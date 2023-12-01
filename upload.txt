@@ -1,0 +1,10 @@
+git:
+cd spider/
+git add .
+git commit -m "xxxxx"
+git push origin master
+
+
+pypi:
+python setup.py sdist
+twine upload dist/*
