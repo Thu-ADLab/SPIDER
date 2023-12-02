@@ -1,1 +1,1 @@
-from spider.utils.predict import linear_predict
+from spider.utils.predict.linear import linear_predict

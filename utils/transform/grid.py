@@ -1,8 +1,7 @@
-from spider.elements.grid import OccupancyGrid2D
 
 import sys
 
-sys.path.append("D:/科研工作/自动驾驶决策/to康安(1)/")
+# sys.path.append("D:/科研工作/自动驾驶决策/to康安(1)/")
 from spider.elements.grid import OccupancyGrid2D
 import numpy as np
 from typing import List

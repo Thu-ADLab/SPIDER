@@ -3,7 +3,7 @@ import math
 import cv2
 
 from spider.elements.Box import TrackingBoxList
-
+import os
 
 '''
 qzl:
@@ -102,9 +102,9 @@ class OccupancyGrid2D:
     #     pass
 
     # qka完成
-    from spider.utils.transform.grid import GridTransformer
+    # from spider.utils.transform.grid import GridTransformer
     @staticmethod
-    def get_bbox_grid(gt: GridTransformer, grid, bbox):
+    def get_bbox_grid(gt: "GridTransformer", grid, bbox):
 
         x0y0_cart = bbox[0]
         x1y1_cart = bbox[1]
