@@ -12,7 +12,7 @@ from spider.elements.vehicle import VehicleState
 from spider.elements.Box import TrackingBoxList, TrackingBox
 
 from spider.sampler.PolynomialSampler import QuinticPolyminalSampler, QuarticPolyminalSampler
-from spider.sampler.Combiner import PVDCombiner
+from spider.sampler.Combiner import LatLonCombiner
 from spider.evaluator import FrenetCostEvaluator
 
 from spider.utils.transform.frenet import FrenetCoordinateTransformer
@@ -70,7 +70,7 @@ class MFRLPlanner(BasicPlanner):
                                                             self.config["end_v_candidates"])
         self.lateral_sampler = QuinticPolyminalSampler(self.config["end_s_candidates"],
                                                        self.config["end_l_candidates"])
-        self.trajectory_combiner = PVDCombiner(self.config["steps"],self.config["dt"]) # 默认路径-速度解耦的重新耦合
+        self.trajectory_combiner = LatLonCombiner(self.config["steps"], self.config["dt"]) # 默认路径-速度解耦的重新耦合
         self.trajectory_evaluator = FrenetCostEvaluator()
         # self.constraint_checker = None
         self.collision_checker = BoxCollisionChecker(self.config["ego_veh_length"], self.config["ego_veh_width"])

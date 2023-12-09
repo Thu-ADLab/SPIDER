@@ -572,7 +572,7 @@ if __name__ == '__main__':
     t2 = time()
     for _ in range(10000):
         # a = {n: scipy.special.binom(n, np.arange(n + 1)) for n in range(1, 9)}
-        b = c.arclength3
+        b = c.arclength2
     t3 = time()
 
     print(t2-t1)

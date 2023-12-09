@@ -1,7 +1,8 @@
 from spider.elements.trajectory import Trajectory, FrenetTrajectory
+from spider.elements.curves import ParametricCurve, Curve1d
+import numpy as np
 
-
-class PVDCombiner:
+class LatLonCombiner:
     '''
     这里准确来讲不能叫PVD，只能叫LatLon解耦
     PVD本质是路径和速度（标量速度）的分解
@@ -16,10 +17,10 @@ class PVDCombiner:
         self.steps = steps
         self.dt = dt
 
-    def combine(self, lat_generators, long_generators):
+    def combine(self, lat_generators, lon_generators):
         ts = [self.dt * i for i in range(self.steps)]
         candidate_trajectories = []
-        for long_generator in long_generators:
+        for long_generator in lon_generators:
             ss, dss, ddss, dddss = [ [long_generator(t, order) for t in ts] for order in range(4)] ## ss是绝对坐标
             # ss_abs = [s + ego_s0 for s in ss]  # 注意，加上ego_s0这一步非常重要,从相对变为绝对frenet坐标
             s0 = ss[0]
@@ -33,3 +34,46 @@ class PVDCombiner:
                 candidate_trajectories.append(traj)
 
         return candidate_trajectories
+
+class PVDCombiner:
+    def __init__(self, steps, dt):
+        # print("")
+        self.steps = steps
+        self.dt = dt
+
+    def combine(self, path_generators, displacement_generators):
+        '''
+        path_generators: list of 参数化曲线，以displacement（累积曲线长度）为参数的x,y曲线参数方程
+        displacement_generator: list of 显式曲线方程，表示displacement关于时间的函数关系，如果是speed profile,需要先进行积分
+        这里有个点需要说明的是，这里的displacement不能直接理解为frenet坐标里面的s，因为s是沿着referenceline的里程，
+        而displacement是沿着已规划好的path的里程，积累曲线长度
+        这里很容易犯一个误区，就比如生成的path是frenet坐标下的，然后displacement_generator是speed_profile生成的
+        然而speedprofile积分生成的是笛卡尔坐标下的距离，不是frenet下的path的距离！
+        '''
+        if not all([isinstance(path_generator, ParametricCurve) for path_generator in path_generators]):
+            raise NotImplementedError("Only support ParametricCurve for path in PVDCombiner for now...")
+        if not all([isinstance(displacement_generator, ParametricCurve) for displacement_generator in displacement_generators]):
+            raise NotImplementedError("Only support Curve for displacement in PVDCombiner for now...")
+
+        ts = [self.dt * i for i in range(self.steps)]
+        candidate_trajectories = []
+
+        for displacement_generator in displacement_generators:
+            ss, dss, ddss, dddss = [[displacement_generator(t, order) for t in ts] for order in range(4)] ## ss是绝对坐标
+            # ss_abs = [s + ego_s0 for s in ss]  # 注意，加上ego_s0这一步非常重要,从相对变为绝对frenet坐标
+            s0 = ss[0]
+            for path_generator in path_generators:
+                xys, dxys, ddxys, dddxys = [[path_generator(s-s0, order) for s in ss] for order in range(4)]
+
+                traj = Trajectory(self.steps, self.dt)
+                traj.t = ts
+                traj.x, traj.y = xys
+                traj.v = np.linalg.norm(dxys)
+
+                traj.heading = np.arctan2()
+                traj.s, traj.s_dot, traj.s_2dot, traj.s_3dot = ss, dss, ddss, dddss
+                traj.l, traj.l_prime, traj.l_2prime, traj.l_3prime = ls, dls, ddls, dddls
+                candidate_trajectories.append(traj)
+
+        return candidate_trajectories
+
