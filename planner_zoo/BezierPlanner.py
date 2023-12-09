@@ -23,7 +23,7 @@ from spider.constraints import CartConstriantChecker
 
 class Bezier(BasicPlanner):
     def __init__(self, config=None):
-        super(LatticePlanner, self).__init__()
+        super(BasicPlanner, self).__init__()
 
         self.config = self.default_config()
         if not (config is None):
