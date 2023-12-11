@@ -48,8 +48,8 @@ class Bicycle:
             dt = self.dt
         dx = x - self.x
         dy = y - self.y
-        heading = math.atan2(dy,dx)  # t+1时刻的
-        v = dx / dt / math.cos(heading)  # t+1时刻的
+        heading = math.atan2(dy,dx)  # x+1时刻的
+        v = dx / dt / math.cos(heading)  # x+1时刻的
         dv = v - self.velocity
         a = dv/dt
         dheading = heading-self.heading

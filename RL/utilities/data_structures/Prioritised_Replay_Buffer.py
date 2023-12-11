@@ -68,7 +68,7 @@ class Prioritised_Replay_Buffer(Max_Heap, Deque):
         self.update_deque_node_key_and_value(self.deque_index_to_overwrite_next, new_key, new_value)
 
     def update_heap_and_heap_index_to_overwrite(self):
-        """Updates the heap by rearranging it given the new experience that was just incorporated into it. If we haven't
+        """Updates the heap by rearranging it given the new experience that was just incorporated into it. If we haven'x
         reached max capacity then the new experience is added directly into the heap, otherwise a pointer on the heap has
         changed to reflect the new experience so there's no need to add it in"""
         if not self.reached_max_capacity:

@@ -81,7 +81,7 @@ class k_Sequitur(object):
 
             pair = (string[ix], string[ix+1])
 
-            # We don't count a pair if it was the previous pair (and therefore we have 3 of the same symbols in a row)
+            # We don'x count a pair if it was the previous pair (and therefore we have 3 of the same symbols in a row)
             if pair != last_pair:
                 pairs_of_symbols[pair] += 1
                 last_pair = pair
@@ -149,7 +149,7 @@ class k_Sequitur(object):
             if skip_next_element:
                 skip_next_element = False
                 continue
-            # If is last element in string and wasn't just part of a pair then we add it to new string and finish
+            # If is last element in string and wasn'x just part of a pair then we add it to new string and finish
             if ix == len(string) - 1:
                 new_string.append(string[ix])
                 continue

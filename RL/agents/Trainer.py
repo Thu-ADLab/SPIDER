@@ -86,7 +86,7 @@ class Trainer(object):
         return self.results
 
     def create_object_to_store_results(self):
-        """Creates a dictionary that we will store the results in if it doesn't exist, otherwise it loads it up"""
+        """Creates a dictionary that we will store the results in if it doesn'x exist, otherwise it loads it up"""
         if self.config.overwrite_existing_results_file or not self.config.file_to_save_data_results or not os.path.isfile(self.config.file_to_save_data_results):
             results = {}
         else: results = self.load_obj(self.config.file_to_save_data_results)

@@ -3,7 +3,7 @@
 """
 import numpy as np
 import math
-from spider.elements.curves import Spline2D
+from spider.elements.curves import ParametricCubicSpline
 from spider.utils.geometry import find_nearest_point, point_to_segment_distance
 from spider.elements.trajectory import FrenetTrajectory
 from spider.elements.vehicle import KinematicState, FrenetKinematicState
@@ -52,7 +52,7 @@ class FrenetCoordinateTransformer:
         self.refer_line_arr = reference_line
         # assert self.refer_line_arr.shape[1] == 2
         if reference_line_csp is None:
-            self.refer_line_csp = Spline2D(self.refer_line_arr[:,0], self.refer_line_arr[:,1])
+            self.refer_line_csp = ParametricCubicSpline(self.refer_line_arr[:, 0], self.refer_line_arr[:, 1])
         else:
             self.refer_line_csp = reference_line_csp
 
@@ -134,7 +134,7 @@ class FrenetCoordinateTransformer:
         if speed is None or yaw is None:
             raise ValueError("Lack of 2-order information")
 
-        rdkappa = 0 # todo: 需要在spline2D中加入计算曲率对于s的变化率的计算公式
+        rdkappa = 0 # todo: 需要在ParametricCubicSpline中加入计算曲率对于s的变化率的计算公式
         delta_theta_prime = one_minus_kappa_r_l / cos_dtheta * kappa - rkappa
         kappa_r_d_prime = rdkappa * l + rkappa * l_prime
         s_2dot = (acc * cos_dtheta - s_dot ** 2 * (l_prime * delta_theta_prime - kappa_r_d_prime)) / one_minus_kappa_r_l
@@ -188,7 +188,7 @@ class FrenetCoordinateTransformer:
         dtheta = yaw - rtheta
         cos_dtheta = np.cos(dtheta)
         tan_dtheta = np.tan(dtheta)
-        rdkappa = 0  # todo: 需要在spline2D中加入计算曲率对于s的变化率的计算公式
+        rdkappa = 0  # todo: 需要在ParametricCubicSpline中加入计算曲率对于s的变化率的计算公式
         kappa_r_d_prime = rdkappa * l + rkappa * l_prime
         temp = cos_dtheta / one_minus_kappa_r_l
         kappa = ((l_2prime + kappa_r_d_prime * tan_dtheta) * cos_dtheta * temp + rkappa) * temp

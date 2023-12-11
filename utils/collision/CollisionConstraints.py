@@ -39,7 +39,7 @@ def generate_corridor_bboxes(initial_guess:Trajectory, bboxes:TrackingBoxList,
     # lon_offset为负表示在几何中心后方
 
     # bboxes.dilate(radius)
-    # bboxes.predict(initial_guess.t) # TODO:QZL:是不是要把预测放到外面
+    # bboxes.predict(initial_guess.x) # TODO:QZL:是不是要把预测放到外面
     collision_checker = BoxCollisionChecker(utils.collision.BoxCollisionChecker.flagSAT)
 
     corridor = []

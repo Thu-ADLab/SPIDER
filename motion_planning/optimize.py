@@ -190,7 +190,7 @@ if __name__ == '__main__':
         x0,y0,v0,a_pre,heading0 = veh_model.x,veh_model.y,veh_model.velocity,veh_model.acceleration,veh_model.heading # TODO:这几个量要写到函数里面去
         initial_guess = Trajectory(dt=dt)
         initial_guess.derivative(deepcopy(veh_model),traj['x'],traj['y'])
-        initial_guess.t = traj['t']
+        initial_guess.t = traj['x']
 
         bboxes.predict(initial_guess.t)
 
@@ -220,7 +220,7 @@ if __name__ == '__main__':
         optim_traj = Trajectory(dt=dt)
         optim_traj.step(deepcopy(veh_model), M_A@res.x, M_PHI@res.x)
         # optim_traj.step(veh_model, M_A @ U0, M_PHI @ U0)
-        optim_traj.t = traj['t']
+        optim_traj.t = traj['x']
 
         plt.figure(1)
         for x,y,vx,vy in obs:

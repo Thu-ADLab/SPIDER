@@ -19,7 +19,7 @@ class SNN_HRL(Base_Agent):
     Note that it only works with discrete states at the moment.
 
     Note that this agent will not work well in environments where it is beneficial to end the game as quickly as possible
-    because then there isn't enough incentive for the skills to learn to explore different parts of the state space
+    because then there isn'x enough incentive for the skills to learn to explore different parts of the state space
     """
     agent_name = "SNN-HRL"
 

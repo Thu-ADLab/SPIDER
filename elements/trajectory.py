@@ -41,13 +41,35 @@ class Trajectory(Path):
         self.a = []
         self.steer = []
         self.steer_velocity = []
+        self.jerk = []
+        self.centripetal_acceleration = []
         pass
+
+    @classmethod
+    def from_trajectory_array(cls, trajectory_array: np.ndarray, dt, calc_derivative: bool = False,
+                              v0=0., heading0=0., a0=0., steer0=0., steer_velocity0=0.) -> 'Trajectory':
+        '''
+        trajectory_array: shape of [N,2], ndarray([[x,y],[x,y]])
+        calc_derivative: if True, then calculate the Higher-order kinematics parameters
+        todo: 以后要加入自定义vehicle model的接口
+        '''
+        VehModel = Bicycle
+        xs, ys = trajectory_array[:, 0], trajectory_array[:, 1]
+        traj = cls(len(trajectory_array), dt)
+
+        if calc_derivative:
+            veh_model = VehModel(xs[0], ys[0], v0, a0, heading0, steer0, steer_velocity0)
+            traj.derivative(veh_model, xs, ys)
+        else:
+            traj.x = list(xs)
+            traj.y = list(ys)
+        return traj
 
     def densify(self):
         # 时间维度的
         pass
 
-    def step(self, veh_model:Bicycle, accs, steers=None, steer_velocities=None):
+    def step(self, veh_model:Bicycle, accs, steers=None):
         # 要考虑轨迹第一个点是不是t=1*dt，这里认为是的
         self.clearState()
         self.appendStateFromModel(veh_model)
@@ -109,9 +131,6 @@ class Trajectory(Path):
         self.l = []
         self.t = []
 
-    @classmethod
-    def from_trajectory_array(cls, trajectory_array):
-        pass
 
 
 class FrenetTrajectory(Trajectory):

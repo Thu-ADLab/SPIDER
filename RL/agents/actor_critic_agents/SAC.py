@@ -94,7 +94,7 @@ class SAC(Base_Agent):
         self.episode_number += 1
 
     def pick_action(self, eval_ep, state=None):
-        """Picks an action using one of three methods: 1) Randomly if we haven't passed a certain number of steps,
+        """Picks an action using one of three methods: 1) Randomly if we haven'x passed a certain number of steps,
          2) Using the actor in evaluation mode if eval_ep is True  3) Using the actor in training mode if eval_ep is False.
          The difference between evaluation and training mode is that training mode does more exploration"""
         if state is None: state = self.state
@@ -108,7 +108,7 @@ class SAC(Base_Agent):
         return action
 
     def actor_pick_action(self, state=None, eval=False):
-        """Uses actor to pick an action in one of two ways: 1) If eval = False and we aren't in eval mode then it picks
+        """Uses actor to pick an action in one of two ways: 1) If eval = False and we aren'x in eval mode then it picks
         an action that has partly been randomly sampled 2) If eval = True then we pick the action that comes directly
         from the network and so did not involve any random sampling"""
         if state is None: state = self.state

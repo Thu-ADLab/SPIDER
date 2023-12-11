@@ -1,7 +1,7 @@
 import enum
 import numpy as np
 import math
-from spider.elements.curves import Spline2D
+from spider.elements.curves import ParametricCubicSpline
 from spider.elements.vehicle import VehicleState
 from spider.utils.transform.frenet import FrenetCoordinateTransformer
 
@@ -34,7 +34,7 @@ class Lane:
         self.virtual = False # 是否是虚拟车道（比如路口的虚拟reference line形成的虚拟车道）
 
         self.centerline = centerline
-        self.centerline_csp = Spline2D(centerline[:,0], centerline[:,1])
+        self.centerline_csp = ParametricCubicSpline(centerline[:, 0], centerline[:, 1])
         self.width = width
         self.speed_limit = speed_limit
 

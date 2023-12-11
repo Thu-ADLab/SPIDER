@@ -12,7 +12,7 @@ from agents.actor_critic_agents.SAC import SAC
 
 # NOTE: DIAYN calculates diversity of states penalty each timestep but it might be better to only base it on where the
 # agent got to in the last timestep, or after X timesteps
-# NOTE another problem with this is that the discriminator is trained from online data as it comes in which isn't iid
+# NOTE another problem with this is that the discriminator is trained from online data as it comes in which isn'x iid
 # so we could probably make it perform better by maintaining a replay buffer and using that to train the discriminator instead
 
 class DIAYN(Base_Agent):

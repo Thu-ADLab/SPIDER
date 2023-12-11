@@ -6,7 +6,7 @@ There are three environments that can be represented by this class depending on 
 The options are: ["AntMaze", "AntPush", "AntFall"].
 
 Note that "Success" for this game is defined by the authors as achieving -5 or more on the last step of the episode 
-but that this isn't coded in anyway as part of the environment. 
+but that this isn'x coded in anyway as part of the environment. 
 """
 class Ant_Navigation_Environments(object):
 

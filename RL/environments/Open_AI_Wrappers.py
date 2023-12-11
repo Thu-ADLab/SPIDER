@@ -140,7 +140,7 @@ class MaxAndSkipEnv(gym.Wrapper):
             if done:
                 break
         # Note that the observation on the done=True frame
-        # doesn't matter
+        # doesn'x matter
         max_frame = self._obs_buffer.max(axis=0)
 
         return max_frame, total_reward, done, info

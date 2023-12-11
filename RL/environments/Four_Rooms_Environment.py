@@ -204,7 +204,7 @@ class Four_Rooms_Environment(gym.Env):
             self.grid[3][3] = self.goal_space_name
 
     def randomly_place_something(self, thing_name, invalid_places):
-        """Randomly places a thing called thing_name on any square that doesn't have an invalid item on it"""
+        """Randomly places a thing called thing_name on any square that doesn'x have an invalid item on it"""
         thing_placed = False
         while not thing_placed:
             random_row = randint(0, self.grid_height - 1)
