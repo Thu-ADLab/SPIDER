@@ -33,8 +33,8 @@ class Lane:
         self.id = index  # 左小右大，0，1，2，3
         self.virtual = False # 是否是虚拟车道（比如路口的虚拟reference line形成的虚拟车道）
 
-        self.centerline = centerline
-        self.centerline_csp = ParametricCubicSpline(centerline[:, 0], centerline[:, 1])
+        self.centerline = np.array(centerline)
+        self.centerline_csp = ParametricCubicSpline(self.centerline[:, 0], self.centerline[:, 1])
         self.width = width
         self.speed_limit = speed_limit
 

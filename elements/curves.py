@@ -1,6 +1,6 @@
 """
 曲线类
-目前只完成了2d平面曲线类
+只包含2d平面曲线类
 
 主要分三大类，
 一类是显式方程表达的曲线，现在命名ExplicitCurve，形如 y = f(x)
@@ -213,6 +213,51 @@ class BasicPolynomial(ExplicitCurve):
         coef = np.polyfit(x_data, y_data, order)
         self.set_coef(coef)
 
+
+class CubicPolynomial(BasicPolynomial):
+    def __init__(self, coef=None, valid_x_range=None):
+        super(CubicPolynomial, self).__init__(coef, valid_x_range)
+
+    def two_point_boundary_value(self, x_0, y_0, y_prime_0, x_end, y_end, y_prime_end):
+        '''
+        interpolate with two_point_boundary_value constraints.
+        And it is recommended to set x_0 to 0 to accelerate the calculation
+        todo: 可以提前储存几次方是几，可以加速
+        '''
+        self.valid_x_range = [x_0, x_end]
+
+        if x_0 != 0:
+            # general 的计算方法
+            A = np.array([
+                [x_0 ** 3, x_0 ** 2, x_0, 1],
+                [3 * x_0 ** 2, 2 * x_0, 1, 0],
+                [x_end ** 3, x_end ** 2, x_end, 1],
+                [3 * x_end ** 2, 2 * x_end, 1, 0],
+            ])
+            b = np.array([y_0, y_prime_0, y_end, y_prime_end])
+            coef = np.linalg.solve(A,b)
+            self.set_coef(coef)
+        else:
+            # x_0 = 0特殊条件下的计算，仅用于加速，数值上等效于general情况下的方法，实验提速1/3
+            a0 = y_0
+            a1 = y_prime_0
+
+            A = np.array([[x_end**3, x_end**2],
+                          [3 * x_end ** 2, 2 * x_end]])
+            b = np.array([y_end - a0 - x_end * a1,
+                          y_prime_end - a1])
+            temp = np.linalg.solve(A, b)
+
+            a3 = temp[0]
+            a2 = temp[1]
+            self.set_coef([a3, a2, a1, a0])
+
+
+    @classmethod
+    def from_kine_states(cls, x0, y0, yaw0, xe, ye, yawe):
+        cp = cls()
+        cp.two_point_boundary_value(x0, y0, math.tan(yaw0), xe, ye, math.tan(yawe))
+        return cp
 
 class QuarticPolynomial(BasicPolynomial):
     def __init__(self, coef=None, valid_x_range=None):
@@ -490,12 +535,14 @@ class CubicSpline(InterpolationCurve):
     分段三次函数
     """
     def __init__(self, x=None, y=None):
-        super(CubicSpline, self).__init__(x, y)
         self.b, self.c, self.d, self.w = [], [], [], []
+        # 一定要把需要在calc_coef里面计算用到的属性定义在前面，因为下一句可能会调用calc_coef
+        super(CubicSpline, self).__init__(x, y)
+
 
     def _calc_coef(self):
         self.a = list(self.y)
-        h = np.diff(x)
+        h = np.diff(self.x)
         # calc coefficient c
         A = self._calc_A(h)
         B = self._calc_B(h)
@@ -870,8 +917,10 @@ class ParametricCubicSpline(ParametricCurve):
 
 ################# 贝塞尔曲线 #####################
 class BezierCurve(ParametricCurve):
+    # 预先计算二项式系数
     # 类变量的定义语句在类被定义时就会执行，并且只执行一次, 多次初始化多个类的实例时，类变量的定义语句不会被重新执行
-    _binom_coeff_dict = {n: scipy.special.binom(n, np.arange(n+1)) for n in range(1, 9)} # 预先算至多8个控制点
+    _binom_coeff_dict = {n: scipy.special.binom(n, np.arange(n+1)) for n in range(1, 9)} # 预先算至多8个控制点的情况
+    # 字典中,n:[B_n_0, B_n_1,...B_n_n]储存了n下的所有的二项式系数
 
     def __init__(self, control_points, pre_calculation=True):
         super(BezierCurve, self).__init__()
@@ -1005,22 +1054,14 @@ class BezierCurve(ParametricCurve):
     def calc_third_derivative(self, s):
         return self.calc_third_derivative_t( np.array(s) / self.arclength )
 
-    # def calc_point(self, x):
-    #     '''
-    #     qzl:
-    #     非常不推荐使用这个函数，
-    #     贝塞尔曲线的计算本质上是在描述点 (x,y) 关于参数 x 的函数关系
-    #     这个函数将其视作描述y关于x的函数关系（这里采用采样点插值处理）
-    #     在不是函数映射的曲线（比如竖着的半圆曲线）无法处理
-    #     '''
-    #     uu = np.linspace(0, 1, 100)
+
 
 
 
 ################## 基础的隐式方程表达的曲线类 #####################
 class ImplicitCurve:
     def __init__(self):
-        raise NotImplementedError("Wait for completion. Can be used for circle curve and eclipse")
+        raise NotImplementedError("Wait for completion. Can be used for curves like circle and eclipse")
 
 
 
