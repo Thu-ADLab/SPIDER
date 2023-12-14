@@ -123,8 +123,8 @@ class MFRLPlanner(BasicPlanner):
     def configure(self, config: dict):
         self.__init__(config)
 
-    def set_reward_function(self):
-        pass
+    def set_reward_function(self, reward_model):
+        self.reward_function = reward_model
 
 
     def set_local_map(self, local_map:RoutedLocalMap):

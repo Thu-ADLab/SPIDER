@@ -17,7 +17,7 @@ class QuarticPolyminalSampler(BasicSampler):
         samples = []
         for dxe in self.end_dx_candidates:
             for te in self.end_t_candidates:
-                samples.append(QuarticPolynomial(xs, dxs, ddxs, dxe, 0.0, te))
+                samples.append(QuarticPolynomial.from_kine_states(xs, dxs, ddxs, dxe, 0.0, te))
 
         return samples
 
@@ -37,6 +37,6 @@ class QuinticPolyminalSampler(BasicSampler):
         samples = []
         for xe in self.end_x_candidates:
             for te in self.end_t_candidates:
-                samples.append(QuinticPolynomial(xs, dxs, ddxs, xe, 0.0, 0.0, te))
+                samples.append(QuinticPolynomial.from_kine_states(xs, dxs, ddxs, xe, 0.0, 0.0, te))
 
         return samples
