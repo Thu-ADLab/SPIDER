@@ -158,7 +158,7 @@ class FrenetCoordinateTransformer:
         frenet_state = FrenetKinematicState()
 
         # 零阶导
-        rx, ry = self.refer_line_csp.calc_position(s)
+        rx, ry = self.refer_line_csp.calc_point(s)
         rtheta = self.refer_line_csp.calc_yaw(s)
         x = rx - l * np.sin(rtheta)
         y = ry + l * np.cos(rtheta)

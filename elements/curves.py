@@ -470,9 +470,9 @@ class InterpolationCurve(ExplicitCurve):
             self.set_data(x, y)
 
     def set_data(self, x, y):
-        self.x, self.y = x, y
+        self.x, self.y = np.array(x), np.array(y)
         self.nx = len(x)
-        self.valid_x_range = [x[0], x[1]]
+        self.valid_x_range = [x[0], x[-1]]
         self._calc_coef()
 
     @abstractmethod
@@ -555,6 +555,8 @@ class CubicSpline(InterpolationCurve):
                  (self.c[i + 1] + 2.0 * self.c[i]) / 3.0
             self.b.append(tb)
 
+        self.a, self.b, self.c, self.d, self.w = np.array(self.a), np.array(self.b), np.array(self.c), np.array(self.d), np.array(self.w)
+
 
     def _calc_A(self, h):
         """
@@ -591,10 +593,14 @@ class CubicSpline(InterpolationCurve):
         search data segment index
         """
         if self._isscalar(x):
-            return bisect.bisect(self.x, x) - 1
+            pt_idx = bisect.bisect(self.x, x) - 1  # 二分查找插入点的索引
+            seg_idx = pt_idx if pt_idx != self.nx - 1 else pt_idx - 1 #如果是最后一个点，那么segment id要往前挪一个
+            return seg_idx
         else:
-            idxs = [bisect.bisect(self.x, xi) - 1 for xi in x]
-            return idxs
+            pt_idxs = [bisect.bisect(self.x, xi) - 1 for xi in x]  # 二分查找插入点的索引
+            seg_idxs = np.array(pt_idxs)
+            seg_idxs[seg_idxs==self.nx-1] -= 1
+            return seg_idxs #如果是最后一个点，那么segment id要往前挪一个
 
     def interpolate(self, x, order):
         if np.array(x).size == 0:
@@ -882,6 +888,8 @@ class ParametricCubicSpline(ParametricCurve):
     def __init__(self, x, y):
         super(ParametricCubicSpline, self).__init__()
         self.s = self._calc_s(x, y)
+        self.x = np.array(x)
+        self.y = np.array(y)
         self.sx = CubicSpline(self.s, x) # 以s为自变量，以x为因变量的三阶样条曲线
         self.sy = CubicSpline(self.s, y) # 以s为自变量，以y为因变量的三阶样条曲线
 

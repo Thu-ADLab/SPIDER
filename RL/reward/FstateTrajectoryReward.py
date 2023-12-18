@@ -6,10 +6,12 @@ import torch
 from spider.utils.collision.SAT import SAT_check
 from spider.elements.Box import obb2vertices
 from spider.elements.trajectory import FrenetTrajectory
+from spider.RL.reward.BasicReward import BasicReward
 
 
-class FstateTrajectoryReward:
+class FstateTrajectoryReward(BasicReward):
     def __init__(self, config: dict):
+        super(FstateTrajectoryReward, self).__init__()
         self.trajectory_candidates: Sequence[FrenetTrajectory] = []
         self.config = config
 

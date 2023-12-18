@@ -1,5 +1,5 @@
 import math
-from typing import Union, Tuple
+from typing import Union, Tuple, Type
 # import highway_env
 import gymnasium as gym
 import highway_env.envs
@@ -8,6 +8,7 @@ import numpy as np
 import spider
 import spider.elements as elm
 from spider.elements import TrackingBoxList, OccupancyGrid2D, RoutedLocalMap, VehicleState, Trajectory
+
 # from spider.elements import Location, Rotation, Transform,
 
 '''
@@ -15,17 +16,17 @@ Interface逻辑：
 observation -> perception, routed_local_map, localization (planner统一的输入表达) -> output
 '''
 
+
 class HighwayEnvInterface:
     def __init__(self,
-                 env: highway_env.envs.AbstractEnv,
+                 env: Union[highway_env.envs.AbstractEnv, gym.Env], # 这个union纯粹是为了避免IDE报提示
                  # observation_flag=spider.HIGHWAYENV_OBS_KINEMATICS,
                  perception_flag=spider.PERCEPTION_BOX,
                  output_flag=spider.OUTPUT_TRAJECTORY,
-
                  veh_length=5.0,
                  veh_width=2.0):
 
-        self._env = env
+        self._env = env # 注意，由于python是引用传递，所以这个_env完全等价于外部的env!
         self._env_config = env.config
 
         # 车长车宽没考虑
@@ -33,61 +34,68 @@ class HighwayEnvInterface:
         self.perception_flag = perception_flag
         self.output_flag = output_flag
 
-        self.veh_length = 5.0
-        self.veh_width = 2.0
+        self.veh_length = veh_length
+        self.veh_width = veh_width
 
         # self.kine_feature_index_mapping = self._build_feature_index_mapping()
-        self._all_features = self._env_config["observation"]["features"]
-        assert "x" in self._all_features and "y" in self._all_features
+        if self.observation_flag == spider.HIGHWAYENV_OBS_KINEMATICS:
+            self._all_features = self._env.observation_type.FEATURES
+            assert "x" in self._all_features and "y" in self._all_features
 
+        self._routed_local_map = None
 
     # def observe_env(self):
     #     obs, info = self._env.
 
-    def wrap_observation(self, observation, center_lines=None) \
+    def reset(self):
+        # todo: qzl: 想一想有没有什么更多的需要reset的
+        self._routed_local_map = None
+        return self._env.reset()
+
+    def wrap_observation(self, observation) \
             -> Tuple[Union[TrackingBoxList, OccupancyGrid2D], RoutedLocalMap, VehicleState]:
         '''
         qzl:这个函数的名字可以再改
         把observation改成planner的统一输入形式。
         '''
 
-
-
         if self.observation_flag == spider.HIGHWAYENV_OBS_KINEMATICS:
             # highway-env的观测是kinematics
 
             ego_veh_state = self._get_kine_ego_state(observation)
 
-
             if self.perception_flag == spider.PERCEPTION_BOX:
                 perception = self._wrap_kine2box(observation)
             elif self.perception_flag == spider.PERCEPTION_OCC:
-                perception = self._wrap_kine2box(observation)
+                raise NotImplementedError("not supported now...")
+                # perception = self._wrap_kine2box(observation)
             else:
                 raise ValueError("INVALID perception_flag")
 
         else:
             raise NotImplementedError("not supported now...")
 
-        return perception, RoutedLocalMap, VehicleState
+        if self._need_to_update_map():
+            local_map = self.extract_map()
+        else:
+            local_map = self._routed_local_map
+
+        return perception, local_map, ego_veh_state
 
     def convert_action(self, action, planner_dt):
-        if self.output_flag == spider.OUTPUT_TRAJECTORY: # 轨迹
+        if self.output_flag == spider.OUTPUT_TRAJECTORY:  # 轨迹
             next_x, next_y = action.x[1], action.y[1]
-        else: # 控制量
+        else:  # 控制量
             raise NotImplementedError("not supported now...")
-
-
 
     def conduct_action(self, action, planner_dt):
         '''
         qzl: 应该写成直接执行动作呢还是写成输出对应格式的动作呢？
         '''
-        if self.output_flag == spider.OUTPUT_TRAJECTORY: # 轨迹
-
+        if self.output_flag == spider.OUTPUT_TRAJECTORY:  # 轨迹
 
             pass
-        else: # 控制量
+        else:  # 控制量
             raise NotImplementedError("not supported now...")
 
     def _observation_type(self):
@@ -112,8 +120,7 @@ class HighwayEnvInterface:
     #             self.kine_feature_index_mapping[key] = idx
     #     assert "x" in self.kine_feature_index_mapping and "y" in self.kine_feature_index_mapping
 
-
-    def _get_veh_info_dict(self, veh_info_vector, feat_names, *, calc_heading: bool=True) -> dict:
+    def _get_veh_info_dict(self, veh_info_vector, feat_names, *, calc_heading: bool = True) -> dict:
         '''
         feat_names: 需要给出的feature的名字
         veh_info_vector: 目标车辆的Observation的对应切片
@@ -130,11 +137,10 @@ class HighwayEnvInterface:
         veh_info_dict = {key: all_veh_info_dict[key] if key in all_veh_info_dict else 0.0
                          for key in feat_names}
 
-
         if calc_heading:
-            if "heading" in feat_names: # 如果需要储存heading信息，但heading可能用别的方式表达，那么需要进行以下处理
+            if "heading" in feat_names:  # 如果需要储存heading信息，但heading可能用别的方式表达，那么需要进行以下处理
                 if "heading" in self._all_features:
-                    pass  #  如果本身observation给出的heading就直接用heading信息
+                    pass  # 如果本身observation给出的heading就直接用heading信息
                 elif "cos_h" in self._all_features:
                     veh_info_dict["heading"] = math.acos(all_veh_info_dict["cos_h"])
                 elif "sin_h" in self._all_features:
@@ -142,20 +148,18 @@ class HighwayEnvInterface:
                 elif ("vx" in self._all_features) and ("vy" in self._all_features):
                     veh_info_dict["heading"] = math.atan2(all_veh_info_dict["vy"], all_veh_info_dict["vx"])
                 else:
-                    pass # 默认设0.0
+                    pass  # 默认设0.0
 
         return veh_info_dict
 
-
     def _get_kine_ego_state(self, observation) -> VehicleState:
         necessary_feat = ["x", "y", "vx", "vy", "heading", "cos_h", "sin_h"]
-        ego_info:dict = self._get_veh_info_dict(observation[0], necessary_feat)
+        ego_info: dict = self._get_veh_info_dict(observation[0], necessary_feat)
         loc = elm.Location(ego_info["x"], ego_info["y"], 0.)
         rot = elm.Rotation(0., ego_info["heading"], 0.)
         velocity = elm.Vector3D(ego_info["vx"], ego_info["vy"], 0.)
         ego_state = VehicleState(elm.Transform(loc, rot), velocity, elm.Vector3D())
         return ego_state
-
 
     def _wrap_kine2box(self, observation) -> TrackingBoxList:
 
@@ -175,18 +179,22 @@ class HighwayEnvInterface:
             heading = veh_info["heading"]
             vx = veh_info["vx"]
             vy = veh_info["vy"]
-            tbox = elm.TrackingBox(obb=(x, y, self.veh_length,self.veh_width,heading), vx=vx, vy=vy)
+            tbox = elm.TrackingBox(obb=(x, y, self.veh_length, self.veh_width, heading), vx=vx, vy=vy)
 
             tbox_list.append(tbox)
 
         return tbox_list
 
-
     def _wrap_kine2grid(self) -> OccupancyGrid2D:
         pass
 
+    ############## 地图信息 #############
+    def _need_to_update_map(self) -> bool:
+        if self._routed_local_map is None:
+            return True
+        return True # todo: qzl: 现在还没来得及写，默认是每一刻都需要更新，后面要加上这个判断的逻辑
 
-    def _extract_map(self, delta_s=1.0) -> RoutedLocalMap:
+    def extract_map(self, start_s=0.0, delta_s=1.0) -> RoutedLocalMap:
         # todo:qzl:现在没有加入extend车道的功能，也就是在长度不够的情况下，通过route信息，把下一个路段的lane加载进来。
         # todo:qzl: 另外导航信息也没加到routedmap里面
         local_map = RoutedLocalMap()
@@ -198,14 +206,23 @@ class HighwayEnvInterface:
         target_lane_idx = ego_veh.target_lane_index
         all_neighbor_lanes = network.all_side_lanes(target_lane_idx)
 
-        for i, lane in enumerate(all_neighbor_lanes):
-            sampled_s = np.arange(0, lane.length, delta_s)
+        for i, lane_idx in enumerate(all_neighbor_lanes):
+            lane = network.get_lane(lane_idx)
+            # qzl: 在highway-env里面，如果不加min，lane.length是10000，后面的三次样条插值什么的计算极其复杂
+            # 先制作自己感兴趣的区间
+            roi_start = max([0., start_s-50])
+            roi_length = min([200, lane.length-roi_start])
+            roi_end = roi_length + roi_start
+
+            sampled_s = np.arange(roi_start, roi_end, delta_s)
             center_line = [lane.position(s, 0) for s in sampled_s]
             spd_lane = elm.Lane(i, center_line, width=lane.width_at(0), speed_limit=lane.speed_limit)
             local_map.add_lane(spd_lane)
 
         # local_map.network = ego_veh.road.network # todo:qzl: 由于没有确认好network的形式，建议后面再说
         # local_map.route = ego_veh.route if not (ego_veh.route is None) else [target_lane_idx]
+
+        # qzl: 以后要加上延长的逻辑
         return local_map
 
 
@@ -217,16 +234,13 @@ if __name__ == '__main__':
     # env = gym.make('highway-v0', render_mode='rgb_array')
     env = gym.make("highway-v0")
     env.reset()
+    env_interface = HighwayEnvInterface(env)
 
-
-    for _ in range(3):
+    for _ in range(10):
         action = env.action_type.actions_indexes["IDLE"]
         obs, reward, done, truncated, info = env.step(action)
+        tboxes, localmap, egostate = env_interface.wrap_observation(obs)
         env.render()
 
     plt.imshow(env.render())
     plt.show()
-
-
-
-

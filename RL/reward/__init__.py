@@ -11,21 +11,21 @@ todo: reward function的写法需要大改动
 '''
 
 # 抽象类
-class BaseRewardFunction:
-    def __init__(self):
-
-        pass
-
-    def evaluate(self, state, action, next_state) -> Tuple[float, bool]:
-
-        if state is None :
-            return 0.0, False # todo: reward应该直接赋0，但是是否done其实要判断的，因为存在一开局就结局的情况
-
-        min_reward = -10
-
-        # 检查当前时刻是否碰撞
-        # 检查
-        reward = 0
+# class BaseRewardFunction:
+#     def __init__(self):
+#
+#         pass
+#
+#     def evaluate(self, state, action, next_state) -> Tuple[float, bool]:
+#
+#         if state is None :
+#             return 0.0, False # todo: reward应该直接赋0，但是是否done其实要判断的，因为存在一开局就结局的情况
+#
+#         min_reward = -10
+#
+#         # 检查当前时刻是否碰撞
+#         # 检查
+#         reward = 0
         #
         # if np.any(np.array(traj.v) > self.config["max_speed"]):
         #     reward = min_reward

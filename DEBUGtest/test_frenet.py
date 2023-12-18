@@ -4,7 +4,7 @@ from spider.elements.trajectory import FrenetTrajectory
 
 
 xs = np.linspace(0,100,101)
-ys = np.zeros_like(xs)
+ys = np.linspace(0,-1,101)
 centerline = np.column_stack((xs, ys))
 transformer = FrenetCoordinateTransformer()
 transformer.set_reference_line(centerline)
@@ -26,7 +26,7 @@ print(state.x, state.y, state.speed, state.yaw, state.acceleration, state.curvat
 
 # 转某个轨迹的坐标
 xs = np.linspace(0,50,50)
-ys = np.random.rand(50)
+ys = np.linspace(0,1,50)
 
 
 traj = FrenetTrajectory(steps=50, dt=0.1)
@@ -37,6 +37,15 @@ print("======================")
 frenet_traj = transformer.cart2frenet4traj(traj,order=0)
 print(frenet_traj.s, frenet_traj.l)
 
+
+import matplotlib.pyplot as plt
+plt.subplot(1,2,1)
+plt.plot(traj.x, traj.y)
+plt.subplot(1,2,2)
+plt.plot(frenet_traj.s, frenet_traj.l)
+
+
+
 frenet_traj = FrenetTrajectory(steps=50, dt=0.1)
 frenet_traj.s = xs
 frenet_traj.l = ys
@@ -44,3 +53,5 @@ frenet_traj.l = ys
 print("======================")
 cart_traj = transformer.frenet2cart4traj(frenet_traj, order=0)
 print(cart_traj.x, cart_traj.y)
+
+plt.show()

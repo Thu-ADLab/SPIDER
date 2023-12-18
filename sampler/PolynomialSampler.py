@@ -3,6 +3,7 @@ from spider.elements.curves import QuarticPolynomial, QuinticPolynomial
 
 
 # 变量符号含义：x对t的函数
+# todo: 这里的变量名字要改，x和t常有歧义
 class QuarticPolyminalSampler(BasicSampler):
     def __init__(self, end_t_candidates, end_dx_candidates):
         '''
