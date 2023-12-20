@@ -27,6 +27,7 @@ import bisect
 from abc import abstractmethod
 from typing import Union
 
+from scipy.special import binom
 import scipy
 import cv2
 
@@ -927,7 +928,7 @@ class ParametricCubicSpline(ParametricCurve):
 class BezierCurve(ParametricCurve):
     # 预先计算二项式系数
     # 类变量的定义语句在类被定义时就会执行，并且只执行一次, 多次初始化多个类的实例时，类变量的定义语句不会被重新执行
-    _binom_coeff_dict = {n: scipy.special.binom(n, np.arange(n+1)) for n in range(1, 9)} # 预先算至多8个控制点的情况
+    _binom_coeff_dict = {n: binom(n, np.arange(n+1)) for n in range(1, 9)} # 预先算至多8个控制点的情况
     # 字典中,n:[B_n_0, B_n_1,...B_n_n]储存了n下的所有的二项式系数
 
     def __init__(self, control_points, pre_calculation=True):
@@ -944,7 +945,7 @@ class BezierCurve(ParametricCurve):
 
         # if pre_calculation:
         #     # 提前计算二项式系数
-        #     values = scipy.special.binom(self.n, np.arange(self.n+1))
+        #     values = binom(self.n, np.arange(self.n+1))
         #     for i, val in enumerate(values):
         #         self._binom_coeff_dict[(self.n, i)] = val
         #     # 提前计算
@@ -986,7 +987,7 @@ class BezierCurve(ParametricCurve):
         if n in self._binom_coeff_dict:
             return self._binom_coeff_dict[n][i]
         else:
-            self._binom_coeff_dict[n] = scipy.special.binom(n, np.arange(n+1))
+            self._binom_coeff_dict[n] = binom(n, np.arange(n+1))
             return self._binom_coeff_dict[n][i]
 
 
@@ -1088,7 +1089,7 @@ if __name__ == '__main__':
         a = c.arclength
     t2 = time()
     for _ in range(10000):
-        # a = {n: scipy.special.binom(n, np.arange(n + 1)) for n in range(1, 9)}
+        # a = {n: binom(n, np.arange(n + 1)) for n in range(1, 9)}
         b = c.arclength2
     t3 = time()
 
