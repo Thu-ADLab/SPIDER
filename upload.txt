@@ -6,5 +6,7 @@ git push origin master
 
 
 pypi:
+rm -r dist
+rm -r spider_python.egg-info
 python setup.py sdist
 twine upload dist/*

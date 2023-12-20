@@ -68,19 +68,23 @@ class FrenetCoordinateTransformer:
         # 计算两个线段之间的距离并选择最短的作为l
         if 0 < nearest_idx < len(self.refer_line_arr) - 1:
             proj1, dist1 = point_to_segment_distance(np.array([x, y]), self.refer_line_arr[nearest_idx - 1],
-                                                     self.refer_line_arr[nearest_idx])
+                                                     self.refer_line_arr[nearest_idx],allow_extension=False)
             proj2, dist2 = point_to_segment_distance(np.array([x, y]), self.refer_line_arr[nearest_idx],
-                                                     self.refer_line_arr[nearest_idx + 1])
+                                                     self.refer_line_arr[nearest_idx + 1],allow_extension=False)
+
+            # 选择距离更短的投影点及距离
             if abs(dist1) < abs(dist2):
-                s_end, l = proj1, dist1
+                s_end, l = proj1, dist1 # s_end指的是最后一段segment上面s的距离
                 segment_start_idx = nearest_idx - 1
             else:
                 s_end, l = proj2, dist2
                 segment_start_idx = nearest_idx
+        # 处理最近点在参考线起始点的情况
         elif nearest_idx == 0:
             s_end, l = point_to_segment_distance(np.array([x, y]), self.refer_line_arr[nearest_idx],
                                                  self.refer_line_arr[nearest_idx + 1])
             segment_start_idx = nearest_idx
+        # 处理最近点在参考线末尾的情况
         else:
             s_end, l = point_to_segment_distance(np.array([x, y]), self.refer_line_arr[nearest_idx - 1],
                                                  self.refer_line_arr[nearest_idx])

@@ -45,6 +45,9 @@ class LatticePlanner(BasicPlanner):
             self.config, BoxCollisionChecker(self.config["ego_veh_length"], self.config["ego_veh_width"])
         )
 
+        self._candidate_trajectories = None
+        self._candidate_trajectories_cost = None
+
 
     @classmethod
     def default_config(cls) -> dict:
@@ -88,6 +91,10 @@ class LatticePlanner(BasicPlanner):
         # self.end_d_candidates = self.config["end_d_candidates"]
         # self.end_v_candidates = self.config["end_v_candidates"]
         # self.end_T_candidates = self.config["end_T_candidates"]
+
+
+    def get_candidate_traj_with_cost(self):
+        return self._candidate_trajectories, self._candidate_trajectories_cost
 
 
     def constraint_check(self, sorted_candidate_trajectories:List[FrenetTrajectory], sorted_cost, obstacles:TrackingBoxList):
@@ -165,6 +172,9 @@ class LatticePlanner(BasicPlanner):
         # 评估+筛选
         sorted_candidates, sorted_cost = self.trajectory_evaluator.evaluate_candidates(candidate_trajectories)
         optimal_trajectory, min_cost = self.constraint_check(sorted_candidates, sorted_cost, predicted_obstacles)
+
+        self._candidate_trajectories, self._candidate_trajectories_cost = sorted_candidates, sorted_cost
+
         if not (optimal_trajectory is None):
             print("Optimal trajectory found! s_dot_end=%.2f,l_end=%.2f" %
                   (optimal_trajectory.s_dot[-1], optimal_trajectory.l[-1]))

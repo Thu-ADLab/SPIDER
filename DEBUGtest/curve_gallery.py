@@ -23,6 +23,7 @@ poly4 = QuarticPolynomial.from_kine_states(y_0, y_prime_0, y_2prime_0, y_prime_e
 xx = np.linspace(x_0, x_end, 1000)
 plt.figure(figsize=(12,8))
 plt.subplot(2,2,1)
+plt.title
 plt.plot(xx, poly3(xx, order=0), label='cubic')
 plt.plot(xx, poly4(xx, order=0), label='quartic')
 plt.plot(xx, poly5(xx, order=0), label='quintic')

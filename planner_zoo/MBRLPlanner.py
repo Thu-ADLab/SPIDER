@@ -87,6 +87,8 @@ class MBRLPlanner(BasicPlanner):
                                self.config["dt"], reward_function=self.reward_function, device=self.device)
         self.closed_loop = self.config["closed_loop"]
 
+        self._candidate_trajectories = None
+
     @classmethod
     def default_config(cls) -> dict:
         """
@@ -119,6 +121,9 @@ class MBRLPlanner(BasicPlanner):
 
     def configure(self, config: dict):
         self.__init__(config)
+
+    def get_candidate_trajectories(self):
+        return self._candidate_trajectories
 
     def set_reward_function(self):
         pass
@@ -230,6 +235,8 @@ class MBRLPlanner(BasicPlanner):
 
         # 轨迹坐标转换，把每个轨迹点转到笛卡尔坐标
         optimal_trajectory = self.decode_action(action_idx, candidate_trajectories)  # 动作解码器
+
+        self._candidate_trajectories = candidate_trajectories
 
         t2 = time.time()
         if not train:

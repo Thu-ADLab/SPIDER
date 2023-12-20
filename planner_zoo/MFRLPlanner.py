@@ -87,6 +87,8 @@ class MFRLPlanner(BasicPlanner):
         self.reward_function = FstateTrajectoryReward(self.config)
         self.closed_loop = self.config["closed_loop"]
 
+        self._candidate_trajectories = None
+
 
     @classmethod
     def default_config(cls) -> dict:
@@ -126,6 +128,8 @@ class MFRLPlanner(BasicPlanner):
     def set_reward_function(self, reward_model):
         self.reward_function = reward_model
 
+    def get_candidate_trajectories(self):
+        return self._candidate_trajectories
 
     def set_local_map(self, local_map:RoutedLocalMap):
         self.local_map = local_map
@@ -235,6 +239,8 @@ class MFRLPlanner(BasicPlanner):
         # todo:qzl: 其实candidates_trajectories不用算出来的，会耗损计算资源，能不能储存Generator形式的？调用的时候再进行计算
         candidate_trajectories = [self.coordinate_transformer.frenet2cart4traj(t, order=2) for t in candidate_trajectories]
         optimal_trajectory = self.decode_action(self.action,candidate_trajectories)  # 动作解码器
+
+        self._candidate_trajectories = candidate_trajectories
 
         return optimal_trajectory
 
