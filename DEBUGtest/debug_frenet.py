@@ -8,8 +8,8 @@ data = torch.load('data.pt')
 
 traj_arr = data['traj'].numpy()
 cline = data['base_centerline'].numpy()
-indices_to_remove = np.where(np.arange(len(cline)) % 10 == 0)
-cline = np.delete(cline, indices_to_remove, axis=0)
+# indices_to_remove = np.where(np.arange(len(cline)) % 10 == 0)
+# cline = np.delete(cline, indices_to_remove, axis=0)
 
 plt.figure()
 plt.plot(cline[:,0], cline[:,1], '.-')

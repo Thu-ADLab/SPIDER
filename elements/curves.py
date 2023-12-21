@@ -25,7 +25,7 @@ import math
 import numpy as np
 import bisect
 from abc import abstractmethod
-from typing import Union
+from typing import Union, List
 
 from scipy.special import binom
 import scipy
@@ -401,62 +401,106 @@ class QuinticPolynomial(BasicPolynomial):
         qp.two_point_boundary_value(0., xs, vxs, axs, te, xe, vxe, axe)
         return qp
 
-    #
-    # def __init__(self, xs, vxs, axs, xe, vxe, axe, te):
-    #     # calc coefficient of quintic polynomial
-    #     super(QuinticPolynomial, self).__init__()
-    #     self.a0 = xs
-    #     self.a1 = vxs
-    #     self.a2 = axs / 2.0
-    #
-    #     A = np.array([[te ** 3, te ** 4, te ** 5],
-    #                   [3 * te ** 2, 4 * te ** 3, 5 * te ** 4],
-    #                   [6 * te, 12 * te ** 2, 20 * te ** 3]])
-    #     b = np.array([xe - self.a0 - self.a1 * te - self.a2 * te ** 2,
-    #                   vxe - self.a1 - 2 * self.a2 * te,
-    #                   axe - 2 * self.a2])
-    #     x = np.linalg.solve(A, b)
-    #
-    #     self.a3 = x[0]
-    #     self.a4 = x[1]
-    #     self.a5 = x[2]
-    #     self.t_range = te
-    #
-    # def calc_point(self, t):
-    #     if t > self.t_range:
-    #         xt = self.calc_point(self.t_range) + (t-self.t_range) * self.calc_first_derivative(self.t_range)
-    #         return xt
-    #
-    #     xt = self.a0 + self.a1 * t + self.a2 * t ** 2 + \
-    #          self.a3 * t ** 3 + self.a4 * t ** 4 + self.a5 * t ** 5
-    #
-    #     return xt
-    #
-    # def calc_first_derivative(self, t):
-    #     if t > self.t_range:
-    #         xt = self.calc_first_derivative(self.t_range)
-    #         return xt
-    #
-    #     xt = self.a1 + 2 * self.a2 * t + \
-    #          3 * self.a3 * t ** 2 + 4 * self.a4 * t ** 3 + 5 * self.a5 * t ** 4
-    #
-    #     return xt
-    #
-    # def calc_second_derivative(self, t):
-    #     if t > self.t_range:
-    #         xt = 0
-    #         return xt
-    #     xt = 2 * self.a2 + 6 * self.a3 * t + 12 * self.a4 * t ** 2 + 20 * self.a5 * t ** 3
-    #
-    #     return xt
-    #
-    # def calc_third_derivative(self, t):
-    #     if t > self.t_range:
-    #         xt = 0
-    #         return xt
-    #     xt = 6 * self.a3 + 24 * self.a4 * t + 60 * self.a5 * t ** 2
-    #
-    #     return xt
+
+class PiecewiseQuinticPolynomial(ExplicitCurve):
+    def __init__(self, all_points_with_derivatives=None, segment_num=None):
+        super(PiecewiseQuinticPolynomial, self).__init__()
+        self.segment_num = segment_num
+        self.segments:List[QuinticPolynomial] = None if segment_num is None else \
+            [QuinticPolynomial() for _ in range(segment_num)]
+        self.critical_points = None # 所有临界点的x
+
+        if not (all_points_with_derivatives is None):
+            self.calc_coef(all_points_with_derivatives)
+
+    def calc_coef(self, all_points_with_derivatives:np.ndarray):
+        '''
+        all_points_with_derivatives:
+        np.array([
+            [x0, y0, y_prime0, y_2prime0],
+            [x1, y1, y_prime1, y_2prime1],
+            ...
+            [xn, yn, y_prime_n, y_2prime_n]
+        ])
+        '''
+        all_points_with_derivatives = np.array(all_points_with_derivatives)
+        if self.segment_num is None:
+            self.segment_num = len(all_points_with_derivatives) - 1
+            self.segments: List[QuinticPolynomial] = [QuinticPolynomial() for _ in range(self.segment_num)]
+        if all_points_with_derivatives.shape[0] == self.segment_num + 1 \
+                and all_points_with_derivatives.shape[1] == 4:
+            pass
+        else:
+            print("Expect %d points with %d features." % (self.segment_num + 1, 4))
+            raise ValueError(
+                '''
+                Wrong size of all_points_with_derivatives. Did you miss any points or miss any information about each point?
+                Here is the definition of all_points_with_derivatives:
+                np.array([
+                    [x0, y0, y_prime0, y_2prime0],
+                    [x1, y1, y_prime1, y_2prime1],
+                    ...
+                    [xn, yn, y_prime_n, y_2prime_n]
+                ])
+                '''
+            )
+        for i in range(len(all_points_with_derivatives) - 1):
+            # 给每一段曲线插值计算参数
+            start = all_points_with_derivatives[i]
+            end = all_points_with_derivatives[i+1]
+            self.segments[i].two_point_boundary_value(start[0], start[1], start[2], start[3],
+                                                      end[0], end[1], end[2], end[3])
+
+        self.critical_points = all_points_with_derivatives[:,0]
+
+    def search_segment_idx(self, x):
+        # x需要是scalar
+        # n个segment, n+1个临界点, n+2个区间
+        idx = bisect.bisect(self.critical_points, x) - 1
+        idx = max([0, idx])
+        idx = min([idx, self.segment_num-1])
+        return idx
+
+    def calc_point(self, x):
+        if self._isscalar(x):
+            idx = self.search_segment_idx(x)
+            val = self.segments[idx](x, order=0)
+        else:
+            val = np.array([self.evaluate(xi, order=0) for xi in x])
+        return val
+
+    def calc_first_derivative(self, x):
+        if self._isscalar(x):
+            idx = self.search_segment_idx(x)
+            val = self.segments[idx](x, order=1)
+        else:
+            val = np.array([self.evaluate(xi, order=1) for xi in x])
+        return val
+
+    def calc_second_derivative(self, x):
+        if self._isscalar(x):
+            idx = self.search_segment_idx(x)
+            val = self.segments[idx](x, order=2)
+        else:
+            val = np.array([self.evaluate(xi, order=2) for xi in x])
+        return val
+
+    def calc_third_derivative(self, x):
+        if self._isscalar(x):
+            idx = self.search_segment_idx(x)
+            val = self.segments[idx](x, order=3)
+        else:
+            val = np.array([self.evaluate(xi, order=3) for xi in x])
+        return val
+
+
+
+
+
+
+
+
+
 
 
 ################ 插值曲线 ################
