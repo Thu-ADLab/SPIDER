@@ -97,9 +97,9 @@ class ExplicitCurve:
 
 ################ 多项式曲线 ################
 
-class BasicPolynomial(ExplicitCurve):
+class BasePolynomial(ExplicitCurve):
     def __init__(self, coef=None, valid_x_range=None):
-        super(BasicPolynomial, self).__init__()
+        super(BasePolynomial, self).__init__()
 
         self._derivative_coefs = {}
 
@@ -215,7 +215,7 @@ class BasicPolynomial(ExplicitCurve):
         self.set_coef(coef)
 
 
-class CubicPolynomial(BasicPolynomial):
+class CubicPolynomial(BasePolynomial):
     def __init__(self, coef=None, valid_x_range=None):
         super(CubicPolynomial, self).__init__(coef, valid_x_range)
 
@@ -260,7 +260,7 @@ class CubicPolynomial(BasicPolynomial):
         cp.two_point_boundary_value(x0, y0, math.tan(yaw0), xe, ye, math.tan(yawe))
         return cp
 
-class QuarticPolynomial(BasicPolynomial):
+class QuarticPolynomial(BasePolynomial):
     def __init__(self, coef=None, valid_x_range=None):
         super(QuarticPolynomial, self).__init__(coef, valid_x_range)
         # self.t_range:list = []
@@ -347,7 +347,7 @@ class QuarticPolynomial(BasicPolynomial):
     #
     #     return xt
 
-class QuinticPolynomial(BasicPolynomial):
+class QuinticPolynomial(BasePolynomial):
 
     def __init__(self, coef=None, valid_x_range=None):
         super(QuinticPolynomial, self).__init__(coef, valid_x_range)

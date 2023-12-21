@@ -4,7 +4,7 @@ import time
 import numpy as np
 
 import spider
-from spider.planner_zoo.BasicPlanner import BasicPlanner
+from spider.planner_zoo.BasePlanner import BasePlanner
 
 from spider.elements.map import RoutedLocalMap
 from spider.elements.trajectory import FrenetTrajectory
@@ -21,7 +21,7 @@ from spider.utils.collision import BoxCollisionChecker
 from spider.constraints import CartConstriantChecker
 
 
-class LatticePlanner(BasicPlanner):
+class LatticePlanner(BasePlanner):
     def __init__(self, config=None):
         super(LatticePlanner, self).__init__()
 

@@ -1,13 +1,13 @@
 import numpy as np
 from itertools import product
 
-from spider.sampler.BasicSampler import BasicSampler
+from spider.sampler.BaseSampler import BaseSampler
 from spider.elements.curves import QuarticPolynomial, QuinticPolynomial, PiecewiseQuinticPolynomial
 
 
 # 变量符号含义：x对t的函数
 # todo: 这里的变量名字要改，x和t常有歧义
-class QuarticPolyminalSampler(BasicSampler):
+class QuarticPolyminalSampler(BaseSampler):
     def __init__(self, end_t_candidates, end_dx_candidates):
         '''
         end_dx_candidates: x一阶导的终值候选项
@@ -26,7 +26,7 @@ class QuarticPolyminalSampler(BasicSampler):
         return samples
 
 
-class QuinticPolyminalSampler(BasicSampler):
+class QuinticPolyminalSampler(BaseSampler):
     def __init__(self, end_t_candidates, end_x_candidates):
         """
         end_x_candidates: x的终值候选项
@@ -46,7 +46,7 @@ class QuinticPolyminalSampler(BasicSampler):
         return samples
 
 
-class PiecewiseQuinticPolyminalSampler(BasicSampler):
+class PiecewiseQuinticPolyminalSampler(BaseSampler):
     def __init__(self, delta_t, max_segment_num, x_candidates, critical_x_candidates=None):
         """
         end_x_candidates: x的终值候选项

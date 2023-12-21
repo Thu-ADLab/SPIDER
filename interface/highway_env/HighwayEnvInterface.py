@@ -13,7 +13,7 @@ from spider.elements import TrackingBoxList, OccupancyGrid2D, RoutedLocalMap, Ve
 
 '''
 Interface逻辑：
-observation -> perception, routed_local_map, localization (planner统一的输入表达) -> output
+observation -> perception, routed_local_map, localization (planner统一的输入表达) ->(planner)-> output -> action
 '''
 
 
@@ -82,13 +82,19 @@ class HighwayEnvInterface:
 
         return perception, local_map, ego_veh_state
 
-    def convert_action(self, action, planner_dt):
+    def convert_to_action(self, planner_output, planner_dt):
+        if planner_output is None:
+            raise AssertionError("The planner outputs NO results. Please check whether it can find a valid solution, and it is recommended to add a fallback trajectory generation scheme.")
         if self.output_flag == spider.OUTPUT_TRAJECTORY:  # 轨迹
-            next_x, next_y = action.x[1], action.y[1]
+            # todo: 注意，这里没有用控制算法出控制量，直接用差分法出控制量按道理是不对的，以后要改掉
+            # next_x, next_y = action.x[1], action.y
+            pass
+
+
         else:  # 控制量
             raise NotImplementedError("not supported now...")
 
-    def conduct_action(self, action, planner_dt):
+    def conduct_output(self, planner_output, planner_dt):
         '''
         qzl: 应该写成直接执行动作呢还是写成输出对应格式的动作呢？
         '''

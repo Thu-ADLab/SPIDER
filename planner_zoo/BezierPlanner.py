@@ -4,7 +4,7 @@ import time
 import numpy as np
 
 import spider
-from spider.planner_zoo.BasicPlanner import BasicPlanner
+from spider.planner_zoo.BasePlanner import BasePlanner
 
 from spider.elements.map import RoutedLocalMap
 from spider.elements.trajectory import FrenetTrajectory
@@ -21,9 +21,9 @@ from spider.utils.collision import BoxCollisionChecker
 from spider.constraints import CartConstriantChecker
 
 
-class Bezier(BasicPlanner):
+class Bezier(BasePlanner):
     def __init__(self, config=None):
-        super(BasicPlanner, self).__init__()
+        super(BasePlanner, self).__init__()
 
         self.config = self.default_config()
         if not (config is None):

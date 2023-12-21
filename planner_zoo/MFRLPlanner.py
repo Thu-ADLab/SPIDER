@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import tqdm
 
-from spider.planner_zoo.BasicPlanner import BasicPlanner
+from spider.planner_zoo.BasePlanner import BasePlanner
 
 from spider.elements.map import RoutedLocalMap
 from spider.elements.trajectory import FrenetTrajectory
@@ -54,7 +54,7 @@ while True:
 '''
 
 
-class MFRLPlanner(BasicPlanner):
+class MFRLPlanner(BasePlanner):
     def __init__(self, config=None, device=None):
         super(MFRLPlanner, self).__init__()
 

@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Tuple
 
-class BasicReward:
+class BaseReward:
     def __init__(self):
         pass
 
