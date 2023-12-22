@@ -1,6 +1,6 @@
 import math
 from typing import Union, Tuple, Type
-# import highway_env
+import highway_env
 import gymnasium as gym
 import highway_env.envs
 import numpy as np
@@ -30,7 +30,12 @@ class HighwayEnvInterface:
         self._env_config = env.config
 
         # 车长车宽没考虑
+
+        # highway-env规范的输入输出flag
         self.observation_flag = self._observation_type()
+        self.action_flag = self._action_type()
+
+        # spider planner规范的输入输出flag
         self.perception_flag = perception_flag
         self.output_flag = output_flag
 
@@ -53,7 +58,7 @@ class HighwayEnvInterface:
         return self._env.reset()
 
     def wrap_observation(self, observation) \
-            -> Tuple[Union[TrackingBoxList, OccupancyGrid2D], RoutedLocalMap, VehicleState]:
+            -> Tuple[VehicleState, Union[TrackingBoxList, OccupancyGrid2D], RoutedLocalMap]:
         '''
         qzl:这个函数的名字可以再改
         把observation改成planner的统一输入形式。
@@ -80,27 +85,33 @@ class HighwayEnvInterface:
         else:
             local_map = self._routed_local_map
 
-        return perception, local_map, ego_veh_state
+        return ego_veh_state, perception, local_map
 
-    def convert_to_action(self, planner_output, planner_dt):
+    def convert_to_action(self, planner_output, planner_dt=None):
         if planner_output is None:
             raise AssertionError("The planner outputs NO results. Please check whether it can find a valid solution, and it is recommended to add a fallback trajectory generation scheme.")
+
+        if self.action_flag != spider.HIGHWAYENV_ACT_CONTINUOUS:
+            raise AssertionError("not supported now. Please change the environment action type into ContinuousAction.")
+
         if self.output_flag == spider.OUTPUT_TRAJECTORY:  # 轨迹
             # todo: 注意，这里没有用控制算法出控制量，直接用差分法出控制量按道理是不对的，以后要改掉
-            # next_x, next_y = action.x[1], action.y
-            pass
-
+            # todo: 现在没有统一轨迹中,a的定义是从t0开始还是t1开始。目前默认是从t0开始，所以下一刻要执行的是t1的
+            if len(planner_output.a) == 0 or len(planner_output.steer) == 0:
+                raise AssertionError("The trajectory lacks the acceleration or steering_angle information!")
+            acc, steer = planner_output.a[1], planner_output.steer[1]
+            return acc, steer
 
         else:  # 控制量
-            raise NotImplementedError("not supported now...")
+            raise NotImplementedError("control not supported now...")
 
-    def conduct_output(self, planner_output, planner_dt):
+    def conduct_output(self, planner_output, planner_dt=None):
         '''
         qzl: 应该写成直接执行动作呢还是写成输出对应格式的动作呢？
         '''
         if self.output_flag == spider.OUTPUT_TRAJECTORY:  # 轨迹
-
-            pass
+            action = self.convert_to_action(planner_output,planner_dt)
+            return self._env.step(action)
         else:  # 控制量
             raise NotImplementedError("not supported now...")
 
@@ -116,6 +127,17 @@ class HighwayEnvInterface:
             return spider.HIGHWAYENV_OBS_TTC
         else:
             raise ValueError("INVALID observation type")
+
+    def _action_type(self):
+        type_str = self._env_config["action"]["type"]
+        if type_str == "ContinuousAction":
+            return spider.HIGHWAYENV_ACT_CONTINUOUS
+        elif type_str == "DiscreteAction":
+            return spider.HIGHWAYENV_ACT_DISCRETE
+        elif type_str == "DiscreteMetaAction":
+            return spider.HIGHWAYENV_ACT_META
+        else:
+            raise ValueError("INVALID action type")
 
     # def _build_feature_index_mapping(self):
     #     features: list = self._env_config["observation"]["features"]
@@ -209,8 +231,8 @@ class HighwayEnvInterface:
 
         network = ego_veh.road.network
 
-        target_lane_idx = ego_veh.target_lane_index
-        all_neighbor_lanes = network.all_side_lanes(target_lane_idx)
+        ego_lane_idx = ego_veh.lane_index
+        all_neighbor_lanes = network.all_side_lanes(ego_lane_idx)
 
         for i, lane_idx in enumerate(all_neighbor_lanes):
             lane = network.get_lane(lane_idx)
@@ -233,12 +255,14 @@ class HighwayEnvInterface:
 
 
 if __name__ == '__main__':
-    import gym
-    import highway_env
+    # import highway_env
     from matplotlib import pyplot as plt
 
     # env = gym.make('highway-v0', render_mode='rgb_array')
     env = gym.make("highway-v0")
+    env.configure({
+        "show_trajectories": True
+    })
     env.reset()
     env_interface = HighwayEnvInterface(env)
 

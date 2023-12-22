@@ -654,15 +654,25 @@ class CubicSpline(InterpolationCurve):
         i = self._search_index(x)
         dx = x - self.x[i]
         if order == 0:
-            val = self.a[i] + self.b[i] * dx + self.c[i] * dx ** 2.0 + self.d[i] * dx ** 3.0
+            val = np.polyval([self.d[i], self.c[i],self.b[i], self.a[i]], dx)
         elif order == 1:
-            val = self.b[i] + 2.0 * self.c[i] * dx + 3.0 * self.d[i] * dx ** 2.0
+            val = np.polyval([3*self.d[i], 2*self.c[i], self.b[i]], dx)
         elif order == 2:
-            val = 2.0 * self.c[i] + 6.0 * self.d[i] * dx
+            val = np.polyval([6 * self.d[i], 2 * self.c[i]], dx)
         elif order == 3:
             val = 6.0 * self.d[i]
         else:
             val = 0.
+        # if order == 0:
+        #     val = self.a[i] + self.b[i] * dx + self.c[i] * dx ** 2.0 + self.d[i] * dx ** 3.0
+        # elif order == 1:
+        #     val = self.b[i] + 2.0 * self.c[i] * dx + 3.0 * self.d[i] * dx ** 2.0
+        # elif order == 2:
+        #     val = 2.0 * self.c[i] + 6.0 * self.d[i] * dx
+        # elif order == 3:
+        #     val = 6.0 * self.d[i]
+        # else:
+        #     val = 0.
         return val
 
     def extrapolate(self, x, order):

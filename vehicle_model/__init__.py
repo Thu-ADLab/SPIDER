@@ -1,1 +1,1 @@
-from spider.vehicle_model.bicycle import Bicycle
+from spider.vehicle_model.bicycle import *

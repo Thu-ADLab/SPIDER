@@ -7,6 +7,7 @@ from spider.elements.curves import ParametricCubicSpline
 from spider.utils.geometry import find_nearest_point, point_to_segment_distance
 from spider.elements.trajectory import FrenetTrajectory
 from spider.elements.vehicle import KinematicState, FrenetKinematicState
+from spider.vehicle_model.bicycle import curvature2steer
 
 # def cartesian_to_frenet(rs, rx, ry, rtheta, rkappa, rdkappa, x, y, v, a, theta, kappa):
 #     """
@@ -302,6 +303,7 @@ class FrenetCoordinateTransformer:
                 traj.heading.append(temp_state.yaw)
                 traj.a.append(temp_state.acceleration)
                 traj.curvature.append(temp_state.curvature)
+                traj.steer.append(curvature2steer(temp_state.curvature))
 
         return traj
 

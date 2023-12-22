@@ -89,8 +89,9 @@ class BoundingBox:
 
 
 class TrackingBox(BoundingBox):
-    def __init__(self, *, vertices=None, obb=None, vx=0, vy=0):
+    def __init__(self, *, id=0, vertices=None, obb=None, vx=0, vy=0):
         super(TrackingBox, self).__init__(vertices=vertices, obb=obb)
+        self.id = id
         self.vx = vx
         self.vy = vy
         self.pred_vertices = []
@@ -109,6 +110,9 @@ class TrackingBox(BoundingBox):
             self.pred_vertices = linear_predict(self.vertices, self.vx, self.vy, ts)
         else:
             raise ValueError("Invalid method flag")
+
+    def __str__(self):
+        return "TrackingBox: id:%d, OBB:%s, velocity:(%.1f, %.1f)" % (self.id, str(self.obb), self.vx, self.vy)
 
 
 class TrackingBoxList(list):

@@ -2,6 +2,7 @@ import math
 from typing import List
 import time
 import numpy as np
+import warnings
 
 import spider
 from spider.planner_zoo.BasePlanner import BasePlanner
@@ -179,7 +180,7 @@ class LatticePlanner(BasePlanner):
             print("Optimal trajectory found! s_dot_end=%.2f,l_end=%.2f" %
                   (optimal_trajectory.s_dot[-1], optimal_trajectory.l[-1]))
         else:
-            print("WARNING: NO feasible trajectory!")
+            warnings.warn("WARNING: NO feasible trajectory!")
 
         t2 = time.time()
         print("Planning Succeed! Time: %.2f seconds, FPS: %.2f" % (t2 - t1, 1 / (t2 - t1)))
@@ -418,4 +419,5 @@ if __name__ == '__main__':
             print("video_writer.release()")
 
 
-    intersection()
+    # intersection()
+    multilane()

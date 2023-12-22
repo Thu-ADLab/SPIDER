@@ -45,7 +45,7 @@ class ConstraintCollection:
             all_funcs = self.control_constraint_functions
 
         funcs = [all_funcs[key] for key in self.constraint_flags]
-        feasibility_function = lambda traj: np.all(func(traj, config) for func in funcs)
+        feasibility_function = lambda traj: np.all([func(traj, self.config) for func in funcs])
         return feasibility_function
 
 

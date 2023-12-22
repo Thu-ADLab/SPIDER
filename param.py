@@ -56,12 +56,15 @@ COLLISION_CHECKER_OCC = _assignment()
 
 
 ####################### interface ######################
-# for highway-_env
+########### for highway-_env
 HIGHWAYENV_OBS_KINEMATICS = _assignment(0)
 HIGHWAYENV_OBS_GRAYIMG = _assignment()
 HIGHWAYENV_OBS_OCCUPANCY = _assignment()
 HIGHWAYENV_OBS_TTC = _assignment()
 
+HIGHWAYENV_ACT_META = _assignment(0)
+HIGHWAYENV_ACT_DISCRETE = _assignment()
+HIGHWAYENV_ACT_CONTINUOUS = _assignment()
 
 # del _i, _assignment
 del _assignment

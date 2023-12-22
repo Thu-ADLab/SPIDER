@@ -7,6 +7,14 @@ from typing import List
 #     def __init__(self, shape, dtype=None, buffer=None, offset=0, strides=None, order=None):
 #         super(BicycleState, self).__init__(shape, dtype, buffer, offset, strides, order)
 
+def curvature2steer(curvature, wheelbase=3.0):
+    steer = np.arctan(wheelbase * curvature)
+    return steer
+
+def steer2curvature(steer, wheelbase=3.0):
+    k = np.tan(steer) / wheelbase
+    return k
+
 
 class Bicycle:
     def __init__(self,
