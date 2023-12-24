@@ -175,7 +175,7 @@ class BasePolynomial(ExplicitCurve):
 
 
     def calc_point(self, x):
-        x = np.array(x)
+        x = np.array(x, dtype=np.float)
         extra_mask = self._out_of_range_flag(x)
         val = np.empty_like(x)
         val[extra_mask] = self.extrapolate(x[extra_mask], order=0) # 数据范围外，按外推规则计算
@@ -183,7 +183,7 @@ class BasePolynomial(ExplicitCurve):
         return val
 
     def calc_first_derivative(self,x):
-        x = np.array(x)
+        x = np.array(x, dtype=np.float)
         extra_mask = self._out_of_range_flag(x)
         val = np.empty_like(x)
         val[extra_mask] = self.extrapolate(x[extra_mask], order=1)  # 数据范围外，按外推规则计算
@@ -191,7 +191,7 @@ class BasePolynomial(ExplicitCurve):
         return val
 
     def calc_second_derivative(self,x):
-        x = np.array(x)
+        x = np.array(x, dtype=np.float)
         extra_mask = self._out_of_range_flag(x)
         val = np.empty_like(x)
         val[extra_mask] = self.extrapolate(x[extra_mask], order=2)  # 数据范围外，按外推规则计算
@@ -199,7 +199,7 @@ class BasePolynomial(ExplicitCurve):
         return val
 
     def calc_third_derivative(self, x):
-        x = np.array(x)
+        x = np.array(x, dtype=np.float)
         extra_mask = self._out_of_range_flag(x)
         val = np.empty_like(x)
         val[extra_mask] = self.extrapolate(x[extra_mask], order=3)  # 数据范围外，按外推规则计算
@@ -541,7 +541,7 @@ class InterpolationCurve(ExplicitCurve):
         pass
 
     def calc_point(self, x):
-        x = np.array(x)
+        x = np.array(x, dtype=np.float)
         extra_mask = self._out_of_range_flag(x)
         val = np.empty_like(x)
         val[extra_mask] = self.extrapolate(x[extra_mask], order=0)  # 数据范围外，按外推规则计算
@@ -549,7 +549,7 @@ class InterpolationCurve(ExplicitCurve):
         return val
 
     def calc_first_derivative(self, x):
-        x = np.array(x)
+        x = np.array(x, dtype=np.float)
         extra_mask = self._out_of_range_flag(x)
         val = np.empty_like(x)
         val[extra_mask] = self.extrapolate(x[extra_mask], order=1)  # 数据范围外，按外推规则计算
@@ -557,7 +557,7 @@ class InterpolationCurve(ExplicitCurve):
         return val
 
     def calc_second_derivative(self, x):
-        x = np.array(x)
+        x = np.array(x, dtype=np.float)
         extra_mask = self._out_of_range_flag(x)
         val = np.empty_like(x)
         val[extra_mask] = self.extrapolate(x[extra_mask], order=2)  # 数据范围外，按外推规则计算
@@ -565,7 +565,7 @@ class InterpolationCurve(ExplicitCurve):
         return val
 
     def calc_third_derivative(self, x):
-        x = np.array(x)
+        x = np.array(x, dtype=np.float)
         extra_mask = self._out_of_range_flag(x)
         val = np.empty_like(x)
         val[extra_mask] = self.extrapolate(x[extra_mask], order=3)  # 数据范围外，按外推规则计算
