@@ -3,9 +3,12 @@ import torch
 import torch.nn as nn
 from copy import deepcopy
 
-from spider.RL.dataset import ExperienceBuffer
 import torch.optim as optim
 import torch.nn.functional as F
+
+import spider
+from spider.RL.dataset import ExperienceBuffer
+from spider.RL.agents.BaseAgent import BaseAgent
 
 '''
 qzl
@@ -27,16 +30,18 @@ class QNetwork(nn.Module):
         return self.fc3(x)
 
 
-class DQNAgent:
+class DQNAgent(BaseAgent):
     def __init__(self, state_size, action_size, buffer_size=100000, batch_size=32, gamma=0.98, lr=0.001,
                  target_update_frequency=50, device=None):
+        super(DQNAgent, self).__init__(buffer_size, batch_size, gamma, lr, device)
+
         # RL相关
         self.state_size = state_size
         self.action_size = action_size
 
         # 数据集相关
         # qzl: 这里有个疑问，就是经验池应该算是planner里的，还是agent里面的
-        self.experience = [None, None, None, None]  # 四元组,s,a,r,s'
+        self.experience = [None, None, None, None, None]  # 5元组,s,a,r,s',d
         self.experience_buffer = ExperienceBuffer(buffer_size)
         self.batch_size = batch_size
 
@@ -52,38 +57,42 @@ class DQNAgent:
         self.steps = 0
         self.target_update_frequency = target_update_frequency
 
+        self.mode_flag = spider.NN_TRAIN_MODE
 
-    def set_q_network(self, q_network: nn.Module, lr=0.001):
+    def train_mode(self):
+        self.q_network.train()
+        self.target_q_network.train()
+        self.mode_flag = spider.NN_TRAIN_MODE
+
+    def eval_mode(self):
+        self.q_network.eval()
+        self.target_q_network.eval()
+        self.mode_flag = spider.NN_EVAL_MODE
+
+
+    def set_network(self, q_network: nn.Module, lr=0.001):
         self.q_network = q_network.to(self.device)
         self.target_q_network = q_network.to(self.device)
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=lr)
 
-    def save_q_network_model(self, filename:str):
+    def save_model(self, filename:str):
         torch.save(self.q_network.state_dict(), filename)
         print("Successfully save the Q network model into ", filename)
 
-    def load_q_network_model(self, filename:str):
+    def load_model(self, filename:str):
         state_dict = torch.load(filename)
         self.q_network.load_state_dict(state_dict)   # 从本地加载模型
         self.target_q_network.load_state_dict(state_dict)
         print("Successfully load the Q network model from ", filename)
-
-    def save_experience_buffer(self):
-        pass
-
-    def record_data(self, state, action, reward, next_state, done):
-        experience = [state, action, reward, next_state, done]
-        self.experience_buffer.store_experience(experience)
-
-    # def record_data(self, state, action, reward, done):
-    # qzl:已弃用
-    #     self.experience_buffer.record(state, action, reward, done)
 
     def learn(self):
         batch_size = min([self.experience_buffer.size, self.batch_size])
         if batch_size <= 1:
             print("batch_size <= 1, Nothing to learn!")
             return
+
+        if self.mode_flag != spider.NN_TRAIN_MODE:
+            self.train_mode()
 
         # if self.experience_buffer.size < self.batch_size:
         #     return
@@ -119,6 +128,9 @@ class DQNAgent:
 
 
     def act(self, state, egreedy=False, epsilon=0.1):
+        if self.mode_flag != spider.NN_EVAL_MODE:
+            self.eval_mode()
+
         if egreedy and np.random.random() < epsilon:
             action_idx = np.random.randint(self.action_size)
         else:

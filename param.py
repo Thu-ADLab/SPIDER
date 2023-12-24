@@ -53,7 +53,10 @@ COLLISION_CHECKER_AABB = _assignment()
 COLLISION_CHECKER_DISK = _assignment()
 COLLISION_CHECKER_OCC = _assignment()
 
-
+####################### RL ######################
+# MODE FLAG
+NN_TRAIN_MODE = _assignment(0)
+NN_EVAL_MODE = _assignment()
 
 ####################### interface ######################
 ########### for highway-_env

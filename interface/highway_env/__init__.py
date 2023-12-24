@@ -1,2 +1,2 @@
 from spider.interface.highway_env.HighwayEnvInterface import HighwayEnvInterface
-from spider.interface.highway_env.HighwayEnvBenchmark import HighwayEnvBenchmark
+from spider.interface.highway_env.HighwayEnvBenchmark import HighwayEnvBenchmark, HighwayEnvBenchmarkGUI

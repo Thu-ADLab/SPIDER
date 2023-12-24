@@ -46,8 +46,8 @@ class HighwayEnvBenchmark(BaseBenchmark):
         config = super().default_config()
         config.update({
             "env_name": "highway-v0",
-            "max_steps": 100,
             "episode_num": 1,
+            "max_steps": 100,
             "env_config": {
                 "observation": {
                     "type": "Kinematics",
@@ -107,6 +107,7 @@ class HighwayEnvBenchmark(BaseBenchmark):
         # todo:录像功能现在有问题 & metrics
         self.env.close()
         self.metrics["avg_cumulative_reward"] /= self.config["episode_num"]
+        print(self.metrics)
 
     def update_metrics(self, reward):
         self.metrics["avg_cumulative_reward"] += reward
@@ -229,3 +230,132 @@ class HighwayEnvBenchmark(BaseBenchmark):
     #         # 如果指定了绘制标签，绘制标签
     #         font = pygame.font.Font(None, 15)
     #         text = "#{}".format(id(v) % 1000)
+
+
+
+
+import tkinter as tk
+from tkinter import ttk
+from tkinter.font import Font
+from spider.planner_zoo import LatticePlanner
+
+class HighwayEnvBenchmarkGUI:
+    def __init__(self, master):
+        self.master = master
+        self.master.title("Configuration GUI")
+
+        # 设置全局字体大小
+        default_font = Font(family="Helvetica", size=12)
+        self.master.option_add("*TButton*Font", default_font)
+        self.master.option_add("*TButton*Padding", 10)
+        self.master.option_add("*TEntry*Font", default_font)
+        self.master.option_add("*TEntry*Padding", 5)
+        self.master.option_add("*TLabel*Font", default_font)
+        self.master.option_add("*TLabel*Padding", 5)
+        self.master.option_add("*TCheckbutton*Font", default_font)
+        self.master.option_add("*TCheckbutton*Padding", 5)
+        self.master.option_add("*TCombobox*Font", default_font)
+        self.master.option_add("*TCombobox*Padding", 5)
+
+        # 默认配置字典
+        self.default_config = {
+            "env_name": "highway-v0",
+            "episode_num": 1,
+            "max_steps": 100,
+            "random_seed": 666,
+            "offscreen_rendering": False,
+            "save_video": True,
+            "video_root": './videos/',
+            "video_name": 'benchmark.mp4'
+        }
+
+        # 创建一个字典来存储用户输入的值
+        self.user_input_values = {}
+
+        # 在最上方放大的"SPIDER"标题
+        title_label = ttk.Label(master, text="SPIDER", font=("Helvetica", 40, "bold"))
+        title_label.grid(row=0, column=0, columnspan=2, pady=10)
+
+        # 创建一个标签和输入框用于每个key
+        row = 1
+        for key, value in self.default_config.items():
+            label = ttk.Label(master, text=f"{key}:")
+            label.grid(row=row, column=0, padx=5, pady=5, sticky="e")
+
+            if key == "env_name":
+                # 创建下拉栏
+                entry_var = tk.StringVar()
+                entry_var.set(value)  # 设置默认值
+                options = ["highway-v0", "highway-fast-v0", "highway-merge-v0", "highway-bottleneck-v0",
+                           "highway-continuous-v0"]
+                entry = ttk.Combobox(master, textvariable=entry_var, values=options)
+                entry.grid(row=row, column=1, padx=5, pady=5, sticky="w")
+            elif isinstance(value, bool):
+                entry_var = tk.BooleanVar()
+                entry_var.set(value)  # 设置默认值
+                entry = tk.Checkbutton(master, variable=entry_var)
+            else:
+                entry_var = tk.StringVar()
+                entry_var.set(value)  # 设置默认值
+                entry = ttk.Entry(master, textvariable=entry_var)
+
+            entry.grid(row=row, column=1, padx=5, pady=5, sticky="w")
+
+            self.user_input_values[key] = entry_var
+            row += 1
+
+        # 创建一个按钮用于执行函数
+        self.run_button = ttk.Button(master, text="Run", command=self.run_test)
+        self.run_button.grid(row=row, column=0, columnspan=2, pady=10)
+
+
+    def run_test(self):
+        try:
+            # 将用户输入的值组成配置字典
+            config_dict = {}
+
+            # 遍历用户输入的值
+            for key, entry in self.user_input_values.items():
+                # 如果输入不是布尔类型
+                if not isinstance(entry, tk.BooleanVar):
+                    # 获取输入框的值
+                    value = entry.get()
+                    # 如果值是数字，转换为整数；否则保留字符串形式
+                    config_dict[key] = int(value) if value.isdigit() else value
+                else:
+                    # 如果输入是布尔类型，直接获取其值
+                    config_dict[key] = entry.get() == 1
+
+            # 转换配置字典中的值为适当的类型
+            config_dict["max_steps"] = int(config_dict["max_steps"])
+            config_dict["episode_num"] = int(config_dict["episode_num"])
+            # config_dict["env_config"]["policy_frequency"] = int(config_dict["env_config"]["policy_frequency"])
+
+
+            steps, dt = 20, 0.1
+            # 创建HighwayEnvBenchmark对象
+            benchmark = HighwayEnvBenchmark(dt, config_dict)
+
+
+            planner = LatticePlanner({
+                "steps": steps,
+                'dt': dt,
+                "max_speed": 120 / 3.6,
+                "end_s_candidates": (10, 20, 40, 60),
+                "end_l_candidates": (-4, 0, 4),  # s,d采样生成横向轨迹 (-3.5, 0, 3.5), #
+                "end_v_candidates": tuple(i * 120 / 3.6 / 4 for i in range(5)),  # 改这一项的时候，要连着限速一起改了
+                "end_T_candidates": (1, 2, 4, 8),  # s_dot, T采样生成纵向轨迹
+            })
+
+            # 执行test函数
+            benchmark.test(planner)
+
+        except Exception as e:
+            # 处理异常，例如配置解析错误
+            print(f"Error: {e}")
+
+if __name__ == "__main__":
+    pass
+    # root = tk.Tk()
+    # app = HighwayEnvBenchmarkGUI(root)
+    # root.mainloop()

@@ -180,6 +180,9 @@ class MFRLPlanner(BasePlanner):
         optimal_trajectory = candidate_trajectories[action]
         return optimal_trajectory
 
+    def load_model(self, model_filename):
+        self.agent.load_model(model_filename)
+
     def save_experience_buffer(self):
         pass
 
@@ -187,7 +190,7 @@ class MFRLPlanner(BasePlanner):
         self.agent.learn()
 
     def save_model(self, filename:str):
-        self.agent.save_q_network_model(filename)
+        self.agent.save_model(filename)
 
     def plan(self, ego_veh_state:VehicleState, obstacles:TrackingBoxList, local_map:RoutedLocalMap=None, train=False) \
             -> Union[FrenetTrajectory, None]:
@@ -283,7 +286,7 @@ if __name__ == '__main__':
         rl_planner.configure({"closed_loop": False})
 
         if not (q_network_model_filename is None):
-            rl_planner.agent.load_q_network_model(q_network_model_filename)
+            rl_planner.load_model(q_network_model_filename)
         rl_planner.set_local_map(local_map)
 
         if save_video:
@@ -376,7 +379,7 @@ if __name__ == '__main__':
         rl_planner = MFRLPlanner()
         rl_planner.set_local_map(local_map)
         if not (resume is None):
-            rl_planner.agent.load_q_network_model(resume)
+            rl_planner.agent.load_model(resume)
 
         ################## main loop ########################
         for episode in tqdm.tqdm(range(episodes)):
@@ -414,8 +417,8 @@ if __name__ == '__main__':
         ################## save model ########################
         rl_planner.save_model(q_network_model_filename)
 
-    # train(episodes=200, q_network_model_filename='./model_for_mfrl.pth')#,resume='./model_for_mfrl.pth')
-    test('model_for_mfrl.pth',save_video=True)#'model_for_mfrl.pth'
+    train(episodes=200, q_network_model_filename='./model_for_mfrl.pth')#,resume='./model_for_mfrl.pth')
+    # test('model_for_mfrl.pth',save_video=True)#'model_for_mfrl.pth'
 
     # def test_intersection(q_network_model_filename=None, save_video=False):
     #     #################### 输入信息的初始化 ####################

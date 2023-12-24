@@ -4,6 +4,7 @@ import pickle
 
 
 class ExperienceBuffer:
+    # todo:以后替换成torch.dataset
     def __init__(self, buffer_size=100000):
         self.max_size = buffer_size
         self.buffer = deque(maxlen=buffer_size)
@@ -17,6 +18,9 @@ class ExperienceBuffer:
         self.buffer.clear()
 
     def clear_experience(self):
+        '''
+        弃用
+        '''
         self.experience = [None, None, None, None, None]
 
     def store_experience(self, experience):
@@ -54,3 +58,51 @@ class ExperienceBuffer:
         return batch
 
 
+# import torch
+# from torch.utils.data import Dataset, DataLoader
+# import random
+#
+# class ExperienceBuffer(Dataset):
+#     def __init__(self, capacity):
+#         self.capacity = capacity
+#         self.buffer = []
+#         self.position = 0
+#
+#     def add_experience(self, state, action, reward, next_state, done):
+#         experience = (state, action, reward, next_state, done)
+#         if len(self.buffer) < self.capacity:
+#             self.buffer.append(experience)
+#         else:
+#             self.buffer[self.position] = experience
+#         self.position = (self.position + 1) % self.capacity
+#
+#     def __len__(self):
+#         return len(self.buffer)
+#
+#     def __getitem__(self, idx):
+#         return self.buffer[idx]
+#
+#     def sample_batch(self, batch_size):
+#         return random.sample(self.buffer, min(batch_size, len(self.buffer)))
+#
+# # Example usage:
+# # Initialize the experience buffer with a capacity of 1000
+# experience_buffer = ExperienceBuffer(capacity=1000)
+#
+# # Add experiences to the buffer
+# for _ in range(1500):
+#     state, action, reward, next_state, done = ..., ..., ..., ..., ...
+#     experience_buffer.add_experience(state, action, reward, next_state, done)
+#
+# # Sample a batch of experiences
+# batch_size = 32
+# sampled_batch = experience_buffer.sample_batch(batch_size)
+#
+# # Create a DataLoader for easy batch iteration
+# dataloader = DataLoader(experience_buffer, batch_size=batch_size, shuffle=True)
+#
+# # Iterate over batches
+# for batch in dataloader:
+#     # Perform training using the sampled batch
+#     # Your training code here
+#     pass
