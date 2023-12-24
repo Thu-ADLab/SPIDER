@@ -100,6 +100,7 @@ class LatticePlanner(BasePlanner):
 
     def constraint_check(self, sorted_candidate_trajectories:List[FrenetTrajectory], sorted_cost, obstacles:TrackingBoxList):
         for traj, cost in zip(sorted_candidate_trajectories, sorted_cost):
+            traj = self.coordinate_transformer.frenet2cart4traj(traj, order=2) # 在笛卡尔坐标系下做碰撞检测
             if self.constraint_checker.check(traj, obstacles):
                 return traj, cost
 
@@ -168,10 +169,11 @@ class LatticePlanner(BasePlanner):
         candidate_trajectories = self.trajectory_combiner.combine(lat_samples, long_samples)
 
         # 轨迹坐标转换，把每个轨迹点转到笛卡尔坐标
-        # todo: qzl:这一步耗时非常严重，有两个建议：
+        # todo: qzl:这一步耗时非常严重，有2个建议：
         #  1. 评估暂时用不到笛卡尔坐标，碰撞检测目前在笛卡尔坐标下，所以可以在碰撞检测的时候再转换，不用提前把所有的都做坐标转换
-        #  2. 把碰撞检测直接整个放在Frenet坐标下，即先把障碍物变换到Frenet坐标，这样子所有的环节都在Frenet坐标进行，最后输出前再转换到笛卡尔
-        candidate_trajectories = [self.coordinate_transformer.frenet2cart4traj(t, order=2) for t in candidate_trajectories]
+        #  2. 把碰撞检测直接整个放在Frenet坐标下，即先把障碍物及其预测轨迹变换到Frenet坐标，这样子所有的环节都在Frenet坐标进行，最后输出前再转换到笛卡尔
+        #  p.s.第一点的补充：坐标转换可以暂时先存储成函数或生成器，暂时先不执行，在碰撞检测的时候才执行
+        # candidate_trajectories = [self.coordinate_transformer.frenet2cart4traj(t, order=2) for t in candidate_trajectories]
 
         # 评估+筛选
         sorted_candidates, sorted_cost = self.trajectory_evaluator.evaluate_candidates(candidate_trajectories)

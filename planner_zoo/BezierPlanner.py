@@ -21,7 +21,7 @@ from spider.utils.collision import BoxCollisionChecker
 from spider.constraints import CartConstriantChecker
 
 
-class Bezier(BasePlanner):
+class BezierPlanner(BasePlanner):
     def __init__(self, config=None):
         super(BasePlanner, self).__init__()
 

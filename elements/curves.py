@@ -498,11 +498,6 @@ class PiecewiseQuinticPolynomial(ExplicitCurve):
 
 
 
-
-
-
-
-
 ################ 插值曲线 ################
 class InterpolationCurve(ExplicitCurve):
     def __init__(self, x=None, y=None):
@@ -576,13 +571,59 @@ class InterpolationCurve(ExplicitCurve):
 
 class CubicSpline(InterpolationCurve):
     """
+    CubicSpline class
+    三次样条插值
+    """
+    def __init__(self, x=None, y=None):
+        self._sp_csp = None # 屈服了，还是用Scipy的吧
+        super(CubicSpline, self).__init__(x, y)
+
+    def _calc_coef(self):
+        self._sp_csp = scipy.interpolate.CubicSpline(self.x, self.y)
+
+    def interpolate(self, x, order):
+        if np.array(x).size == 0:
+            return np.empty_like(x)
+
+        val = self._sp_csp(x, order)
+        return val
+
+    def extrapolate(self, x, order):
+        '''
+        在超出已知数据范围的点上进行插值/外推，默认保持二阶导为0然后外推，即保持起点或终点的斜率
+        please notice that, if any x in the valid_x_range, the corresponding y maintains 0 value
+        '''
+        val = np.zeros_like(x)
+        if val.size == 0:
+            return val
+
+        x_0, x_end = self.valid_x_range
+        if order == 0:
+            y_prime_0 = self.evaluate(x_0, order=1)
+            y_prime_end = self.evaluate(x_end, order=1)
+            y_0 = self.evaluate(x_0, order=0)
+            y_end = self.evaluate(x_end, order=0)
+            val[x > x_end] = y_end + y_prime_end * (x[x>x_end] - x_end)
+            val[x < x_0] = y_0 + y_prime_0 * (x[x < x_end] - x_0)
+        elif order == 1:
+            y_prime_0 = self.evaluate(x_0, order=1)
+            y_prime_end = self.evaluate(x_end, order=1)
+            val[x > x_end] = y_prime_end
+            val[x < x_0] = y_prime_0
+        else:
+            pass  # because the higher order derivative is 0 anyway.
+
+        return val
+
+class myCubicSpline(InterpolationCurve):
+    """
     Cubic CubicSpline class
     分段三次函数
     """
     def __init__(self, x=None, y=None):
         self.b, self.c, self.d, self.w = [], [], [], []
         # 一定要把需要在calc_coef里面计算用到的属性定义在前面，因为下一句可能会调用calc_coef
-        super(CubicSpline, self).__init__(x, y)
+        super(myCubicSpline, self).__init__(x, y)
 
 
     def _calc_coef(self):
