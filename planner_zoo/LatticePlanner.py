@@ -168,6 +168,9 @@ class LatticePlanner(BasePlanner):
         candidate_trajectories = self.trajectory_combiner.combine(lat_samples, long_samples)
 
         # 轨迹坐标转换，把每个轨迹点转到笛卡尔坐标
+        # todo: qzl:这一步耗时非常严重，有两个建议：
+        #  1. 评估暂时用不到笛卡尔坐标，碰撞检测目前在笛卡尔坐标下，所以可以在碰撞检测的时候再转换，不用提前把所有的都做坐标转换
+        #  2. 把碰撞检测直接整个放在Frenet坐标下，即先把障碍物变换到Frenet坐标，这样子所有的环节都在Frenet坐标进行，最后输出前再转换到笛卡尔
         candidate_trajectories = [self.coordinate_transformer.frenet2cart4traj(t, order=2) for t in candidate_trajectories]
 
         # 评估+筛选
@@ -268,7 +271,7 @@ if __name__ == '__main__':
                 fig = plt.gcf()
                 fig.canvas.draw()
                 image = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-                image = image.reshape(np.append(np.flip(fig.get_size_inches()) * fig.dpi, 3).astype(np.int))
+                image = image.reshape(np.append(np.flip(fig.get_size_inches()) * fig.dpi, 3).astype(int))
                 if video_writer is None:
                     video_writer = cv2.VideoWriter(video_name, fourcc, frame_rate, (image.shape[1], image.shape[0]))
                 video_writer.write(image)
