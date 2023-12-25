@@ -204,17 +204,17 @@ class FrenetCoordinateTransformer:
         frenet_state.acceleration, frenet_state.curvature = acc, kappa
         return frenet_state
 
-    def cart2frenet4state(self, state: KinematicState, *, order: int):
+    def cart2frenet4state(self, state: KinematicState,  order: int):
         self.__check_validity(order)
         return self.cart2frenet(state.x, state.y, state.speed, state.yaw,
                                 state.acceleration, state.curvature, order=order)
 
-    def frenet2cart4state(self, state: FrenetKinematicState, *, order: int):
+    def frenet2cart4state(self, state: FrenetKinematicState, order: int):
         self.__check_validity(order)
         return self.frenet2cart(state.s, state.l, state.s_dot, state.l_dot, state.l_prime,
                                 state.s_2dot, state.l_2dot, state.l_2prime, order=order)
 
-    def cart2frenet4traj(self, traj:FrenetTrajectory, *, order:int):
+    def cart2frenet4traj(self, traj:FrenetTrajectory, order:int):
         self.__check_validity(order)
 
         if order == 0:
@@ -255,7 +255,7 @@ class FrenetCoordinateTransformer:
 
         return traj
 
-    def frenet2cart4traj(self, traj:FrenetTrajectory, *, order:int):
+    def frenet2cart4traj(self, traj:FrenetTrajectory, order:int):
         self.__check_validity(order)
 
         if order == 0:

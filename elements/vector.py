@@ -37,7 +37,7 @@ def project(vector, segment_vector, calc_distance:bool=False):
 
 
 def rotate90(vec:np.ndarray):
-    return np.flip(vec)*[-1,0]
+    return np.flip(vec)*[-1,1]  # 离谱bug，1写成0了
 
 def rotate(array,anchor, angle, clockwise=False):
     '''

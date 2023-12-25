@@ -571,15 +571,15 @@ class InterpolationCurve(ExplicitCurve):
         return val
 
 
-
-class CubicSpline(InterpolationCurve):
+class spCubicSpline(InterpolationCurve):
     """
     CubicSpline class
     三次样条插值
+    todo: scipy自带的在距离很远的时候插值有严重问题，暂时先用自己写的，以后看看为什么有这个问题并且怎么修复
     """
     def __init__(self, x=None, y=None):
         self._sp_csp = None # 屈服了，还是用Scipy的吧
-        super(CubicSpline, self).__init__(x, y)
+        super(spCubicSpline, self).__init__(x, y)
 
     def _calc_coef(self):
         self._sp_csp = scipy.interpolate.CubicSpline(self.x, self.y)
@@ -745,6 +745,10 @@ class myCubicSpline(InterpolationCurve):
             pass  # because the higher order derivative is 0 anyway.
 
         return val
+
+
+class CubicSpline(myCubicSpline):
+    pass
 
 class Spline:#Cubic CubicSpline class(abandoned)
     def __init__(self, x, y):

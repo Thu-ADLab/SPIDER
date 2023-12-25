@@ -12,7 +12,7 @@ from spider.elements.trajectory import FrenetTrajectory
 from spider.elements.vehicle import VehicleState
 from spider.elements.Box import TrackingBoxList, TrackingBox
 
-from spider.sampler.PolynomialSampler import QuinticPolyminalSampler, QuarticPolyminalSampler
+from spider.sampler.PolynomialSampler import QuarticPolyminalSampler, QuinticPolyminalSampler,  PiecewiseQuinticPolyminalSampler
 from spider.sampler.Combiner import LatLonCombiner
 from spider.evaluator import FrenetCostEvaluator
 
@@ -21,14 +21,10 @@ from spider.utils.collision import BoxCollisionChecker
 
 from spider.constraints import CartConstriantChecker
 
-# from concurrent.futures import ProcessPoolExecutor
-# def transform_trajectory(t, coordinate_transformer):
-#     return coordinate_transformer.frenet2cart4traj(t, order=2)
 
-
-class LatticePlanner(BasePlanner):
+class PiecewiseLatticePlanner(BasePlanner):
     def __init__(self, config=None):
-        super(LatticePlanner, self).__init__()
+        super(PiecewiseLatticePlanner, self).__init__()
 
         self.config = self.default_config()
         if not (config is None):
@@ -40,8 +36,10 @@ class LatticePlanner(BasePlanner):
         # self.predictor = None
         self.longitudinal_sampler = QuarticPolyminalSampler(self.config["end_T_candidates"],
                                                             self.config["end_v_candidates"])
-        self.lateral_sampler = QuinticPolyminalSampler(self.config["end_s_candidates"],
-                                                       self.config["end_l_candidates"])
+        self.lateral_sampler = PiecewiseQuinticPolyminalSampler(
+            self.config["delta_s"], self.config["max_seg_num"], self.config["l_candidates"]
+        )
+        
         self.trajectory_combiner = LatLonCombiner(self.config["steps"], self.config["dt"]) # 默认路径-速度解耦的重新耦合
         self.trajectory_evaluator = FrenetCostEvaluator()
 
@@ -71,8 +69,10 @@ class LatticePlanner(BasePlanner):
             "max_deceleration": 10,
             # "max_centripetal_acceleration" : 100,
             "max_curvature": 100,
-            "end_s_candidates": (10,20,40,60),
-            "end_l_candidates": (-0.8,0,0.8), # s,d采样生成横向轨迹 (-3.5, 0, 3.5), #
+            "delta_s": 12,
+            "max_seg_num": 3,
+            "l_candidates": (-3.5,0,3.5), # s,d采样生成横向轨迹 (-3.5, 0, 3.5), #
+
             "end_v_candidates": tuple(i*60/3.6/3 for i in range(4)), # 改这一项的时候，要连着限速一起改了
             "end_T_candidates": (1,2,4,8), # s_dot, T采样生成纵向轨迹
 
@@ -178,10 +178,6 @@ class LatticePlanner(BasePlanner):
         #  2. 把碰撞检测直接整个放在Frenet坐标下，即先把障碍物及其预测轨迹变换到Frenet坐标，这样子所有的环节都在Frenet坐标进行，最后输出前再转换到笛卡尔
         #  p.s.第一点的补充：坐标转换可以暂时先存储成函数或生成器，暂时先不执行，在碰撞检测的时候才执行
         # candidate_trajectories = [self.coordinate_transformer.frenet2cart4traj(t, order=2) for t in candidate_trajectories]
-        # 并行计算
-        # with ProcessPoolExecutor() as executor:
-        #     candidate_trajectories = list(executor.map(transform_trajectory, candidate_trajectories,
-        #                                 [self.coordinate_transformer] * len(candidate_trajectories)))
 
         # 评估+筛选
         sorted_candidates, sorted_cost = self.trajectory_evaluator.evaluate_candidates(candidate_trajectories)
@@ -233,7 +229,7 @@ if __name__ == '__main__':
         tb_list.append(TrackingBox(obb=(50, 0, 5, 2, 0), vx=0, vy=0))
         tb_list.append(TrackingBox(obb=(100, 0, 5, 2, 0), vx=0, vy=0))
 
-        lattice_planner = LatticePlanner()
+        lattice_planner = PiecewiseLatticePlanner()
         lattice_planner.configure({"end_l_candidates": (-3.5, 0, 3.5)})
         lattice_planner.set_local_map(local_map)
 
@@ -333,7 +329,7 @@ if __name__ == '__main__':
         tb_list = TrackingBoxList()
         tb_list.append(TrackingBox(obb=(-3.5/2, 20, 5, 2, -math.pi/2), vx=0, vy=-5))
 
-        lattice_planner = LatticePlanner()
+        lattice_planner = PiecewiseLatticePlanner()
         lattice_planner.configure({
             "end_l_candidates": (-0.8, 0, 0.8),
             "steps": 20,

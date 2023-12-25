@@ -25,7 +25,7 @@ def SAT_check(vertices1:np.ndarray ,vertices2:np.ndarray):
                 v2 = polygon[0]
             else:
                 v2 = polygon[i+1]
-            vertical_vec = rotate90(v2-v1)
+            vertical_vec = rotate90(v2-v1) # v2-v1是1-2的边对应的向量
             separating_axis_vec.append(vertical_vec)
 
     # TODO: qzl:投影的时候其实也不用单位化法向量
