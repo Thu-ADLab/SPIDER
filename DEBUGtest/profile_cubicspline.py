@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from spider.elements.curves import myCubicSpline as mycsp
+from spider.elements.curves import CubicSpline as my_spcsp
 from scipy.interpolate import CubicSpline as spcsp
 
 
@@ -34,12 +35,13 @@ if __name__ == '__main__':
 
     # 使用三次样条插值
     csp1 = mycsp(x, y)
-    csp2 = spcsp(x, y)
+    csp2 = my_spcsp(x, y)
+    csp3 = spcsp(x, y)
 
     x_interp = np.linspace(min(x), max(x), 100)
 
     ############## 计时 ####################
-    for csp in [csp1, csp2]:
+    for csp in [csp1, csp2, csp3]:
         for _ in tqdm(range(100000),desc=str(csp.__class__)):
             y_interp = csp(x_interp)
     ##########################################

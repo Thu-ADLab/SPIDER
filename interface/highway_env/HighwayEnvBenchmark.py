@@ -355,7 +355,6 @@ class HighwayEnvBenchmarkGUI:
             print(f"Error: {e}")
 
 if __name__ == "__main__":
-    pass
-    # root = tk.Tk()
-    # app = HighwayEnvBenchmarkGUI(root)
-    # root.mainloop()
+    root = tk.Tk()
+    app = HighwayEnvBenchmarkGUI(root)
+    root.mainloop()

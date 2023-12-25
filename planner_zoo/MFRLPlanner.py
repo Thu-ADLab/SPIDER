@@ -236,12 +236,14 @@ class MFRLPlanner(BasePlanner):
         long_samples = self.longitudinal_sampler.sample((fstate_start.s, fstate_start.s_dot, fstate_start.s_2dot))
         lat_samples = self.lateral_sampler.sample((fstate_start.l, fstate_start.l_prime, fstate_start.l_2prime))
         candidate_trajectories = self.trajectory_combiner.combine(lat_samples, long_samples)
-        self.reward_function.set_trajectory_candidates(candidate_trajectories)
+        self.reward_function.set_trajectory_candidates(candidate_trajectories) # reward function里的碰撞是frenet坐标下的
 
         # 轨迹坐标转换，把每个轨迹点转到笛卡尔坐标
         # todo:qzl: 其实candidates_trajectories不用算出来的，会耗损计算资源，能不能储存Generator形式的？调用的时候再进行计算
-        candidate_trajectories = [self.coordinate_transformer.frenet2cart4traj(t, order=2) for t in candidate_trajectories]
+        # candidate_trajectories = [self.coordinate_transformer.frenet2cart4traj(t, order=2) for t in candidate_trajectories]
         optimal_trajectory = self.decode_action(self.action,candidate_trajectories)  # 动作解码器
+        if not (optimal_trajectory is None):
+            optimal_trajectory = self.coordinate_transformer.frenet2cart4traj(optimal_trajectory, order=2)
 
         self._candidate_trajectories = candidate_trajectories
 
@@ -417,8 +419,8 @@ if __name__ == '__main__':
         ################## save model ########################
         rl_planner.save_model(q_network_model_filename)
 
-    train(episodes=200, q_network_model_filename='./model_for_mfrl.pth')#,resume='./model_for_mfrl.pth')
-    # test('model_for_mfrl.pth',save_video=True)#'model_for_mfrl.pth'
+    # train(episodes=200, q_network_model_filename='./model_for_mfrl.pth')#,resume='./model_for_mfrl.pth')
+    test('model_for_mfrl.pth',save_video=True)#'model_for_mfrl.pth'
 
     # def test_intersection(q_network_model_filename=None, save_video=False):
     #     #################### 输入信息的初始化 ####################

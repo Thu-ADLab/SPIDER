@@ -19,10 +19,10 @@ todo list:
 6以后再加入全局静态的occupancy，一般室内机器人或者停车场可以用。现在默认是跟着自车坐标系对齐的
 '''
 
+'''
+qzl: 可以考虑直接继承ndarray类？还是.grid属性更好？
+'''
 class OccupancyGrid2D:
-    '''
-    qzl: 可以考虑直接继承ndarray类？还是.grid属性更好？
-    '''
     # def __init__(self, height, width, channel, grid_resolution,):
     def __init__(self, longitudinal_range, lateral_range, grid_resolution, channel:int):
         '''
@@ -78,6 +78,21 @@ class OccupancyGrid2D:
 
     @classmethod
     def from_grid(cls, grid: np.ndarray, grid_resolution, ego_anchor) -> 'OccupancyGrid2D':
+        '''
+        从栅格图像构建OccupancyGrid2D对象的类方法。
+
+        Parameters:
+        - grid: np.ndarray
+            栅格图像，三维数组，形状为 (height, width, channel)。
+        - grid_resolution: tuple
+            栅格分辨率，包含两个元素，分别是纵向和横向的分辨率。
+        - ego_anchor: tuple
+            Ego车辆在栅格图像中的锚点坐标 (x, y)。
+
+        Returns:
+        - occ: OccupancyGrid2D
+            从栅格图像构建的OccupancyGrid2D对象。
+        '''
         # ego_anchor是ego veh在图像中的x,y坐标
         assert len(grid.shape) == 3
         assert len(grid_resolution) == 2

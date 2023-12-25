@@ -29,6 +29,7 @@ from typing import Union, List
 
 from scipy.special import binom
 import scipy
+import scipy.interpolate
 import cv2
 
 
@@ -536,11 +537,13 @@ class InterpolationCurve(ExplicitCurve):
         pass
 
     def calc_point(self, x):
+        # val = self.interpolate(x, order=0)
         x = np.array(x, dtype=np.float)
         extra_mask = self._out_of_range_flag(x)
         val = np.empty_like(x)
         val[extra_mask] = self.extrapolate(x[extra_mask], order=0)  # 数据范围外，按外推规则计算
         val[~extra_mask] = self.interpolate(x[~extra_mask], order=0)  # 数据范围内，插值计算
+        # todo：判断是否在数据范围外的逻辑现在写的太耗时了！降低运算效率70%
         return val
 
     def calc_first_derivative(self, x):

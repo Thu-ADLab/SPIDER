@@ -1,5 +1,5 @@
 import numpy as np
-from elements.trajectory import Path
+from spider.elements.trajectory import Path
 from scipy.spatial import cKDTree
 
 
@@ -20,5 +20,4 @@ if __name__ == '__main__':
     XY_GRID_RESO = 0.1
     YAW_GRID_RESO = np.deg2rad(15.)
 
-    from elements.obstacles import TrackingBoxList
     pass

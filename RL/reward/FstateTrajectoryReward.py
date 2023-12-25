@@ -35,7 +35,7 @@ class FstateTrajectoryReward(BaseReward):
     def set_trajectory_candidates(self, trajectory_candidates: Sequence[FrenetTrajectory]) -> None:
         self.trajectory_candidates = trajectory_candidates
 
-    def evaluate(self, state, action, next_state) -> Tuple[float, bool]:
+    def evaluate(self, state=None, action=None, next_state=None) -> Tuple[float, bool]:
         if state is None or action is None or next_state is None:
             return 0.0, False
 
