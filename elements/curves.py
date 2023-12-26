@@ -22,6 +22,8 @@
 """
 
 import math
+import warnings
+
 import numpy as np
 import bisect
 from abc import abstractmethod
@@ -357,8 +359,11 @@ class QuinticPolynomial(BasePolynomial):
         '''
         interpolate with two_point_boundary_value constraints.
         And it is recommended to set x_0 to 0 to accelerate the calculation
+        What's more, a large number (like x>1e5) could cause Ill-Conditioned Matrix!
         todo: 可以提前储存几次方是几，可以加速
         '''
+        if x_0 > 1e5: warnings.warn("WARNING! A large number (like x>1e5) could cause ill-Conditioned Matrix!")
+
         self.valid_x_range = [x_0, x_end]
 
         if x_0 != 0:

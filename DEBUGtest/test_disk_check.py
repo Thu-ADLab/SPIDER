@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+import spider
 from spider.elements import FrenetTrajectory, TrackingBoxList, TrackingBox
 from spider.elements.Box import obb2vertices
 from spider.utils.collision import BoxCollisionChecker
@@ -22,7 +23,6 @@ def check_and_draw(tb):
         plt.plot(vertices[:, 0], vertices[:, 1], color='green', linestyle='-', linewidth=1.5)  # 画他车
         return False
 
-
 qp = QuinticPolynomial()
 qp.two_point_boundary_value(100.,100.,0,0,150.,120,0,0)
 
@@ -42,11 +42,7 @@ for x, y, yaw in zip(traj.x, traj.y, traj.heading):
     plt.plot(vertices[:, 0], vertices[:, 1], color='gray', linestyle='-', linewidth=1)
 
 
-checker = BoxCollisionChecker(5.,2.)
-
-tb = TrackingBox(obb=(119,112.5,4,2,np.arctan(3/5)), vx=0,vy=0)
-check_and_draw(tb)
-# plt.show()
+checker = BoxCollisionChecker(5.,2.,spider.COLLISION_CHECKER_DISK)
 
 
 count = 0
@@ -59,9 +55,10 @@ for i in range(500):
     if check_and_draw(tb):
         count += 1
 
-plt.title("SAT: collision report num is " + str(count))
+plt.title("disk: collision report num is " + str(count))
 plt.gca().set_aspect("equal")
 plt.show()
+
 
 
 

@@ -145,6 +145,8 @@ class TrackingBoxList(list):
                 bboxes_vertices.append(tb.pred_vertices[step])
         return bboxes_vertices
 
+# todo: 应该允许更多几何形状的物体，比如圆形物体的输入，所以应该改为TrackingObjectList
+#  ，trackingobject可以包含box，circle等等几何形状，这样子来适配disk check等等
 
 
 # import matplotlib.pyplot as plt

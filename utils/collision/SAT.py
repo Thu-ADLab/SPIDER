@@ -1,6 +1,6 @@
 from spider.elements.vector import *
 import numpy as np
-from .AABB import AABB_check
+from spider.utils.collision.AABB import AABB_check
 
 
 def SAT_check(vertices1:np.ndarray ,vertices2:np.ndarray):

@@ -5,6 +5,7 @@ from spider.utils.collision.CollisionChecker import BoxCollisionChecker
 # from utils.collision.SAT import SAT_check
 import numpy as np
 from spider.elements.Box import obb2vertices,AABB_vertices,TrackingBox,TrackingBoxList
+import spider
 
 
 
@@ -40,7 +41,7 @@ def generate_corridor_bboxes(initial_guess:Trajectory, bboxes:TrackingBoxList,
 
     # bboxes.dilate(radius)
     # bboxes.predict(initial_guess.x) # TODO:QZL:是不是要把预测放到外面
-    collision_checker = BoxCollisionChecker(utils.collision.BoxCollisionChecker.flagSAT)
+    collision_checker = BoxCollisionChecker(spider.COLLISION_CHECKER_SAT)
 
     corridor = []
     for i in range(len(initial_guess.t)):

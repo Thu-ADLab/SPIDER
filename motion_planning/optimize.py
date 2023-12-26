@@ -1,9 +1,9 @@
 import numpy as np
 import scipy.optimize as opt
 import cyipopt
-from utils.collision.CollisionConstraints import generate_corridor
-from elements.trajectory import Trajectory
-from utils.collision.Disks import disks_approximate
+from spider.utils.collision.CollisionConstraints import generate_corridor
+from spider.elements.trajectory import Trajectory
+from spider.utils.collision.disks import disks_approximate
 from copy import deepcopy
 
 
@@ -180,7 +180,8 @@ if __name__ == '__main__':
         bboxes.append(tb)
 
     # initial guess
-    center_offset, radius = disks_approximate(veh_length, veh_width, 3)
+    centers, radius = disks_approximate((0.,0.,veh_length, veh_width,0.), 3)
+    center_offset = centers[:, 0]
     bboxes.dilate(radius)
 
     for traj in available_traj[:]:

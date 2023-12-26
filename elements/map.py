@@ -3,7 +3,7 @@ import numpy as np
 import math
 from spider.elements.curves import ParametricCubicSpline
 from spider.elements.vehicle import VehicleState
-from spider.utils.transform.frenet import FrenetCoordinateTransformer
+from spider.utils import transform
 
 """
 当前场景：flag，Multi-lane / Junction
@@ -85,7 +85,7 @@ class LocalMap:
 
         x, y = ego_veh_state.x(), ego_veh_state.y()
         min_idx, min_dist = -1, math.inf
-        coordinate_transformer = FrenetCoordinateTransformer()
+        coordinate_transformer = transform.FrenetCoordinateTransformer()
         for idx in range(len(self.lanes)):
             target_lane = self.lanes[idx]
             coordinate_transformer.set_reference_line(target_lane.centerline, target_lane.centerline_csp)

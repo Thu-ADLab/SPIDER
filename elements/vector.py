@@ -39,7 +39,7 @@ def project(vector, segment_vector, calc_distance:bool=False):
 def rotate90(vec:np.ndarray):
     return np.flip(vec)*[-1,1]  # 离谱bug，1写成0了
 
-def rotate(array,anchor, angle, clockwise=False):
+def rotate(array, anchor, angle, clockwise=False):
     '''
 
     :param array: vector or 2-column matrix
