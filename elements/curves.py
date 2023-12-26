@@ -178,7 +178,7 @@ class BasePolynomial(ExplicitCurve):
 
 
     def calc_point(self, x):
-        x = np.array(x, dtype=np.float)
+        x = np.array(x, dtype=float)
         extra_mask = self._out_of_range_flag(x)
         val = np.empty_like(x)
         val[extra_mask] = self.extrapolate(x[extra_mask], order=0) # 数据范围外，按外推规则计算
@@ -186,7 +186,7 @@ class BasePolynomial(ExplicitCurve):
         return val
 
     def calc_first_derivative(self,x):
-        x = np.array(x, dtype=np.float)
+        x = np.array(x, dtype=float)
         extra_mask = self._out_of_range_flag(x)
         val = np.empty_like(x)
         val[extra_mask] = self.extrapolate(x[extra_mask], order=1)  # 数据范围外，按外推规则计算
@@ -194,7 +194,7 @@ class BasePolynomial(ExplicitCurve):
         return val
 
     def calc_second_derivative(self,x):
-        x = np.array(x, dtype=np.float)
+        x = np.array(x, dtype=float)
         extra_mask = self._out_of_range_flag(x)
         val = np.empty_like(x)
         val[extra_mask] = self.extrapolate(x[extra_mask], order=2)  # 数据范围外，按外推规则计算
@@ -202,7 +202,7 @@ class BasePolynomial(ExplicitCurve):
         return val
 
     def calc_third_derivative(self, x):
-        x = np.array(x, dtype=np.float)
+        x = np.array(x, dtype=float)
         extra_mask = self._out_of_range_flag(x)
         val = np.empty_like(x)
         val[extra_mask] = self.extrapolate(x[extra_mask], order=3)  # 数据范围外，按外推规则计算
@@ -543,7 +543,7 @@ class InterpolationCurve(ExplicitCurve):
 
     def calc_point(self, x):
         # val = self.interpolate(x, order=0)
-        x = np.array(x, dtype=np.float)
+        x = np.array(x, dtype=float)
         extra_mask = self._out_of_range_flag(x)
         val = np.empty_like(x)
         val[extra_mask] = self.extrapolate(x[extra_mask], order=0)  # 数据范围外，按外推规则计算
@@ -552,7 +552,7 @@ class InterpolationCurve(ExplicitCurve):
         return val
 
     def calc_first_derivative(self, x):
-        x = np.array(x, dtype=np.float)
+        x = np.array(x, dtype=float)
         extra_mask = self._out_of_range_flag(x)
         val = np.empty_like(x)
         val[extra_mask] = self.extrapolate(x[extra_mask], order=1)  # 数据范围外，按外推规则计算
@@ -560,7 +560,7 @@ class InterpolationCurve(ExplicitCurve):
         return val
 
     def calc_second_derivative(self, x):
-        x = np.array(x, dtype=np.float)
+        x = np.array(x, dtype=float)
         extra_mask = self._out_of_range_flag(x)
         val = np.empty_like(x)
         val[extra_mask] = self.extrapolate(x[extra_mask], order=2)  # 数据范围外，按外推规则计算
@@ -568,7 +568,7 @@ class InterpolationCurve(ExplicitCurve):
         return val
 
     def calc_third_derivative(self, x):
-        x = np.array(x, dtype=np.float)
+        x = np.array(x, dtype=float)
         extra_mask = self._out_of_range_flag(x)
         val = np.empty_like(x)
         val[extra_mask] = self.extrapolate(x[extra_mask], order=3)  # 数据范围外，按外推规则计算
@@ -582,15 +582,19 @@ class spCubicSpline(InterpolationCurve):
     三次样条插值
     todo: scipy自带的在距离很远的时候插值有严重问题，暂时先用自己写的，以后看看为什么有这个问题并且怎么修复
     """
-    def __init__(self, x=None, y=None):
+    def __init__(self, x=None, y=None, bc_type='natural'):
         self._sp_csp = None # 屈服了，还是用Scipy的吧
+        self.bc_type = bc_type
         super(spCubicSpline, self).__init__(x, y)
 
     def _calc_coef(self):
-        self._sp_csp = scipy.interpolate.CubicSpline(self.x, self.y, bc_type=((1, 0), (1, 0)))
+        self._sp_csp = scipy.interpolate.CubicSpline(self.x, self.y, bc_type=self.bc_type)#bc_type=((1, 0), (1, 0)))
         #，bc_type=((1, 0), (1, 0)) 指定了第一个和最后一个插值点处的一阶导数为0
         # (1, 0) 表示一阶导数为0，(2, 0) 表示二阶导数为0
-        # 不加这个限制的话会出现非常大的振荡
+        # 不加这个限制的话会出现非常大的振荡,，因为默认Not-a-knot Spline (非结点样条)
+        # Natural Spline (自然样条): 在这种情况下，样条的二阶导数在两个端点都被设定为零。这是默认的边界条件。
+        # Clamped Spline (夹持样条): 在这种情况下，你可以指定首尾两个点的一阶导数值。这相当于夹持（固定）样条的两个端点。
+        # Not-a-knot Spline (非结点样条): 在这种情况下，样条的三阶导数在内部节点上是连续的。这种条件通常在要求样条在内部节点处更平滑的情况下使用。
 
     def interpolate(self, x, order):
         if np.array(x).size == 0:
