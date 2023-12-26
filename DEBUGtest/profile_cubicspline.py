@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from spider.elements.curves import myCubicSpline as mycsp
-from spider.elements.curves import CubicSpline as my_spcsp
+from spider.elements.curves import spCubicSpline as my_spcsp
 from scipy.interpolate import CubicSpline as spcsp
 
 
@@ -29,9 +29,13 @@ if __name__ == '__main__':
     # assert  0
 
     # 生成一些二维点序列，这里以随机点为例
-    np.random.seed(0)
-    x = np.sort(np.random.rand(10) * 10)
+    np.random.seed(6)
+    x = np.sort(np.random.rand(10) * 6)
     y = np.sin(x) + np.random.normal(0, 0.1, len(x))
+
+    x = np.append(x, 20)
+    y = np.append(y, y[-1])
+
 
     # 使用三次样条插值
     csp1 = mycsp(x, y)
@@ -42,7 +46,7 @@ if __name__ == '__main__':
 
     ############## 计时 ####################
     for csp in [csp1, csp2, csp3]:
-        for _ in tqdm(range(100000),desc=str(csp.__class__)):
+        for _ in tqdm(range(10000),desc=str(csp.__class__)):
             y_interp = csp(x_interp)
     ##########################################
     # <class 'spider.elements.curves.CubicSpline'>: 100%|██████████| 100000/100000 [00:04<00:00, 21689.01it/s]
@@ -51,18 +55,20 @@ if __name__ == '__main__':
 
 
     # 生成插值点
+    plt.figure(figsize=(12,8))
     for order in range(4):
         plt.subplot(2,2,order+1)
         for csp in [csp1, csp2]:
 
             y_interp = csp(x_interp, order)
             # 绘制原始点和插值曲线
-            plt.plot(x_interp, y_interp)
+            plt.plot(x_interp, y_interp, label=str(csp.__class__).split('.')[-1])
 
         if order == 0: plt.scatter(x, y, label='Original Points')
         plt.xlabel('X')
         plt.ylabel('Y')
-        plt.title('Cubic Spline Interpolation')
+        plt.legend()
+        plt.title('Cubic Spline for order '+str(order))
     plt.show()
 
 

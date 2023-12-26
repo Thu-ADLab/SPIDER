@@ -587,7 +587,10 @@ class spCubicSpline(InterpolationCurve):
         super(spCubicSpline, self).__init__(x, y)
 
     def _calc_coef(self):
-        self._sp_csp = scipy.interpolate.CubicSpline(self.x, self.y)
+        self._sp_csp = scipy.interpolate.CubicSpline(self.x, self.y, bc_type=((1, 0), (1, 0)))
+        #，bc_type=((1, 0), (1, 0)) 指定了第一个和最后一个插值点处的一阶导数为0
+        # (1, 0) 表示一阶导数为0，(2, 0) 表示二阶导数为0
+        # 不加这个限制的话会出现非常大的振荡
 
     def interpolate(self, x, order):
         if np.array(x).size == 0:
@@ -752,7 +755,7 @@ class myCubicSpline(InterpolationCurve):
         return val
 
 
-class CubicSpline(myCubicSpline):
+class CubicSpline(spCubicSpline):
     pass
 
 class Spline:#Cubic CubicSpline class(abandoned)
