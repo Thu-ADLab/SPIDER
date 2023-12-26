@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
     # 生成一些二维点序列，这里以随机点为例
     np.random.seed(6)
-    x = np.sort(np.random.rand(10) * 6)
+    x = np.arange(10) + np.random.normal(0, 0.3, 10)
     y = np.sin(x) + np.random.normal(0, 0.1, len(x))
 
     x = np.append(x, 20)
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     csp2 = my_spcsp(x, y)
     csp3 = spcsp(x, y)
 
-    x_interp = np.linspace(min(x), max(x), 100)
+    x_interp = np.linspace(min(x), max(x)+5, 100)
 
     ############## 计时 ####################
     for csp in [csp1, csp2, csp3]:
