@@ -40,7 +40,7 @@ if __name__ == '__main__':
     # 使用三次样条插值
     csp1 = mycsp(x, y)
     csp2 = my_spcsp(x, y)
-    csp3 = spcsp(x, y)
+    csp3 = spcsp(x, y, bc_type='natural')
 
     x_interp = np.linspace(min(x), max(x)+5, 100)
 
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     plt.figure(figsize=(12,8))
     for order in range(4):
         plt.subplot(2,2,order+1)
-        for csp in [csp1, csp2]:
+        for csp in [csp1, csp2, csp3]:
 
             y_interp = csp(x_interp, order)
             # 绘制原始点和插值曲线

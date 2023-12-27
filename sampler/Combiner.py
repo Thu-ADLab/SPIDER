@@ -18,14 +18,16 @@ class LatLonCombiner:
         self.dt = dt
 
     def combine(self, lat_generators, lon_generators):
-        ts = [self.dt * i for i in range(self.steps)]
+        # todo: 这个函数特别耗时！！！
+        ts = np.arange(self.steps) * self.dt
         candidate_trajectories = []
         for long_generator in lon_generators:
-            ss, dss, ddss, dddss = [ [long_generator(t, order) for t in ts] for order in range(4)] ## ss是绝对坐标
+            ss, dss, ddss, dddss = [ long_generator(ts, order) for order in range(4)] ## ss是绝对坐标
             # ss_abs = [s + ego_s0 for s in ss]  # 注意，加上ego_s0这一步非常重要,从相对变为绝对frenet坐标
             s0 = ss[0]
+            ss_relative = ss - s0
             for lat_generator in lat_generators:
-                ls, dls, ddls, dddls = [[lat_generator(s-s0, order) for s in ss] for order in range(4)]
+                ls, dls, ddls, dddls = [lat_generator(ss_relative, order) for order in range(4)]
 
                 traj = FrenetTrajectory(self.steps, self.dt)
                 traj.t = ts
@@ -59,6 +61,7 @@ class PVDCombiner:
         candidate_trajectories = []
 
         for displacement_generator in displacement_generators:
+            # todo: 改向量化的ts
             ss, dss, ddss, dddss = [[displacement_generator(t, order) for t in ts] for order in range(4)] ## ss是绝对坐标
             # ss_abs = [s + ego_s0 for s in ss]  # 注意，加上ego_s0这一步非常重要,从相对变为绝对frenet坐标
             s0 = ss[0]

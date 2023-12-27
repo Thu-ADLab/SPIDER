@@ -170,7 +170,8 @@ class LatticePlanner(BasePlanner):
         # 轨迹采样
         long_samples = self.longitudinal_sampler.sample((fstate_start.s, fstate_start.s_dot, fstate_start.s_2dot))
         lat_samples = self.lateral_sampler.sample((fstate_start.l, fstate_start.l_prime, fstate_start.l_2prime))
-        candidate_trajectories = self.trajectory_combiner.combine(lat_samples, long_samples)
+        candidate_trajectories = self.trajectory_combiner.combine(lat_samples, long_samples) # todo:这一步特别耗时!!
+
 
         # 轨迹坐标转换，把每个轨迹点转到笛卡尔坐标
         # todo: qzl:这一步耗时非常严重，有2个建议：
