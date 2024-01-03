@@ -33,13 +33,11 @@ def test_benchmark_api():
 
 
 def test_benchmark_gui():
-    import tkinter as tk
-    from tkinter import ttk
-    from spider.planner_zoo import LatticePlanner
-
-    root = tk.Tk()
-    app = HighwayEnvBenchmarkGUI(root)
-    root.mainloop()
+    HighwayEnvBenchmarkGUI.launch()
+    # import tkinter as tk
+    # root = tk.Tk()
+    # app = HighwayEnvBenchmarkGUI(root)
+    # root.mainloop()
 
 if __name__ == '__main__':
     test_benchmark_gui()

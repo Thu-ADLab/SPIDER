@@ -25,7 +25,6 @@ from spider.constraints import CartConstriantChecker
 # def transform_trajectory(t, coordinate_transformer):
 #     return coordinate_transformer.frenet2cart4traj(t, order=2)
 
-
 class LatticePlanner(BasePlanner):
     def __init__(self, config=None):
         super(LatticePlanner, self).__init__()

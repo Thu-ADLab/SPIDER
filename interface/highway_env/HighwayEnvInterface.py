@@ -27,7 +27,7 @@ class HighwayEnvInterface:
                  veh_width=2.0):
 
         self._env = env # 注意，由于python是引用传递，所以这个_env完全等价于外部的env!
-        self._env_config = env.config
+        self._env_config = env.unwrapped.config
 
         # 车长车宽没考虑
 
@@ -44,7 +44,7 @@ class HighwayEnvInterface:
 
         # self.kine_feature_index_mapping = self._build_feature_index_mapping()
         if self.observation_flag == spider.HIGHWAYENV_OBS_KINEMATICS:
-            self._all_features = self._env.observation_type.FEATURES
+            self._all_features = self._env.unwrapped.observation_type.FEATURES
             assert "x" in self._all_features and "y" in self._all_features
 
         self._routed_local_map = None
@@ -227,7 +227,7 @@ class HighwayEnvInterface:
         # todo:qzl: 另外导航信息也没加到routedmap里面
         local_map = RoutedLocalMap()
 
-        ego_veh = self._env.vehicle
+        ego_veh = self._env.unwrapped.vehicle
 
         network = ego_veh.road.network
 
@@ -260,7 +260,7 @@ if __name__ == '__main__':
 
     # env = gym.make('highway-v0', render_mode='rgb_array')
     env = gym.make("highway-v0")
-    env.configure({
+    env.unwrapped.configure({
         "show_trajectories": True
     })
     env.reset()

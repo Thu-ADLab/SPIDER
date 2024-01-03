@@ -17,6 +17,8 @@ import spider
 from spider.interface.BaseBenchmark import BaseBenchmark
 from spider.interface.highway_env.HighwayEnvInterface import HighwayEnvInterface
 
+# todo: 给GUI加一个dashboard！加一个dashboard，任意planner出来的结果都可以被dashboard监视计算，然后benchmark自己调用，同时还能计算metrics
+
 
 class HighwayEnvBenchmark(BaseBenchmark):
     def __init__(self, dt=0.1, config=None):
@@ -72,7 +74,7 @@ class HighwayEnvBenchmark(BaseBenchmark):
         if self.env is None:
             self.env = gym.make(self.config['env_name'],render_mode='rgb_array')
 
-        self.env.configure(self.config["env_config"])
+        self.env.unwrapped.configure(self.config["env_config"])
         if self.save_video:
             self.env = RecordVideo(self.env, video_folder=self.video_root, episode_trigger=lambda e: True)
             self.env.unwrapped.set_record_video_wrapper(self.env)
@@ -119,8 +121,8 @@ class HighwayEnvBenchmark(BaseBenchmark):
         if self.interface.output_flag == spider.OUTPUT_TRAJECTORY:# 检查输出标志，确保是轨迹输出
             traj: spider.elements.Trajectory = planner_output
             # 获取仿真器画布和offscreen flag
-            surface = self.env.viewer.sim_surface
-            offscreen = self.env.viewer.offscreen
+            surface = self.env.unwrapped.viewer.sim_surface
+            offscreen = self.env.unwrapped.viewer.offscreen
 
             traj_points_px = [[*surface.pos2pix(traj.x[0], traj.y[0])]] # 在像素坐标系中的轨迹点，先加入第一个轨迹点（当前点）
             for i in range(1, traj.steps):
@@ -138,7 +140,7 @@ class HighwayEnvBenchmark(BaseBenchmark):
             warnings.warn("can't visualize control output yet...")
 
         # 将画布内容绘制到屏幕上并刷新显示
-        self.env.viewer.screen.blit(surface, (0, 0))
+        self.env.unwrapped.viewer.screen.blit(surface, (0, 0))
         pygame.display.flip()
 
 
@@ -264,7 +266,7 @@ class HighwayEnvBenchmarkGUI:
             "max_steps": 100,
             "random_seed": 666,
             "offscreen_rendering": False,
-            "save_video": True,
+            "save_video": False,
             "video_root": './videos/',
             "video_name": 'benchmark.mp4'
         }
@@ -354,7 +356,16 @@ class HighwayEnvBenchmarkGUI:
             # 处理异常，例如配置解析错误
             print(f"Error: {e}")
 
+    @classmethod
+    def launch(cls):
+        root = tk.Tk()
+        app = cls(root)
+        root.mainloop()
+        return root
+
+
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = HighwayEnvBenchmarkGUI(root)
-    root.mainloop()
+    HighwayEnvBenchmarkGUI.launch()
+    # root = tk.Tk()
+    # app = HighwayEnvBenchmarkGUI(root)
+    # root.mainloop()

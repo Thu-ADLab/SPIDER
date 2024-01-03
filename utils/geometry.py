@@ -1,6 +1,58 @@
 import numpy as np
 import math
-from spider.elements.vector import project
+from spider.elements.vector import project, rotate90
+import spider
+
+
+def resample_polyline(line, resolution):
+    """
+    Dense a polyline by linear interpolation.
+    线性插值重新采样曲线上的点
+
+    :param resolution: the gap between each point should be lower than this resolution
+    :param interp: the interpolation method
+    :return: the densed polyline
+    """
+    if line is None or len(line) == 0:
+        raise ValueError("Line input is null")
+
+    s = np.cumsum(np.linalg.norm(np.diff(line, axis=0), axis=1))
+    s = np.concatenate([[0],s])
+    num = int(round(s[-1]/resolution))
+
+    try:
+        s_space = np.linspace(0,s[-1],num = num)
+    except:
+        raise ValueError(num, s[-1], len(s))
+
+    x = np.interp(s_space,s,line[:,0])
+    y = np.interp(s_space,s,line[:,1])
+
+    return np.array([x,y]).T
+
+
+def generate_parallel_line(polyline:np.ndarray, dist, left_or_right=spider.DIRECTION_LEFT):
+    # todo: 看看需不需要修改，尤其是转化为矢量运算，现在可能效率比较低
+    assert left_or_right in [spider.DIRECTION_LEFT, spider.DIRECTION_RIGHT]
+    direction_sign = -1 if left_or_right == spider.DIRECTION_LEFT else 1
+
+    polyline = np.asarray(polyline)
+    parallel_line = np.zeros_like(polyline)
+
+    for j, pt2 in enumerate(polyline):
+        if j == 0:
+            pt1 = polyline[j + 1]
+            vec_long = pt1 - pt2
+        else:
+            pt1 = polyline[j - 1]
+            vec_long = pt2 - pt1
+        e_long = vec_long/np.linalg.norm(vec_long) # vector/its norm
+        e_lat = direction_sign * rotate90(e_long)
+        vec_lat = e_lat * dist
+        parallel_line[j] = pt2 + vec_lat
+
+    return parallel_line
+
 
 def find_nearest_point(point: np.ndarray, target_points):
     x,y = point

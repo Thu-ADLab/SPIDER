@@ -49,6 +49,7 @@ class Trajectory(Path):
     def from_trajectory_array(cls, trajectory_array: np.ndarray, dt, calc_derivative: bool = False,
                               v0=0., heading0=0., a0=0., steer0=0., steer_velocity0=0.) -> 'Trajectory':
         '''
+        从x y点序列变换trajectory类，并且可以计算高阶导数
         trajectory_array: shape of [N,2], ndarray([[x,y],[x,y]])
         calc_derivative: if True, then calculate the Higher-order kinematics parameters
         todo: 以后要加入自定义vehicle model的接口
@@ -150,6 +151,11 @@ class FrenetTrajectory(Trajectory):
     def clearState(self):
         super(FrenetTrajectory, self).clearState()
         self.clearFrenetState()
+
+    @classmethod
+    def from_sl_array(cls, sl_array, dt, calc_derivative=True):
+        pass
+        # todo: 想一想怎么用插值曲线的方式计算s和l的导数。三次样条插值的话，边界条件是个问题。
 
 
 if __name__ == '__main__':

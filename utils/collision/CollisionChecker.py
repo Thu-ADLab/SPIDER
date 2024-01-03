@@ -8,9 +8,9 @@ import spider
 # from spider.param import *
 
 
-class CollisionChecker(ABC):
-    def __init__(self, methodflag):
-        self.method = methodflag
+class BaseCollisionChecker(ABC):
+    def __init__(self, method_flag):
+        self.method = method_flag
         pass
 
     @abstractmethod
@@ -23,8 +23,8 @@ class CollisionChecker(ABC):
 
 
 
-class BoxCollisionChecker(CollisionChecker):
-    def __init__(self, ego_veh_length, ego_veh_width, method_flag=spider.COLLISION_CHECKER_SAT):
+class BoxCollisionChecker(BaseCollisionChecker):
+    def __init__(self, ego_veh_length=5., ego_veh_width=2., method_flag=spider.COLLISION_CHECKER_SAT):
         super(BoxCollisionChecker, self).__init__(method_flag)
         # self.method = method_flag
         self.ego_box_vertices = None
@@ -98,6 +98,6 @@ class BoxCollisionChecker(CollisionChecker):
         return collision # True就是撞了，False就是没撞
 
 
-class GridCollisionChecker(CollisionChecker):
+class GridCollisionChecker(BaseCollisionChecker):
     pass
 

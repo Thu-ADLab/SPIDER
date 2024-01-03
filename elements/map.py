@@ -4,6 +4,7 @@ import math
 from spider.elements.curves import ParametricCubicSpline
 from spider.elements.vehicle import VehicleState
 from spider.utils import transform
+from spider.utils.geometry import resample_polyline
 
 """
 当前场景：flag，Multi-lane / Junction
@@ -26,13 +27,15 @@ class TrafficLight(enum.Enum):
 
 
 class Lane:
-    def __init__(self, index, centerline:np.ndarray, width=3.5, speed_limit=60/3.6):
+    def __init__(self, index, centerline:np.ndarray, width=3.5, speed_limit=60/3.6, resample:bool=False, resample_resolution=1.0):
         """
         centerline是2列N行的ndarray，N无长度限制
         """
         self.id = index  # 左小右大，0，1，2，3
         self.virtual = False # 是否是虚拟车道（比如路口的虚拟reference line形成的虚拟车道）
 
+        if resample:
+            centerline = resample_polyline(centerline, resample_resolution)
         self.centerline = np.array(centerline)
         self.centerline_csp = ParametricCubicSpline(self.centerline[:, 0], self.centerline[:, 1])
         self.width = width
@@ -52,9 +55,9 @@ class Lane:
         self.traffic_density = 0
         self.average_speed = 0 # qzl:这三个都是交通特性，动态地图可以给出；详见greenshields模型
 
-    # todo:qzl:完成下面2个函数
-    def densify(self, ds=1.0):
-        pass
+
+    # def densify(self, ds=1.0): # 在geometry里面
+    #     pass
 
     def smoothen(self):
         pass

@@ -35,15 +35,16 @@ import scipy.interpolate
 import cv2
 
 try:
-    import poly_calc
-except ModuleNotFoundError:
+    from . import _poly_calc
+except (ModuleNotFoundError, ImportError):
     print("Cython module not found. Use pyximport temporally")
     import pyximport
-    pyximport.install(language_level=3)  # '../elements/poly_calc.pyx',
-    import os
+    import os, sys
     pyxroot = os.path.dirname(os.path.abspath(__file__))
-    poly_calc = pyximport.load_module('poly_calc', pyxroot+'\\poly_calc.pyx', language_level=3)
-    # import poly_calc
+    sys.path.append(pyxroot)
+    pyximport.install(language_level=3)  # '../elements/_poly_calc.pyx',
+    # _poly_calc = pyximport.load_module('_poly_calc', pyxroot+'\\__poly_calc.pyx', language_level=3)
+    import _poly_calc
 
 
 ################## 基础的一维曲线类(抽象类) 现在已经弃用！#####################
@@ -138,7 +139,7 @@ class BasePolynomial(ExplicitCurve):
             x = np.ascontiguousarray(self.valid_x_range, dtype=np.float64)
             coef = self.coef if order == 0 else self.derivative_coef(order)
             c = np.ascontiguousarray(coef, dtype=np.float64)
-            val = poly_calc.evaluate(x, c, self.valid_x_range[0], self.valid_x_range[1], 0, 0.,0.,0.,0.)
+            val = _poly_calc.evaluate(x, c, self.valid_x_range[0], self.valid_x_range[1], 0, 0.,0.,0.,0.)
             val = np.asarray(val)
             self._lower_boundary_value[order] = val[0] #self.evaluate(self.valid_x_range[0],order)
             self._upper_boundary_value[order] = val[1] #self.evaluate(self.valid_x_range[1],order)
@@ -206,11 +207,11 @@ class BasePolynomial(ExplicitCurve):
         c = np.ascontiguousarray(self.coef, dtype=np.float64)
 
         if self._isscalar(x):
-            return poly_calc.evaluate_scalar(x, c, self.valid_x_range[0], self.valid_x_range[1], 0,
+            return _poly_calc.evaluate_scalar(x, c, self.valid_x_range[0], self.valid_x_range[1], 0,
                                              y_0, y_prime_0, y_end, y_prime_end)
 
         x = np.ascontiguousarray(x, dtype=np.float64)
-        val = poly_calc.evaluate(x, c, self.valid_x_range[0], self.valid_x_range[1], 0,
+        val = _poly_calc.evaluate(x, c, self.valid_x_range[0], self.valid_x_range[1], 0,
                                  y_0, y_prime_0, y_end, y_prime_end)
         val = np.asarray(val)
 
@@ -227,11 +228,11 @@ class BasePolynomial(ExplicitCurve):
         c = np.ascontiguousarray(self.derivative_coef(order=1), dtype=np.float64)
 
         if self._isscalar(x):
-            return poly_calc.evaluate_scalar(x, c, self.valid_x_range[0], self.valid_x_range[1], 1, y_0, y_prime_0, y_end,
+            return _poly_calc.evaluate_scalar(x, c, self.valid_x_range[0], self.valid_x_range[1], 1, y_0, y_prime_0, y_end,
                                       y_prime_end)
 
         x = np.ascontiguousarray(x, dtype=np.float64)
-        val = poly_calc.evaluate(x, c, self.valid_x_range[0], self.valid_x_range[1], 1,
+        val = _poly_calc.evaluate(x, c, self.valid_x_range[0], self.valid_x_range[1], 1,
                                  y_0, y_prime_0, y_end, y_prime_end)
         val = np.asarray(val)
 
@@ -248,11 +249,11 @@ class BasePolynomial(ExplicitCurve):
         c = np.ascontiguousarray(self.derivative_coef(order=2), dtype=np.float64)
 
         if self._isscalar(x):
-            return poly_calc.evaluate_scalar(x, c, self.valid_x_range[0], self.valid_x_range[1], 2, y_0, y_prime_0, y_end,
+            return _poly_calc.evaluate_scalar(x, c, self.valid_x_range[0], self.valid_x_range[1], 2, y_0, y_prime_0, y_end,
                                       y_prime_end)
 
         x = np.ascontiguousarray(x, dtype=np.float64)
-        val = poly_calc.evaluate(x, c, self.valid_x_range[0], self.valid_x_range[1], 2,
+        val = _poly_calc.evaluate(x, c, self.valid_x_range[0], self.valid_x_range[1], 2,
                                  y_0, y_prime_0, y_end, y_prime_end)
         val = np.asarray(val)
 
@@ -269,11 +270,11 @@ class BasePolynomial(ExplicitCurve):
         c = np.ascontiguousarray(self.derivative_coef(order=3), dtype=np.float64)
 
         if self._isscalar(x):
-            return poly_calc.evaluate_scalar(x, c, self.valid_x_range[0], self.valid_x_range[1], 3, y_0, y_prime_0, y_end,
+            return _poly_calc.evaluate_scalar(x, c, self.valid_x_range[0], self.valid_x_range[1], 3, y_0, y_prime_0, y_end,
                                       y_prime_end)
 
         x = np.ascontiguousarray(x, dtype=np.float64)
-        val = poly_calc.evaluate(x, c, self.valid_x_range[0], self.valid_x_range[1], 3,
+        val = _poly_calc.evaluate(x, c, self.valid_x_range[0], self.valid_x_range[1], 3,
                                  y_0, y_prime_0, y_end, y_prime_end)
         val = np.asarray(val)
 
@@ -1263,28 +1264,28 @@ class ImplicitCurve:
 
 
 if __name__ == '__main__':
-    cp = np.array([[0, 0], [2, 3], [4, 4],[8,10]])
-    t = 0.1
-    c = BezierCurve(cp)
-    x = c.calc_point_t(t)
-    dx = c.calc_first_derivative_t(t)
-    ddx = c.calc_second_derivative_t(t)
-    dddx = c.calc_third_derivative_t(t)
-
-    from time import time
-    t1 = time()
-    for _ in range(10000):
-        a = c.arclength
-    t2 = time()
-    for _ in range(10000):
-        # a = {n: binom(n, np.arange(n + 1)) for n in range(1, 9)}
-        b = c.arclength2
-    t3 = time()
-
-    print(t2-t1)
-    print(t3-t2)
-    print(a)
-    print(b)
+    # cp = np.array([[0, 0], [2, 3], [4, 4],[8,10]])
+    # t = 0.1
+    # c = BezierCurve(cp)
+    # x = c.calc_point_t(t)
+    # dx = c.calc_first_derivative_t(t)
+    # ddx = c.calc_second_derivative_t(t)
+    # dddx = c.calc_third_derivative_t(t)
+    #
+    # from time import time
+    # t1 = time()
+    # for _ in range(10000):
+    #     a = c.arclength
+    # t2 = time()
+    # for _ in range(10000):
+    #     # a = {n: binom(n, np.arange(n + 1)) for n in range(1, 9)}
+    #     b = c.arclength2
+    # t3 = time()
+    #
+    # print(t2-t1)
+    # print(t3-t2)
+    # print(a)
+    # print(b)
 
 
     pass

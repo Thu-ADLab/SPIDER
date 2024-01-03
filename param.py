@@ -1,14 +1,14 @@
-# _i = 0
-# def _assignment():
-#     global _i
-#     _i += 1
-#     return _i-1
 def _assignment(flag=None):
     if flag is None:
         _assignment.flag = _assignment.flag + 1 if hasattr(_assignment, "flag") else 0+1
     else:
         _assignment.flag = flag + 1
     return _assignment.flag - 1
+
+####################### common ######################
+######### direction
+DIRECTION_LEFT = _assignment(0)
+DIRECTION_RIGHT = _assignment()
 
 ####################### perception ######################
 # _i = 0

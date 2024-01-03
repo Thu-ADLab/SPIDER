@@ -4,7 +4,7 @@
 import numpy as np
 import math
 from spider.elements.curves import ParametricCubicSpline
-from spider.utils.geometry import find_nearest_point, point_to_segment_distance
+from spider.utils.geometry import find_nearest_point, point_to_segment_distance, resample_polyline
 from spider.elements.trajectory import FrenetTrajectory
 from spider.elements.vehicle import KinematicState, FrenetKinematicState
 from spider.vehicle_model.bicycle import curvature2steer
@@ -49,9 +49,12 @@ class FrenetCoordinateTransformer:
         self.refer_line_arr = None # N行2列，[[x,y]*N]
         self.refer_line_csp = None
 
-    def set_reference_line(self, reference_line:np.ndarray, reference_line_csp=None):
+    def set_reference_line(self, reference_line:np.ndarray, reference_line_csp=None, resample=False, resample_resolution=1.0):
+        if resample:
+            reference_line = resample_polyline(reference_line, resample_resolution)
+            reference_line_csp = ParametricCubicSpline(reference_line[:, 0], reference_line[:, 1])
+
         self.refer_line_arr = reference_line
-        # assert self.refer_line_arr.shape[1] == 2
         if reference_line_csp is None:
             self.refer_line_csp = ParametricCubicSpline(self.refer_line_arr[:, 0], self.refer_line_arr[:, 1])
         else:

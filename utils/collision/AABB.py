@@ -1,4 +1,5 @@
 import numpy as np
+from spider.elements.Box import AABB_vertices
 
 def minmax(arr):
     return np.min(arr), np.max(arr)
