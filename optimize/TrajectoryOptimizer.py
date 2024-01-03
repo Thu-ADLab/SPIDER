@@ -155,8 +155,11 @@ def getConsMat(s0,s_d0,s_dd0,l0,l_d0,l_dd0, target_l_bound,
     traj = Trajectory(steps=50,dt=dt)
     traj.t = [dt*i for i in range(N)]
     ss,ls = Ms@initial_guess, Ml@initial_guess
-    veh_model = Bicycle(s0,l0, s_d0, s_dd0,heading=0., dt=dt, wheelbase=wheelbase)
-    traj.derivative(veh_model,xs=ss,ys=ls) # 这里是不对的
+    traj.x = ss
+    traj.y = ls
+    traj.heading = traj.heading = np.insert(np.arctan2(np.diff(traj.y), np.diff(traj.x)), 0, np.arctan2(l_d0,s_d0))
+    # veh_model = Bicycle(s0,l0, s_d0, s_dd0,heading=0., dt=dt, wheelbase=wheelbase)
+    # traj.derivative(veh_model,xs=ss,ys=ls)
     bboxes.predict(traj.t)
     corridors = generate_corridor_bboxes(traj, bboxes)#:return: corridor: [ [x1_min, y1_min, x1_max, y1_max],... ]
     slb,llb, sub,lub = corridors.T#[:,0],corridors[:,1],corridors[:,2],corridors[:,3]
@@ -287,15 +290,17 @@ class FrenetTrajectoryOptimizer(BaseOptimizer):
 
 if __name__ == '__main__':
     from spider.elements import TrackingBox
+    from spider.visualize import draw_polygon
     import matplotlib.pyplot as plt
 
 
-    def draw_polygon(vertices, color='black', lw=1.):
-        vertices = np.vstack((vertices, vertices[0]))  # recurrent to close polyline
-        plt.plot(vertices[:, 0], vertices[:, 1], color=color, linestyle='-', linewidth=lw)
+    # def draw_polygon(vertices, color='black', lw=1.):
+    #     vertices = np.vstack((vertices, vertices[0]))  # recurrent to close polyline
+    #     plt.plot(vertices[:, 0], vertices[:, 1], color=color, linestyle='-', linewidth=lw)
+    steps = 50
+    dt = 0.1
 
-
-    optim = FrenetTrajectoryOptimizer(50,0.1)
+    optim = FrenetTrajectoryOptimizer(steps,dt)
 
     veh_length = 5
     veh_width = 2
