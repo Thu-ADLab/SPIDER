@@ -36,7 +36,7 @@ class Trajectory(Path):
         super(Trajectory, self).__init__()
         self.steps = steps
         self.dt = dt
-        self.t = []
+        self.t = np.arange(steps) * dt
         self.v = []
         self.a = []
         self.steer = []
@@ -65,6 +65,10 @@ class Trajectory(Path):
             traj.x = list(xs)
             traj.y = list(ys)
         return traj
+
+    @property
+    def trajectory_array(self):
+        return np.column_stack((self.x, self.y))
 
     def densify(self):
         # 时间维度的
@@ -156,6 +160,10 @@ class FrenetTrajectory(Trajectory):
     def from_sl_array(cls, sl_array, dt, calc_derivative=True):
         pass
         # todo: 想一想怎么用插值曲线的方式计算s和l的导数。三次样条插值的话，边界条件是个问题。
+
+    @property
+    def trajectory_sl_array(self):
+        return np.column_stack((self.s, self.l))
 
 
 if __name__ == '__main__':

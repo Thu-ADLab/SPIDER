@@ -1,0 +1,8 @@
+# plt.gca().set_facecolor('white')
+#     plt.gca().set_xticks([])
+#     plt.gca().set_yticks([])
+#     plt.gca().set_zticks([])
+#     plt.gca().set_box_aspect([5, 1, 1.5])
+#     plt.gca().grid(False)
+#     plt.savefig('./images/figure2.pdf', dpi=300, bbox_inches='tight')
+#     plt.savefig('./images/figure2.png', dpi=300, bbox_inches='tight')
