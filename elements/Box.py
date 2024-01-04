@@ -1,11 +1,11 @@
 import numpy as np
-from typing import List
-
+from typing import List, Sequence
+import warnings
+import spider
 from spider.elements.vector import rotate
 from spider.utils.predict.linear import linear_predict
-import warnings
 
-flagLinear = 0
+
 
 def AABB_vertices(AABB):
     '''
@@ -52,27 +52,27 @@ def vertices2obb(vertices):
 
 
 class BoundingBox:
+
     def __init__(self, *, vertices=None, obb=None):
         '''
 
         :param vertices: a list(4) of four vertices of bounding box
         :param obb: a list(5) of [xc, yc, length, width, heading]
         '''
+        self.obb = None
+        self.vertices = None
         if vertices is not None:
-            self.setVertices(vertices) # 同时输入时，以顶点为准
+            self.set_vertices(vertices) # 同时输入时，以顶点为准
         elif obb is not None:
-            self.setObb(obb)
-        else:
-            self.vertices = None
-            self.obb = None
+            self.set_obb(obb)
         # else:
         #     raise ValueError("Invalid Input of Bounding Box")
 
-    def setObb(self,obb):
+    def set_obb(self, obb):
         self.obb = obb
         self.vertices = obb2vertices(obb)
 
-    def setVertices(self,vertices):
+    def set_vertices(self, vertices):
         self.vertices = np.array(vertices)
         self.obb = vertices2obb(vertices)
 
@@ -80,12 +80,27 @@ class BoundingBox:
     #     obb = self.obb.copy()
     #     obb[2] += radius
     #     obb[3] += radius
-    #     self.setObb(obb)
+    #     self.set_obb(obb)
     def dilate(self,length_add, width_add):
         obb = self.obb.copy()
         obb[2] += length_add
         obb[3] += width_add
-        self.setObb(obb)
+        self.set_obb(obb)
+
+    @property
+    def x(self): return self.obb[0]
+
+    @property
+    def y(self): return self.obb[1]
+
+    @property
+    def box_heading(self): return self.obb[4]
+
+    @property
+    def length(self): return self.obb[2]
+
+    @property
+    def width(self): return self.obb[3]
 
 
 class TrackingBox(BoundingBox):
@@ -96,6 +111,10 @@ class TrackingBox(BoundingBox):
         self.vy = vy
         self.pred_vertices = []
 
+        # todo: 以规范形式定义prediction和history，很重要
+        self.prediction = None
+        self.history = None
+
     def setVelocity(self, vx, vy):
         self.vx, self.vy = vx,vy
 
@@ -104,9 +123,9 @@ class TrackingBox(BoundingBox):
         if len(self.pred_vertices) > 0:
             warnings.warn("TrackingBox dilation after prediction Detected! This might cause incorrect prediction!")
 
-    def predict(self, ts, methodflag=flagLinear):
+    def predict(self, ts, methodflag=spider.PREDICTION_LINEAR):
         assert self.vertices is not None
-        if methodflag == flagLinear:
+        if methodflag == spider.PREDICTION_LINEAR:
             self.pred_vertices = linear_predict(self.vertices, self.vx, self.vy, ts)
         else:
             raise ValueError("Invalid method flag")
@@ -115,11 +134,11 @@ class TrackingBox(BoundingBox):
         return "TrackingBox: id:%d, OBB:%s, velocity:(%.1f, %.1f)" % (self.id, str(self.obb), self.vx, self.vy)
 
 
-class TrackingBoxList(list):
-    def __init__(self, seq=()):
+class TrackingBoxList(list): # List[TrackingBox]
+    def __init__(self, seq:Sequence[TrackingBox]=()):
         super(TrackingBoxList, self).__init__(seq)
 
-    def predict(self, ts, methodflag=flagLinear):
+    def predict(self, ts, methodflag=spider.PREDICTION_LINEAR):
         # todo:预测要单独写一个类
         for tb in self:
             tb.predict(ts, methodflag)

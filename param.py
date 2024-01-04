@@ -15,6 +15,10 @@ DIRECTION_RIGHT = _assignment()
 PERCEPTION_BOX = _assignment(0)
 PERCEPTION_OCC = _assignment()
 
+####################### prediction ######################
+# _i = 0
+PREDICTION_LINEAR = _assignment(0)
+
 
 ####################### output ######################
 # _i = 0

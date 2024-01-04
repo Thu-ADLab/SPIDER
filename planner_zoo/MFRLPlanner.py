@@ -494,7 +494,7 @@ if __name__ == '__main__':
     #             x, y, l, w, h = tb.obb
     #             x += tb.vx * rl_planner.config["dt"]
     #             y += tb.vy * rl_planner.config["dt"]
-    #             tb_list[i].setObb((x, y, l, w, h))
+    #             tb_list[i].set_obb((x, y, l, w, h))
     #
     #         # 定位信息更新,本应该放在前面从gps拿，这里直接假设完美控制，在后面从控制拿了
     #         # ego_veh_state = ...
@@ -611,7 +611,7 @@ if __name__ == '__main__':
     #                 x, y, l, w, h = tb.obb
     #                 x += tb.vx * rl_planner.config["dt"]
     #                 y += tb.vy * rl_planner.config["dt"]
-    #                 tb_list[i].setObb((x, y, l, w, h))
+    #                 tb_list[i].set_obb((x, y, l, w, h))
     #
     #             # 定位信息更新,本应该放在前面从gps拿，这里直接假设完美控制，在后面从控制拿了
     #             # ego_veh_state = ...

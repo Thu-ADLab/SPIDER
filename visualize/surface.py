@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from matplotlib.colors import to_rgba
 import numpy as np
 from spider.elements.Box import obb2vertices
 
@@ -7,9 +8,29 @@ def draw_polygon(vertices, *args, fill=False, **kwargs):
     # vertices = np.vstack((vertices, vertices[0]))  # recurrent to close polyline
     # plt.plot(vertices[:, 0], vertices[:, 1], *args, **kwargs)
 
+    if fill:
+        face_alpha = kwargs['alpha'] if 'alpha' in kwargs else 1.0
+        edge_alpha = 0.8
+        kwargs['alpha'] = None
+    # if fill:
+    #     if 'color' in kwargs and 'alpha' in kwargs:
+    #         kwargs['edgecolor'] = to_rgba(kwargs['color'], 0.8)
+    #         kwargs['facecolor'] = to_rgba(kwargs['color'], kwargs['alpha'])
+    #         del kwargs['color'], kwargs['alpha']
+
+
     polygon = plt.Polygon(vertices, *args, fill=fill, **kwargs)
-    #closed=True, edgecolor='black', color='green'
+
+    if fill:
+        polygon.set_facecolor(to_rgba(polygon.get_facecolor(), face_alpha))
+        if 'color' in kwargs or 'edgecolor' in kwargs: # 如果边框已经被设置过颜色，就只改透明度即可
+            polygon.set_edgecolor(to_rgba(polygon.get_edgecolor(), edge_alpha))
+        else: # 如果边框没有被设置过颜色，就把颜色改成facecolor
+            polygon.set_edgecolor(to_rgba(polygon.get_facecolor(), edge_alpha))
+
     plt.gca().add_patch(polygon)
+    #closed=True, edgecolor='black', color='green'
+
     return polygon
 
 

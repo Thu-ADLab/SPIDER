@@ -20,8 +20,10 @@ class Transform:  # qzl:是叫transform好还是叫pose好呢？
 
 
 class VehicleState:
-    # 2D ONLY
-    def __init__(self, transform:Transform, velocity:Vector3D, acceleration:Vector3D):
+    # length = 5.0
+    # width = 2.0
+    # 2D ONLY for now
+    def __init__(self, transform:Transform, velocity:Vector3D, acceleration:Vector3D, length=5.0, width=2.0):
         self.transform = transform
         self.velocity = velocity
         self.acceleration = acceleration
@@ -31,6 +33,9 @@ class VehicleState:
         # self.curvature = (acceleration.y * velocity.x - acceleration.x * velocity.y) / self.speed
         self.kinematics = KinematicState()
         self.calc_kinematics()
+
+        self.length = length
+        self.width = width
 
     def calc_kinematics(self):
         self.kinematics.x = self.transform.location.x
@@ -44,6 +49,7 @@ class VehicleState:
     # todo:这里说实话kinematics的引入造成了一定混乱，想办法优化一下
 
     def x(self): return self.transform.location.x
+    # todo: 把这些getter全部变为property!
 
     def y(self): return self.transform.location.y
 
@@ -54,6 +60,10 @@ class VehicleState:
     def a(self): return self.kinematics.acceleration
 
     def kappa(self): return self.kinematics.curvature
+
+    @property
+    def obb(self):
+        return (self.x(), self.y(), self.length, self.width, self.yaw())
 
 
 
