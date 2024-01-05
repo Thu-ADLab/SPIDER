@@ -1,2 +1,7 @@
 elements/_pyxbld/
+planner_zoo/*.pth
+planner_zoo/*.mp4
+visualize/matplotlib_cheatsheet/
+DEBUGtest/videos/
+
 upload.txt

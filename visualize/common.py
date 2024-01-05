@@ -60,12 +60,12 @@ class SnapShot:
 
     def snap(self, ax:plt.Axes):
         if self._snap_trigger():
-            ax.axis('off')
+            # ax.axis('off')
             img = np.frombuffer(ax.figure.canvas.buffer_rgba(), dtype=np.uint8)
             bbox = ax.figure.bbox.bounds
             img = img.reshape((int(bbox[3]), int(bbox[2]), -1))
             self.album.append(img.copy())
-            ax.axis('on')
+            # ax.axis('on')
             # self.album.append(ax)
         self.snap_count += 1
 

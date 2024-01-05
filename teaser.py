@@ -95,6 +95,7 @@ def demo():
         for tb in tb_list:
             tb.set_obb([tb.x+tb.vx*traj.dt, tb.y+tb.vy*traj.dt, tb.length, tb.width, tb.box_heading])
 
+    plt.close()
     snapshot.print(3,2,figsize=(15,6))
     plt.show()
 

@@ -32,7 +32,16 @@ from typing import Union, List
 from scipy.special import binom
 import scipy
 import scipy.interpolate
-import cv2
+
+try:
+    from cv2 import arcLength as _arclength  # 用cv2的函数会比自己写的稍快一些
+except (ModuleNotFoundError, ImportError):
+    print("opencv-python module not found.")
+    def _arclength(pts, closed=False):
+        if closed: pts = np.vstack((pts, pts[0]))
+        delta_xy = np.diff(pts, axis=0)
+        delta = np.linalg.norm(delta_xy, axis=1)
+        return np.sum(delta)
 
 try:
     from . import _poly_calc
@@ -1153,7 +1162,8 @@ class BezierCurve(ParametricCurve):
         if self._arclength is None:
             ts = np.linspace(0, 1, 500)
             pts = self.calc_point_t(ts).astype(dtype=np.float32)
-            self._arclength = cv2.arcLength(pts, closed=False) # 用cv2的函数会比自己写的稍快一些
+            self._arclength = _arclength(pts, closed=False)# 用cv2的函数会比自己写的稍快一些
+            #self._arclength = cv2.arcLength(pts, closed=False)
             # delta_xy = np.diff(pts, axis=0)
             # delta = np.linalg.norm(delta_xy,axis=1)
             # self._arclength = np.sum(delta)
