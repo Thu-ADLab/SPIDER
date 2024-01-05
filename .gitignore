@@ -1,7 +1,11 @@
-elements/_pyxbld/
 planner_zoo/*.pth
+planner_zoo/*.pt
 planner_zoo/*.mp4
+planner_zoo/*.avi
+
+elements/_pyxbld/
 visualize/matplotlib_cheatsheet/
 DEBUGtest/videos/
 
+*.bak
 upload.txt
