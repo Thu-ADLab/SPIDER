@@ -14,6 +14,12 @@ import io
 #     plt.gca().grid(False)
 #     plt.savefig('./images/figure2.pdf', dpi=300, bbox_inches='tight')
 #     plt.savefig('./images/figure2.png', dpi=300, bbox_inches='tight')
+def set_background_color(color, fig:plt.Figure=None):
+    if fig is None:
+        fig = plt.gcf()
+    pass
+
+
 def get_figure_tight_layout(fig):
     bbox = fig.get_tightbbox(renderer=fig.canvas.get_renderer())
 
@@ -37,11 +43,6 @@ def _pkl_deep_copy(data):
     return pickle.load(buf)
 
 class SnapShot:
-    # def __init__(self, max_row=4, max_col=4, max_album_size=None): # max_album_size还没用上
-    #     self.max_row = max_row
-    #     self.max_col = max_col
-    #     self.max_num_one_fig = max_row * max_col
-    #     self.album: List[plt.Axes] = []
     def __init__(self, auto_snap=False, auto_snap_intervals=1, max_album_size=None): # max_album_size还没用上
 
         self.album = [] # : List[plt.Axes]
@@ -97,7 +98,7 @@ class SnapShot:
 
     def save(self):
         '''
-        把相册保存下来
+        把相册中每张照片保存下来
         '''
         pass
 

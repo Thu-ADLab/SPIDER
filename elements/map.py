@@ -1,10 +1,13 @@
+from typing import List, Sequence, Union
 import enum
 import numpy as np
 import math
+
+import spider
 from spider.elements.curves import ParametricCubicSpline
 from spider.elements.vehicle import VehicleState
 from spider.utils import transform
-from spider.utils.geometry import resample_polyline
+from spider.utils.geometry import resample_polyline, generate_parallel_line
 
 """
 当前场景：flag，Multi-lane / Junction
@@ -43,8 +46,8 @@ class Lane:
 
         # self.centerline_csp = None # cubic spline for centerline
 
-        self.left_laneline = []
-        self.right_laneline = []
+        self._left_laneline = None
+        self._right_laneline = None
 
         self.left_lane_change = True
         self.right_lane_change = True # 是否允许左换道/右换道
@@ -62,18 +65,33 @@ class Lane:
     def smoothen(self):
         pass
 
+    @property
+    def left_laneline(self):
+        if self._left_laneline is None:
+            self._left_laneline = generate_parallel_line(self.centerline, self.width/2.0, spider.DIRECTION_LEFT)
+        return self._left_laneline
+
+    @property
+    def right_laneline(self):
+        if self._right_laneline is None:
+            self._right_laneline = generate_parallel_line(self.centerline, self.width / 2.0, spider.DIRECTION_RIGHT)
+        return self._right_laneline
+
 
 class LocalMap:
-    def __init__(self):
-        self.type = ScenarioType.Multilane
-        self.section_id = -1
-        self.lanes = [] # 这里指的是自车可以走的lanes
+    def __init__(self, lanes:Sequence[Lane]=(), scene_type=ScenarioType.Multilane, section_id=-1,
+                 network=None, traffic_signs=None):
 
-        self.network = None # qzl:FUTURE VERSION
+        self.type = scene_type
+        self.section_id = section_id
+        self.lanes = list(lanes) # 这里指的是自车可以走的lanes
 
-        self.traffic_signs = None # qzl:FUTURE VERSION
+        self.network = network # qzl:FUTURE VERSION
 
-    def set_scenario_type(self, scenario_type): self.type = scenario_type
+        self.traffic_signs = traffic_signs # qzl:FUTURE VERSION
+
+    def set_scenario_type(self, scenario_type):
+        self.type = scenario_type
 
     def add_lane(self,lane:Lane):
         self.lanes.append(lane)
@@ -97,6 +115,36 @@ class LocalMap:
             if dist < min_dist:
                 min_idx, min_dist = idx, dist
         return min_idx
+
+    @classmethod
+    def from_centerlines(cls, centerline_array_list: List[np.ndarray],
+                         lane_width:Union[Sequence, float] = 3.5,
+                         speed_limit:Union[Sequence, float] = 60/3.6,
+                         lane_idxs:Sequence = None,
+                         resample: bool = False,
+                         resample_resolution=1.0,
+                         **lmap_kwargs):
+        '''
+        centerline_array_list包含N个centerline_array
+        lane_width & speed_limit可以是常数，也可以是N个值的序列
+        '''
+        num = len(centerline_array_list)
+        if lane_idxs is None:
+            lane_idxs = np.arange(num)
+
+        if not isinstance(lane_width, Sequence):
+            lane_width = [lane_width] * num
+        if not isinstance(speed_limit, Sequence):
+            speed_limit = [speed_limit] * num
+
+
+        lanes = []
+        for id, centerline_arr, wid, v_lim in \
+                zip(lane_idxs, centerline_array_list, lane_width, speed_limit):
+            lanes.append(Lane(id, centerline_arr, wid, v_lim, resample, resample_resolution))
+
+        return cls(lanes, **lmap_kwargs)
+
 
 
 

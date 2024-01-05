@@ -5,8 +5,6 @@ from spider.param import *
 # from spider import motion_planning, path_planning
 # from spider import planner_zoo
 # from spider import RL
-
-
 from spider.teaser import teaser
 
 
@@ -15,7 +13,7 @@ submodules = [
     #'teaser', 'param'
 ]
 
-__all__ = submodules
+__all__ = submodules + ['teaser', 'param']
 
 
 def __dir__():

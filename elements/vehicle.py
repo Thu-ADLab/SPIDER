@@ -65,6 +65,19 @@ class VehicleState:
     def obb(self):
         return (self.x(), self.y(), self.length, self.width, self.yaw())
 
+    @classmethod
+    def from_kine_states(cls, x, y, yaw, vx=0., vy=0., ax=0., ay=0., length=5., width=2.):
+        return cls(
+            transform=Transform(
+                location=Location(x, y, 0.),
+                rotation=Rotation(yaw=yaw)
+            ),
+            velocity=Vector3D(vx, vy, 0.),
+            acceleration=Vector3D(ax, ay, 0.),
+            length=length,
+            width=width
+        )
+
 
 
 class KinematicState:
