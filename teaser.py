@@ -1,20 +1,31 @@
-import matplotlib.pyplot as plt
-import numpy as np
-
-from spider.planner_zoo.LatticePlanner import LatticePlanner
-
-from spider.elements.map import RoutedLocalMap
-from spider.elements.Box import TrackingBoxList, TrackingBox
-from spider.elements.map import Lane
-from spider.elements.vehicle import VehicleState, Transform, Location, Rotation,Vector3D
-import spider.visualize as vis
-
-
-__all__ = ['demo']
+# import matplotlib.pyplot as plt
+# import numpy as np
+#
+# from spider.planner_zoo.LatticePlanner import LatticePlanner
+#
+# from spider.elements.map import RoutedLocalMap
+# from spider.elements.Box import TrackingBoxList, TrackingBox
+# from spider.elements.map import Lane
+# from spider.elements.vehicle import VehicleState, Transform, Location, Rotation,Vector3D
+# import spider.visualize as vis
 
 
+__all__ = ['demo', 'teaser']
+
+def teaser():
+    return demo() # 执行spider.teaser(), 就会执行demo()
 
 def demo():
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    from spider.planner_zoo.LatticePlanner import LatticePlanner
+
+    from spider.elements.map import RoutedLocalMap
+    from spider.elements.Box import TrackingBoxList, TrackingBox
+    from spider.elements.map import Lane
+    from spider.elements.vehicle import VehicleState, Transform, Location, Rotation, Vector3D
+    import spider.visualize as vis
     #################### 输入信息的初始化 ####################
     # 定位信息
     ego_veh_state = VehicleState(
@@ -99,8 +110,6 @@ def demo():
     snapshot.print(3,2,figsize=(15,6))
     plt.show()
 
-
-__call__ = demo() # 执行spider.teaser(), 就会执行demo()
 
 
 if __name__ == '__main__':

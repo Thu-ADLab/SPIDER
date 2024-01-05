@@ -7,13 +7,12 @@ from spider.param import *
 # from spider import RL
 
 
-# import spider.teaser as teaser
-
+from spider.teaser import teaser
 
 
 submodules = [
     'elements', 'utils', 'sampler', 'evaluator', 'interface', 'vehicle_model', 'planner_zoo', 'RL',
-    'teaser', 'param'
+    #'teaser', 'param'
 ]
 
 __all__ = submodules

@@ -1,3 +1,13 @@
+# Ignore compiled Python files
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore virtual environment
+venv/
+
 planner_zoo/*.pth
 planner_zoo/*.pt
 planner_zoo/*.mp4
@@ -9,3 +19,5 @@ DEBUGtest/videos/
 
 *.bak
 upload.txt
+
+
