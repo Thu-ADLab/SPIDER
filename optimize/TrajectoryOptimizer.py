@@ -275,7 +275,7 @@ if __name__ == '__main__':
 
     for x, y, vx, vy in obs:
         vertices = AABB_vertices([x - veh_length / 2, y - veh_width / 2, x + veh_length / 2, y + veh_width / 2])
-        tb = TrackingBox(vertices=vertices, vx=vx, vy=vy)
+        tb = TrackingBox.from_vertices(vertices=vertices, vx=vx, vy=vy)
         bboxes.append(tb)
     bboxes.predict([dt * i for i in range(steps)])
 

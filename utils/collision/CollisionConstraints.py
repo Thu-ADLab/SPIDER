@@ -104,7 +104,7 @@ if __name__ == '__main__':
         [6,-1.5],
         [4,-1.5]
     ])
-    bboxes.append(TrackingBox(vertices=vertices1, vx=0, vy=0))
+    bboxes.append(TrackingBox.from_vertices(vertices=vertices1, vx=0, vy=0))
 
     vertices2 = np.array([
         [-2, -7.5],
@@ -112,7 +112,7 @@ if __name__ == '__main__':
         [-1, -5],
         [-1, -7.5]
     ])
-    bboxes.append(TrackingBox(vertices=vertices2, vx=4, vy=14))
+    bboxes.append(TrackingBox.from_vertices(vertices=vertices2, vx=4, vy=14))
 
     corridor = generate_corridor(traj, bboxes)
     for i, rect in enumerate(corridor):

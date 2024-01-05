@@ -35,7 +35,7 @@ def obb2vertices(obb):
 
 
 def vertices2obb(vertices):
-    vertices = np.array(vertices)
+    vertices = np.asarray(vertices)
     edges = [
         vertices[0] - vertices[1],
         vertices[1] - vertices[2],
@@ -53,27 +53,38 @@ def vertices2obb(vertices):
 
 class BoundingBox:
 
-    def __init__(self, *, vertices=None, obb=None):
+    def __init__(self, obb=None, *, vertices=None):
         '''
-
+        # 现在obb和vertices一起输入造成混淆，已经分出from_vertices方法
         :param vertices: a list(4) of four vertices of bounding box
         :param obb: a list(5) of [xc, yc, length, width, heading]
         '''
         self.obb = None
         self.vertices = None
-        if vertices is not None:
-            self.set_vertices(vertices) # 同时输入时，以顶点为准
-        elif obb is not None:
+
+        if vertices is not None: # 未来把这个if下的删掉，并且将BBOX和trackingbox输入的vertices删去，即可
+            warnings.warn("The initialization of BBOX will support vertices input NO MORE! Please use from_vertices instead!",
+                          DeprecationWarning)
+            self.set_vertices(vertices)
+
+        if obb is not None:
             self.set_obb(obb)
+
         # else:
         #     raise ValueError("Invalid Input of Bounding Box")
 
+    @classmethod
+    def from_vertices(cls, vertices):
+        bbox = cls()
+        bbox.set_vertices(vertices)
+        return bbox
+
     def set_obb(self, obb):
-        self.obb = obb
+        self.obb = obb#np.asarray(obb)
         self.vertices = obb2vertices(obb)
 
     def set_vertices(self, vertices):
-        self.vertices = np.array(vertices)
+        self.vertices = np.asarray(vertices)
         self.obb = vertices2obb(vertices)
 
     # def dilate(self,radius):
@@ -102,10 +113,14 @@ class BoundingBox:
     @property
     def width(self): return self.obb[3]
 
+    def __str__(self):
+        return "BoundingBox: OBB:%s" % str(self.obb)
+
+
 
 class TrackingBox(BoundingBox):
-    def __init__(self, *, id=0, vertices=None, obb=None, vx=0, vy=0):
-        super(TrackingBox, self).__init__(vertices=vertices, obb=obb)
+    def __init__(self, obb=None, vx=0., vy=0., id=0, *, vertices=None):
+        super(TrackingBox, self).__init__(obb, vertices=vertices)
         self.id = id
         self.vx = vx
         self.vy = vy
@@ -115,7 +130,14 @@ class TrackingBox(BoundingBox):
         self.prediction = None
         self.history = None
 
-    def setVelocity(self, vx, vy):
+    @classmethod
+    def from_vertices(cls, vertices, vx=0., vy=0., id=0):
+        tbox = cls()
+        tbox.set_vertices(vertices)
+        tbox.set_velocity(vx, vy)
+        return tbox
+
+    def set_velocity(self, vx, vy):
         self.vx, self.vy = vx,vy
 
     def dilate(self,length_add, width_add):
@@ -164,6 +186,23 @@ class TrackingBoxList(list): # List[TrackingBox]
                 bboxes_vertices.append(tb.pred_vertices[step])
         return bboxes_vertices
 
+    @classmethod
+    def from_obbs(cls, obb_set_with_vel:Sequence, obbs_history=None, obbs_prediction=None, ids=None):
+        '''
+        输入的是 带有速度信息的obb的集合，基本格式为：
+        [
+            [x, y, len, wid, yaw, vx, vy],
+            ......
+        ]
+        '''
+        tbox_list = cls()
+        if ids is None:
+            ids = range(len(obb_set_with_vel))
+        for obb_info, id in zip(obb_set_with_vel, ids):
+            tbox_list.append(TrackingBox(obb=obb_info[:5], vx=obb_info[5], vy=obb_info[6], id=id))
+        return tbox_list
+
+
 # todo: 应该允许更多几何形状的物体，比如圆形物体的输入，所以应该改为TrackingObjectList
 #  ，trackingobject可以包含box，circle等等几何形状，这样子来适配disk check等等
 
@@ -184,7 +223,7 @@ class TrackingBoxList(list): # List[TrackingBox]
     #     [5,2],
     #     [5,0]
     # ]
-    # obs.append(TrackingBox(vertices=vertices1, vx=1, vy=0))
+    # obs.append(TrackingBox.from_vertices(vertices=vertices1, vx=1, vy=0))
     #
     # vertices2 = [
     #     [0, 0],
@@ -192,7 +231,7 @@ class TrackingBoxList(list): # List[TrackingBox]
     #     [2, 5],
     #     [2, 0]
     # ]
-    # obs.append(TrackingBox(vertices=vertices2, vx=1, vy=1))
+    # obs.append(TrackingBox.from_vertices(vertices=vertices2, vx=1, vy=1))
     #
     #
     # ts = list(range(10))
