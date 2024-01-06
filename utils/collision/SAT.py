@@ -6,7 +6,7 @@ from spider.utils.collision.AABB import AABB_check
 def SAT_check(vertices1:np.ndarray ,vertices2:np.ndarray):
     '''
     Separating Axis Theorem，SAT,分离轴定理，用于检测凸多边形碰撞
-    TODO:qzl:两个矩形的话只需要检查4条边对应的轴（因为有平行），目前是默认8条全部检测。可以尝试用集合保证唯一性。后期可以改进。
+    qzl:已经解决：两个矩形的话只需要检查4条边对应的轴（因为有平行），目前是默认8条全部检测。可以尝试用集合保证唯一性。后期可以改进。
     :param vertices1: 多边形1
     :param vertices2: 多边形2
     :return: 碰撞与否
@@ -15,7 +15,7 @@ def SAT_check(vertices1:np.ndarray ,vertices2:np.ndarray):
         # 先粗检
         return False
 
-    separating_axis_vec = []
+    separating_axis_vec = np.empty((0, 2))
     # TODO:qzl:下面的内容写成矩阵计算形式更快
     # 获取所有边的单位向量并储存
     for polygon in [vertices1,vertices2]:
@@ -26,7 +26,10 @@ def SAT_check(vertices1:np.ndarray ,vertices2:np.ndarray):
             else:
                 v2 = polygon[i+1]
             vertical_vec = rotate90(v2-v1) # v2-v1是1-2的边对应的向量
-            separating_axis_vec.append(vertical_vec)
+            if vec_in(-vertical_vec, separating_axis_vec) or vec_in(vertical_vec, separating_axis_vec):
+                continue # 如果已经存在方向相同的向量，则不用添加 todo:这里没有加长度上的判断，不过暂时无关紧要了
+            # separating_axis_vec.append(vertical_vec)
+            separating_axis_vec = np.append(separating_axis_vec, [vertical_vec], axis=0)
 
     # TODO: qzl:投影的时候其实也不用单位化法向量
     # 计算每个顶点向量在分离轴上的投影，并检查是否重叠

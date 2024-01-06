@@ -1,5 +1,26 @@
 import numpy as np
 
+# vector定义成形状为(n,)的一维ndarray，matrix定义为形状为(m,n)的二维ndarray
+
+def vec_in(vector, matrix):
+    '''
+    判断 一个向量 是否在 一堆向量里面
+    '''
+    return (matrix == vector).all(1).any()
+
+
+def find_vec(vector, matrix, find_all=False):
+    '''
+    在一堆向量里， 找到一个某个向量的索引， 并返回第一个
+    '''
+    idxs = np.where((matrix == vector).all(1))#[0]
+    if find_all:
+        return idxs
+    else:
+        if len(idxs) == 0:
+            return None
+        else:
+            return idxs[0]
 
 def normalize(vector: np.ndarray):
     '''

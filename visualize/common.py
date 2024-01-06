@@ -17,7 +17,14 @@ import io
 def set_background_color(color, fig:plt.Figure=None):
     if fig is None:
         fig = plt.gcf()
+    # todo: 还没写完
     pass
+
+def ego_centric_view(ego_x, ego_y, x_range=(-50.,50.), y_range=(-50.,50.), ax:plt.Axes=None):
+    ax = plt.gca() if ax is None else ax
+    ax.set_xlim(x_range[0] + ego_x, x_range[1]+ego_x)
+    ax.set_ylim(y_range[0] + ego_y, y_range[1]+ego_y)
+    return ax
 
 
 def get_figure_tight_layout(fig):

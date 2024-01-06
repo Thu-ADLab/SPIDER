@@ -1,4 +1,4 @@
-from typing import Union, Type
+from typing import Union, Type, Sequence
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -14,7 +14,7 @@ def draw_lane(lane: elm.Lane):
     pass
 
 def draw_ego_vehicle(ego_veh_state: elm.VehicleState, *args, fill=False, **kwargs):
-    return draw_obb(ego_veh_state.obb, *args, fill=False, **kwargs)
+    return draw_obb(ego_veh_state.obb, *args, fill=fill, **kwargs)
 
 def draw_trackingbox_list():
     pass
@@ -56,6 +56,20 @@ def draw_trajectory(traj: Union[elm.Path, elm.Trajectory, elm.FrenetTrajectory],
             draw_obb((x, y, length, width, yaw), fill=footprint_fill, alpha=footprint_alpha, color=color)
 
     return lines
+
+
+def draw_candidate_trajectories(candidate_trajectories:Sequence[elm.Trajectory],*args,
+                                show_cost_colormap=False, cost=None,
+                                show_footprint=False, **kwargs):
+    '''
+    candidate_trajectories默认不画脚印
+    '''
+    if show_cost_colormap:
+        for traj in candidate_trajectories:
+            draw_trajectory(traj, *args, show_footprint=show_footprint, **kwargs)
+    else:
+        raise NotImplementedError("To be completed...")  # todo:完善
+
 
 def draw_trajectory_3d():
     '''

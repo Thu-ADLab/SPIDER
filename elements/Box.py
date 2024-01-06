@@ -207,41 +207,5 @@ class TrackingBoxList(list): # List[TrackingBox]
 #  ，trackingobject可以包含box，circle等等几何形状，这样子来适配disk check等等
 
 
-# import matplotlib.pyplot as plt
-# def draw_polygon(vertices):
-#     vertices = np.vstack((vertices, vertices[0]))  # recurrent to close polyline
-#     plt.plot(vertices[:, 0], vertices[:, 1], color='blue', linestyle='-', linewidth=1)
-
-
-
-# if __name__ == '__main__':
-#     pass
-    # obs = TrackingBoxList()
-    # vertices1 = [
-    #     [0,0],
-    #     [0,2],
-    #     [5,2],
-    #     [5,0]
-    # ]
-    # obs.append(TrackingBox.from_vertices(vertices=vertices1, vx=1, vy=0))
-    #
-    # vertices2 = [
-    #     [0, 0],
-    #     [0, 5],
-    #     [2, 5],
-    #     [2, 0]
-    # ]
-    # obs.append(TrackingBox.from_vertices(vertices=vertices2, vx=1, vy=1))
-    #
-    #
-    # ts = list(range(10))
-    # obs.predict(ts)
-    #
-    # for i in range(10):
-    #     bboxes_vertices = obs.getBoxVertices(i)
-    #     for vertice in bboxes_vertices:
-    #         draw_polygon(vertice)
-    #         plt.pause(0.1)
-    # plt.show()
 
 

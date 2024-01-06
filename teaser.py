@@ -20,10 +20,8 @@ def demo():
     import numpy as np
 
     from spider.planner_zoo.LatticePlanner import LatticePlanner
-
-    from spider.elements.map import RoutedLocalMap
+    from spider.elements.map import RoutedLocalMap, Lane
     from spider.elements.Box import TrackingBoxList, TrackingBox
-    from spider.elements.map import Lane
     from spider.elements.vehicle import VehicleState, Transform, Location, Rotation, Vector3D
     import spider.visualize as vis
     #################### 输入信息的初始化 ####################
@@ -80,20 +78,22 @@ def demo():
         plt.cla()
         for lane in local_map.lanes:
             plt.plot(lane.centerline[:, 0], lane.centerline[:, 1], color='gray', linestyle='--', lw=1.5)  # 画地图
-        vis.draw_ego_vehicle(ego_veh_state, color='green', fill=True, alpha=0.2, linestyle='-', linewidth=1.5) # 画自车
+        # vis.draw_ego_vehicle(ego_veh_state, color='green', fill=True, alpha=0.2, linestyle='-', linewidth=1.5) # 画自车
 
         for tb in tb_list:
             vis.draw_boundingbox(tb, color='black',fill=True, alpha=0.1, linestyle='-', linewidth=1.5)# 画他车
             # 画他车预测轨迹
             tb_pred_traj = np.column_stack((tb.x + traj.t * tb.vx, tb.y+traj.t*tb.vy))
-            vis.draw_polyline(tb_pred_traj,show_buffer=True,buffer_dist=tb.width*0.5,buffer_alpha=0.1, color='red')
+            vis.draw_polyline(tb_pred_traj,show_buffer=True,buffer_dist=tb.width*0.5,buffer_alpha=0.1, color='C3')
 
         vis.draw_ego_history(ego_veh_state,'-', lw=1, color='gray')# 画自车历史
-        vis.draw_trajectory(traj,'.-', show_footprint=True,)# 画轨迹
+        vis.draw_trajectory(traj,'.-', show_footprint=True, color='C2')# 画轨迹
+        vis.draw_ego_vehicle(ego_veh_state, color='C0', fill=True, alpha=0.3, linestyle='-', linewidth=1.5) # 画自车
         # plt.axis('equal')
         # plt.tight_layout()
-        plt.xlim([ego_veh_state.x() - 20, ego_veh_state.x() + 80])
-        plt.ylim([ego_veh_state.y() - 5, ego_veh_state.y() + 5])
+        vis.ego_centric_view(ego_veh_state.x(), ego_veh_state.y(), [-20,80], [-5,5])
+        # plt.xlim([ego_veh_state.x() - 20, ego_veh_state.x() + 80])
+        # plt.ylim([ego_veh_state.y() - 5, ego_veh_state.y() + 5])
         plt.pause(0.01)
         snapshot.snap(plt.gca())
 
