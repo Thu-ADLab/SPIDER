@@ -87,7 +87,7 @@ class HighwayEnvInterface:
 
         return ego_veh_state, perception, local_map
 
-    def convert_to_action(self, planner_output, planner_dt=None):
+    def convert_to_action(self, planner_output, planner_dt=None, gain_coef=1.1):
         if planner_output is None:
             raise AssertionError("The planner outputs NO results. Please check whether it can find a valid solution, and it is recommended to add a fallback trajectory generation scheme.")
 
@@ -99,7 +99,7 @@ class HighwayEnvInterface:
             # todo: 现在没有统一轨迹中,a的定义是从t0开始还是t1开始。目前默认是从t0开始，所以下一刻要执行的是t1的
             if len(planner_output.a) == 0 or len(planner_output.steer) == 0:
                 raise AssertionError("The trajectory lacks the acceleration or steering_angle information!")
-            acc, steer = planner_output.a[1], planner_output.steer[1]
+            acc, steer = gain_coef*planner_output.a[1], gain_coef*planner_output.steer[1]
             return acc, steer
 
         else:  # 控制量

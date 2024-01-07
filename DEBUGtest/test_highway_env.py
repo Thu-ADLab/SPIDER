@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 
 def test_benchmark_api():
-    steps, dt = 20, 0.1
+    steps, dt = 10, 0.2
 
     benchmark = HighwayEnvBenchmark(dt=dt, config={"max_steps":200})
 

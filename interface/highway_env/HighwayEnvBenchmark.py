@@ -28,6 +28,7 @@ class HighwayEnvBenchmark(BaseBenchmark):
             warnings.warn("You should set absolute=True,normalize=False.")
         super(HighwayEnvBenchmark, self).__init__(config)
         self.config["env_config"]["policy_frequency"] = int(1/dt)
+        self.config["env_config"]["simulation_frequency"] = int(1 / dt)
         # self.config["env_config"]["offscreen_rendering"]: True
 
         self.interface:HighwayEnvInterface = None
@@ -124,7 +125,8 @@ class HighwayEnvBenchmark(BaseBenchmark):
             surface = self.env.unwrapped.viewer.sim_surface
             offscreen = self.env.unwrapped.viewer.offscreen
 
-            traj_points_px = [[*surface.pos2pix(traj.x[0], traj.y[0])]] # 在像素坐标系中的轨迹点，先加入第一个轨迹点（当前点）
+            # traj_points_px = [[*surface.pos2pix(traj.x[0], traj.y[0])]] # 在像素坐标系中的轨迹点，先加入第一个轨迹点（当前点）
+            traj_points_px = []# todo: 直接加入第一个点好像会有问题，很奇怪
             for i in range(1, traj.steps):
                 env_veh = Vehicle(None, position=[traj.x[i], traj.y[i]], heading=traj.heading[i], speed=traj.v[i])
                 env_veh.action = {'steering': traj.steer[i], 'acceleration': traj.a[i]}
@@ -334,7 +336,7 @@ class HighwayEnvBenchmarkGUI:
             # config_dict["env_config"]["policy_frequency"] = int(config_dict["env_config"]["policy_frequency"])
 
 
-            steps, dt = 20, 0.1
+            steps, dt = 30, 0.1
             # 创建HighwayEnvBenchmark对象
             benchmark = HighwayEnvBenchmark(dt, config_dict)
 
@@ -343,10 +345,11 @@ class HighwayEnvBenchmarkGUI:
                 "steps": steps,
                 'dt': dt,
                 "max_speed": 120 / 3.6,
-                "end_s_candidates": (10, 20, 40, 60),
+                "end_s_candidates": (10, 20, 40, 80),
                 "end_l_candidates": (-4, 0, 4),  # s,d采样生成横向轨迹 (-3.5, 0, 3.5), #
-                "end_v_candidates": tuple(i * 120 / 3.6 / 4 for i in range(5)),  # 改这一项的时候，要连着限速一起改了
-                "end_T_candidates": (1, 2, 4, 8),  # s_dot, T采样生成纵向轨迹
+                "end_v_candidates": tuple(i * 100 / 3.6 / 4 for i in range(5)),  # 改这一项的时候，要连着限速一起改了
+                "end_T_candidates": (1, 2, 4, 8, 10),  # s_dot, T采样生成纵向轨迹
+                # "constraint_flags":{}
             })
 
             # 执行test函数

@@ -64,7 +64,7 @@ class LatticePlanner(BasePlanner):
             "dt": 0.1,
             "ego_veh_length": 5.0,
             "ego_veh_width": 2.0,
-            "max_speed": 60/3.6,
+            "max_speed": 65/3.6,
             "min_speed": 0,
             "max_acceleration": 10,
             "max_deceleration": 10,
