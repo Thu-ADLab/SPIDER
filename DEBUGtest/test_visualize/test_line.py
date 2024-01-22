@@ -1,4 +1,5 @@
-from spider.visualize.line import *
+from spider.visualize import *
+from spider.elements import  Trajectory
 
 from copy import deepcopy
 plt.figure(figsize=(15,3))

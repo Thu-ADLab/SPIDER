@@ -1,2 +1,2 @@
-from spider.evaluator.CostEvaluator import FrenetCostEvaluator
+from spider.evaluator.CostEvaluator import FrenetCostEvaluator, CartCostEvaluator
 

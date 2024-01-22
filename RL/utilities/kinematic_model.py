@@ -46,7 +46,7 @@ class Car:
 
 class KinematicBicycleModel():
 
-    def __init__(self, wheelbase=1.0, max_steer=1.5, dt=0.1, c_r=0.0, c_a=0.0):
+    def __init__(self, wheelbase=3.0, max_steer=1.5, dt=0.1, c_r=0.0, c_a=0.0):
         """
         2D Kinematic Bicycle Model
 

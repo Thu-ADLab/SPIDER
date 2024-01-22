@@ -1,5 +1,5 @@
 from spider.elements.trajectory import Trajectory, FrenetTrajectory
-from spider.elements.curves import ParametricCurve, ExplicitCurve
+from spider.elements.curves import ParametricCurve, ExplicitCurve, BezierCurve
 import numpy as np
 
 class LatLonCombiner:
@@ -54,35 +54,42 @@ class PVDCombiner:
         '''
         if not all([isinstance(path_generator, ParametricCurve) for path_generator in path_generators]):
             raise NotImplementedError("Only support ParametricCurve for path in PVDCombiner for now...")
-        if not all([isinstance(displacement_generator, ParametricCurve) for displacement_generator in displacement_generators]):
+        if not all([isinstance(displacement_generator, ExplicitCurve) for displacement_generator in displacement_generators]):
             raise NotImplementedError("Only support Curve for displacement in PVDCombiner for now...")
 
-        ts = [self.dt * i for i in range(self.steps)]
+        ts = np.arange(self.steps) * self.dt
         candidate_trajectories = []
 
         for displacement_generator in displacement_generators:
             # todo: 改向量化的ts
-            ss, dss, ddss, dddss = [[displacement_generator(t, order) for t in ts] for order in range(4)] ## ss是绝对坐标
+            ss, vs, accs, jerks = [displacement_generator(ts, order) for order in range(4)] ## ss是绝对坐标
             # ss_abs = [s + ego_s0 for s in ss]  # 注意，加上ego_s0这一步非常重要,从相对变为绝对frenet坐标
             s0 = ss[0]
+            displacement = ss - s0
+            vvs = vs ** 2
             for path_generator in path_generators:
                 # 可以把ss一起放进去，不用一个个扔进去
-                xys, dxys, ddxys, dddxys = [[path_generator(s-s0, order) for s in ss] for order in range(4)]
+                xys, dxys, ddxys = [path_generator(displacement, order) for order in range(3)]
 
                 traj = Trajectory(self.steps, self.dt)
                 traj.t = ts
-                traj.x, traj.y = xys
-                traj.v = np.linalg.norm(dxys, axis=1)
-                traj.heading = np.arctan2(dxys[:,1], dxys[:,0])
-                traj.a = np.linalg.norm(ddxys, axis=1)
+                traj.x, traj.y = xys.T
+                dx, dy = dxys.T  # the derivative of x,y to s(displacement)
+                traj.heading = np.arctan2(dy, dx)
+                ddx, ddy = ddxys.T
+                traj.curvature = np.abs(ddy * dx - ddx * dy) / (dx ** 2 + dy ** 2) ** 1.5
 
-                traj.steer = []
-                traj.curvature = []
-                traj.centripetal_acceleration = []
+                traj.v = vs#np.linalg.norm(dxys, axis=1)
+                traj.a = accs#np.linalg.norm(ddxys, axis=1)
+                traj.jerk = jerks
 
+                # traj.steer = []
+                traj.centripetal_acceleration = vvs * traj.curvature
 
-                # traj.s, traj.s_dot, traj.s_2dot, traj.s_3dot = ss, dss, ddss, dddss
-                # traj.l, traj.l_prime, traj.l_2prime, traj.l_3prime = ls, dls, ddls, dddls
+                # debug_info
+                if isinstance(path_generator, BezierCurve):
+                    traj.debug_info["control_points"] = path_generator.control_points
+
                 candidate_trajectories.append(traj)
 
         return candidate_trajectories

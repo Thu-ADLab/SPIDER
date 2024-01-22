@@ -3,6 +3,42 @@ import numpy as np
 from typing import List
 
 
+class CartCostEvaluator:
+    def __init__(self):
+        # self.weight_lat_comfort = 5.0
+        # self.weight_long_comfort = 1.0
+
+        self.weight_comfort = 1.0
+        self.weight_efficiency = 40.0
+        self.weight_safety = 1.0
+
+    def evaluate(self, traj: FrenetTrajectory):
+        '''
+        评价舒适性、通行效率、安全性
+        '''
+
+        comfort = np.sum(np.asarray(traj.jerk) ** 2) + \
+                    np.sum(np.abs(traj.centripetal_acceleration))
+
+        efficiency = -np.sum(traj.v)
+
+        safety = 0#np.sum(np.array(traj.l) ** 2)
+
+        cost = self.weight_comfort * comfort +\
+               self.weight_efficiency * efficiency +\
+               self.weight_safety * safety
+
+        return cost
+
+    def evaluate_candidates(self, trajectory_list:List[FrenetTrajectory]):
+        all_cost = [self.evaluate(t) for t in trajectory_list]
+        idx = list(range(len(all_cost)))
+        sorted_cost, sorted_idx = zip(*sorted(zip(all_cost, idx)))
+        sorted_trajectories = [trajectory_list[i] for i in sorted_idx]
+        # sorted_cost, sorted_trajectories = zip(*sorted(zip(all_cost, trajectory_list)))
+        return sorted_trajectories,sorted_cost
+
+
 class FrenetCostEvaluator:
     def __init__(self):
         self.weight_lat_comfort = 5.0

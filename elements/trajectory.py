@@ -43,6 +43,8 @@ class Trajectory(Path):
         self.steer_velocity = []
         self.jerk = []
         self.centripetal_acceleration = []
+
+        self.debug_info: dict = {} # to store some necessary debug information
         pass
 
     @classmethod

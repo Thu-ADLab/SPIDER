@@ -114,7 +114,7 @@ class ExplicitCurve:
         return curvature
 
     def _isscalar(self, x):
-        return np.isscalar(x) and np.ndim(x)==0
+        return np.isscalar(x) or np.ndim(x)==0
 
 
 ################ 多项式曲线 ################
@@ -1072,7 +1072,7 @@ class ParametricCurve:
         return k
 
     def _isscalar(self, x):
-        return np.isscalar(x) and np.ndim(x)==0
+        return np.isscalar(x) or np.ndim(x)==0
 
 
 
@@ -1104,22 +1104,22 @@ class ParametricCubicSpline(ParametricCurve):
     def calc_point(self, s):
         x = self.sx.calc_point(s)
         y = self.sy.calc_point(s)
-        return x, y
+        return np.array([x,y]).T#x, y
 
     def calc_first_derivative(self, s):
         dx = self.sx.calc_first_derivative(s)
         dy = self.sy.calc_first_derivative(s)
-        return dx, dy
+        return np.array([dx, dy]).T #dx, dy
 
     def calc_second_derivative(self, s):
         ddx = self.sx.calc_second_derivative(s)
         ddy = self.sy.calc_second_derivative(s)
-        return ddx, ddy
+        return np.array([ddx, ddy]).T #ddx, ddy
 
     def calc_third_derivative(self, s):
         dddx = self.sx.calc_third_derivative(s)
         dddy = self.sy.calc_third_derivative(s)
-        return dddx, dddy
+        return np.array([dddx, dddy]).T #dddx, dddy
 
 
 ################# 贝塞尔曲线 #####################
@@ -1140,6 +1140,7 @@ class BezierCurve(ParametricCurve):
 
         self._derivative_bezier_curve = None
         self._arclength = None
+        self._s2t = None # displacement to parameter t
 
         # if pre_calculation:
         #     # 提前计算二项式系数
@@ -1162,23 +1163,25 @@ class BezierCurve(ParametricCurve):
         if self._arclength is None:
             ts = np.linspace(0, 1, 500)
             pts = self.calc_point_t(ts).astype(dtype=np.float32)
-            self._arclength = _arclength(pts, closed=False)# 用cv2的函数会比自己写的稍快一些
+            # self._arclength = _arclength(pts, closed=False)# 用cv2的函数会比自己写的稍快一些
             #self._arclength = cv2.arcLength(pts, closed=False)
-            # delta_xy = np.diff(pts, axis=0)
-            # delta = np.linalg.norm(delta_xy,axis=1)
-            # self._arclength = np.sum(delta)
+            delta_xy = np.diff(pts, axis=0)
+            delta = np.linalg.norm(delta_xy,axis=1)
+            ss = np.insert(np.cumsum(delta), 0, 0.0)
+            self._s2t = scipy.interpolate.interp1d(ss, ts, kind='linear')
+            self._arclength = self._s2t.x[-1]# np.sum(delta)
         return self._arclength
 
-    # @property
-    # def arclength2(self):
-    #     # qzl: 这里要再考虑一下，如果弧线长度很长，但采样的点还是500个，会不会造成弧长的近似严重不符合事实？
-    #     if self._arclength is None:
-    #         ts = np.linspace(0, 1, 500)
-    #         pts = self.calc_point_t(ts)
-    #         delta_xy = np.diff(pts, axis=0)
-    #         delta = np.linalg.norm(delta_xy,axis=1)
-    #         self._arclength = np.sum(delta)
-    #     return self._arclength
+    def get_t_for_displacement(self, s):
+        if self._s2t is None:
+            ts = np.linspace(0, 1, 500)
+            pts = self.calc_point_t(ts).astype(dtype=np.float32)
+            delta_xy = np.diff(pts, axis=0)
+            delta = np.linalg.norm(delta_xy,axis=1)
+            ss = np.cumsum(delta)
+            ss = np.insert(ss, 0, 0.0)
+            self._s2t = scipy.interpolate.interp1d(ss, ts, kind='linear')
+        return self._s2t(s)
 
 
     def _binom(self, n, i):
@@ -1207,7 +1210,7 @@ class BezierCurve(ParametricCurve):
             point = np.zeros((num_pts, 2), dtype=float)
 
         t = np.asarray(t)
-        assert np.all(t <= 1) and np.all(t >= 0)
+        # assert np.all(t <= 1) and np.all(t >= 0)
 
         for i in range(self.n+1):
             point += np.outer(self._binom(self.n, i) *
@@ -1250,17 +1253,109 @@ class BezierCurve(ParametricCurve):
         else:
             return self.derivative_bezier_curve.calc_second_derivative_t(t)
 
+    def _out_of_range_flag(self, s) -> Union[bool, np.ndarray]:
+        '''
+        if x is a scalar, return bool
+        if x is an array, return a boolean array with the same size
+        '''
+        return (s < 0.) | (s > self.arclength)  # 不可以用or， 因为要考虑array情况
+
     def calc_point(self, s):
-        return self.calc_point_t( np.asarray(s) / self.arclength )
+        s = np.asarray(s, dtype=float)
+        extra_mask = self._out_of_range_flag(s)
+        if np.any(extra_mask):
+            val = np.empty(shape=(*s.shape, 2))
+            val[extra_mask] = self.extrapolate(s[extra_mask], order=0)  # 数据范围外，按外推规则计算
+            val[~extra_mask] = self.calc_point_t(self.get_t_for_displacement(s[~extra_mask]))  # 数据范围内，直接计算
+        else:
+            val = self.calc_point_t(self.get_t_for_displacement(s))
+
+        return val
 
     def calc_first_derivative(self, s):
-        return self.calc_first_derivative_t( np.asarray(s) / self.arclength )
+        s = np.asarray(s, dtype=float)
+        extra_mask = self._out_of_range_flag(s)
+        if np.any(extra_mask):
+            val = np.empty(shape=(*s.shape, 2))
+            val[extra_mask] = self.extrapolate(s[extra_mask], order=1)  # 数据范围外，按外推规则计算
+            val[~extra_mask] = self.calc_first_derivative_t(self.get_t_for_displacement(s[~extra_mask]))  # 数据范围内，直接计算
+        else:
+            val = self.calc_first_derivative_t(self.get_t_for_displacement(s))
+
+        return val
 
     def calc_second_derivative(self, s):
-        return self.calc_second_derivative_t( np.asarray(s) / self.arclength )
+        s = np.asarray(s, dtype=float)
+        extra_mask = self._out_of_range_flag(s)
+        if np.any(extra_mask):
+            val = np.empty(shape=(*s.shape, 2))
+            val[extra_mask] = self.extrapolate(s[extra_mask], order=2)  # 数据范围外，按外推规则计算
+            val[~extra_mask] = self.calc_second_derivative_t(self.get_t_for_displacement(s[~extra_mask]))  # 数据范围内，直接计算
+        else:
+            val = self.calc_second_derivative_t(self.get_t_for_displacement(s))
+
+        return val
 
     def calc_third_derivative(self, s):
-        return self.calc_third_derivative_t( np.asarray(s) / self.arclength )
+        s = np.asarray(s, dtype=float)
+        extra_mask = self._out_of_range_flag(s)
+        if np.any(extra_mask):
+            val = np.empty(shape=(*s.shape, 2))
+            val[extra_mask] = self.extrapolate(s[extra_mask], order=3)  # 数据范围外，按外推规则计算
+            val[~extra_mask] = self.calc_third_derivative_t(self.get_t_for_displacement(s[~extra_mask]))  # 数据范围内，直接计算
+        else:
+            val = self.calc_third_derivative_t(self.get_t_for_displacement(s))
+
+        return val
+
+    # def calc_first_derivative(self, s):
+    #     return self.calc_first_derivative_t( np.asarray(s) / self.arclength )
+    #
+    # def calc_second_derivative(self, s):
+    #     return self.calc_second_derivative_t( np.asarray(s) / self.arclength )
+    #
+    # def calc_third_derivative(self, s):
+    #     return self.calc_third_derivative_t( np.asarray(s) / self.arclength )
+
+    def extrapolate(self, s, order):
+        '''
+        在超出已知数据范围的点上进行插值/外推，默认保持二阶导为0然后外推，即保持起点或终点的斜率
+        please notice that, if any x in the valid_x_range, the corresponding y maintains 0 value
+        '''
+        val = np.zeros(shape=(*s.shape, 2))
+        if val.size == 0:
+            return val
+
+        s_0, s_end = 0., self.arclength
+        if order == 0:
+            yaw_0 = self.calc_yaw(s_0)
+            yaw_e = self.calc_yaw(s_end)
+            # dx_ds_0, dy_ds_0 = self.evaluate(s_0, order=1).T
+            # dx_ds_e, dy_ds_e = self.evaluate(s_end, order=1).T
+            x_0, y_0 = self.evaluate(s_0, order=0)
+            x_e, y_e = self.evaluate(s_end, order=0)
+
+            delta_s_e = s[s > s_end] - s_end
+            val[s > s_end] = np.array([
+                x_e + np.cos(yaw_e) * delta_s_e,
+                y_e + np.sin(yaw_e) * delta_s_e
+            ]).T
+
+            delta_s_0 = s[s < s_0] - s_0
+            val[s < s_0] = np.array([
+                x_0 + np.cos(yaw_0) * delta_s_0,
+                y_e + np.sin(yaw_0) * delta_s_0
+            ]).T
+        elif order == 1:
+            dx_ds_0, dy_ds_0 = self.evaluate(s_0, order=1).T
+            dx_ds_e, dy_ds_e = self.evaluate(s_end, order=1).T
+
+            val[s > s_end] = np.array([dx_ds_e, dy_ds_e]).T
+            val[s < s_0] = np.array([dx_ds_0, dy_ds_0]).T
+        else:
+            pass  # because the higher order derivative is 0 anyway.
+
+        return val
 
 
 

@@ -87,7 +87,7 @@ class HighwayEnvInterface:
 
         return ego_veh_state, perception, local_map
 
-    def convert_to_action(self, planner_output, planner_dt=None, gain_coef=1.1):
+    def convert_to_action(self, planner_output, planner_dt=None, gain_coef=1.1, wheelbase=3.0):
         if planner_output is None:
             raise AssertionError("The planner outputs NO results. Please check whether it can find a valid solution, and it is recommended to add a fallback trajectory generation scheme.")
 
@@ -97,9 +97,25 @@ class HighwayEnvInterface:
         if self.output_flag == spider.OUTPUT_TRAJECTORY:  # 轨迹
             # todo: 注意，这里没有用控制算法出控制量，直接用差分法出控制量按道理是不对的，以后要改掉
             # todo: 现在没有统一轨迹中,a的定义是从t0开始还是t1开始。目前默认是从t0开始，所以下一刻要执行的是t1的
-            if len(planner_output.a) == 0 or len(planner_output.steer) == 0:
-                raise AssertionError("The trajectory lacks the acceleration or steering_angle information!")
-            acc, steer = gain_coef*planner_output.a[1], gain_coef*planner_output.steer[1]
+            if len(planner_output.a) > 0:
+                acc = gain_coef * planner_output.a[1]
+            else:
+                try:
+                    acc = gain_coef * (planner_output.v[1] - planner_output.v[0]) / planner_output.dt
+                except:
+                    raise AssertionError("The trajectory lacks the acceleration information!")
+
+            if len(planner_output.steer) > 0:
+                steer = gain_coef * planner_output.steer[1]
+            else:
+                try:
+                    steer = gain_coef * np.arctan(planner_output.curvature[1]*wheelbase) / planner_output.dt
+                except:
+                    raise AssertionError("The trajectory lacks the steer information!")
+            # if len(planner_output.a) == 0 or len(planner_output.steer) == 0:
+            #     raise AssertionError("The trajectory lacks the acceleration or steering_angle information!")
+            # else:
+            #     acc, steer = gain_coef*planner_output.a[1], gain_coef*planner_output.steer[1]
             return acc, steer
 
         else:  # 控制量
