@@ -69,6 +69,7 @@ class PiecewiseLatticePlanner(BasePlanner):
             "max_deceleration": 10,
             # "max_centripetal_acceleration" : 100,
             "max_curvature": 100,
+            "safe_distance": (1.0, 0.2),
             "delta_s": 12,
             "max_seg_num": 3,
             "l_candidates": (-3.5,0,3.5), # s,d采样生成横向轨迹 (-3.5, 0, 3.5), #

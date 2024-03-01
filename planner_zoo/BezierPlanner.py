@@ -62,6 +62,7 @@ class BezierPlanner(BasePlanner):
             "max_deceleration": 10,
             # "max_centripetal_acceleration" : 100,
             "max_curvature": 100,
+            "safe_distance": (1.0, 0.2),
             "end_s_candidates": (20,30),
             "end_l_candidates": (-3.5, 0, 3.5),
             "end_v_candidates": tuple(i * 60 / 3.6 / 3 for i in range(4)),  # 改这一项的时候，要连着限速一起改了

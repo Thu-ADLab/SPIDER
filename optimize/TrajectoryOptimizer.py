@@ -38,7 +38,7 @@ def generate_corridor_bboxes(initial_guess:np.ndarray, bboxes:TrackingBoxList,
         # if t == 0:
         #     continue
 
-        collision_checker.setObstacles(bboxes_vertices=bboxes.getBoxVertices(step=i))
+        collision_checker.set_obstacles(bboxes_vertices=bboxes.getBoxVertices(step=i))
 
         seed = np.float64([x-0.01, y-0.01, x+0.01, y+0.01])  # 坍缩为一个小区域,四个方向发散以扩展
         sign = [-1, -1, 1, 1]
@@ -54,7 +54,7 @@ def generate_corridor_bboxes(initial_guess:np.ndarray, bboxes:TrackingBoxList,
                 temp_space = space.copy()
                 temp_space[j] += sign[j] * delta
 
-                collision_checker.setEgoVehicleBox(AABB_vertices(temp_space))
+                collision_checker.set_ego_box(AABB_vertices(temp_space))
 
                 if np.abs(temp_space[j] - seed[j]) > max_expand or collision_checker.check() or \
                         (road_bound[j]-temp_space[j])*sign[j]<0:

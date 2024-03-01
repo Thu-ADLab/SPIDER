@@ -3,14 +3,14 @@ from spider.utils.collision.SAT import SAT_check
 from spider.utils.collision.disks import disk_check_for_box
 from spider.utils.collision.AABB import AABB_check
 from spider.elements.trajectory import Trajectory
-from spider.elements.Box import TrackingBoxList, obb2vertices, vertices2obb
+from spider.elements.Box import TrackingBoxList, obb2vertices, vertices2obb, dilate
 import spider
 # from spider.param import *
 
 
 class BaseCollisionChecker(ABC):
-    def __init__(self, method_flag):
-        self.method = method_flag
+    def __init__(self, method):
+        self.method = method
         pass
 
     @abstractmethod
@@ -24,8 +24,9 @@ class BaseCollisionChecker(ABC):
 
 
 class BoxCollisionChecker(BaseCollisionChecker):
-    def __init__(self, ego_veh_length=5., ego_veh_width=2., method_flag=spider.COLLISION_CHECKER_SAT):
-        super(BoxCollisionChecker, self).__init__(method_flag)
+    def __init__(self, ego_veh_length=5., ego_veh_width=2.,
+                 method=spider.COLLISION_CHECKER_SAT, safe_dist=(0.0, 0.0)):
+        super(BoxCollisionChecker, self).__init__(method)
         # self.method = method_flag
         self.ego_box_vertices = None
 
@@ -35,6 +36,7 @@ class BoxCollisionChecker(BaseCollisionChecker):
         self.ego_length = ego_veh_length #0.
         self.ego_width = ego_veh_width
 
+        self.safe_dist = safe_dist # 分别为纵向、横向的安全距离阈值
 
         # todo: 这里以后考虑一下如何和vertices统一
         self.ego_box_obb = None
@@ -44,12 +46,13 @@ class BoxCollisionChecker(BaseCollisionChecker):
         self.ego_length = length
         self.ego_width = width
 
-    def setEgoVehicleBox(self,ego_box_vertices=None):
+    # setEgoVehicleBox
+    def set_ego_box(self, ego_box_vertices=None):
         self.ego_box_vertices = ego_box_vertices
         if self.method == spider.COLLISION_CHECKER_DISK: # todo:以后去掉
             self.ego_box_obb = vertices2obb(ego_box_vertices)
 
-    def setObstacles(self, bboxes_vertices=None):
+    def set_obstacles(self, bboxes_vertices=None):
         self.bboxes_vertices = bboxes_vertices
         if self.method == spider.COLLISION_CHECKER_DISK:  # todo:以后去掉
             self.bboxes_obb = [vertices2obb(vs) for vs in bboxes_vertices]
@@ -61,18 +64,22 @@ class BoxCollisionChecker(BaseCollisionChecker):
 
         for i in range(traj.steps):
             x, y, heading = traj.x[i], traj.y[i], traj.heading[i]
-            ego_box_vertices = obb2vertices([x,y,self.ego_length,self.ego_width,heading])
+            ego_box_vertices = obb2vertices(
+                [x, y, self.ego_length+2*self.safe_dist[0], self.ego_width+2*self.safe_dist[1], heading])
             collision = self.check(ego_box_vertices, predicted_obstacles.getBoxVertices(i))
             if collision:
                 return True
         return False
 
 
-    def check(self, ego_box_vertices=None, bboxes_vertices=None):
+    def check(self, ego_box_vertices=None, bboxes_vertices=None, safe_dilate=False):
         if not (ego_box_vertices is None):
-            self.setEgoVehicleBox(ego_box_vertices)
+            self.set_ego_box(ego_box_vertices)
         if not (bboxes_vertices is None):
-            self.setObstacles(bboxes_vertices)
+            self.set_obstacles(bboxes_vertices)
+
+        if safe_dilate:
+            self.set_ego_box(dilate(ego_box_vertices, 2*self.safe_dist[0], 2*self.safe_dist[1]))
 
 
         collision = False

@@ -41,7 +41,7 @@ def generate_corridor_bboxes(initial_guess:Trajectory, bboxes:TrackingBoxList,
 
     # bboxes.dilate(radius)
     # bboxes.predict(initial_guess.x) # TODO:QZL:是不是要把预测放到外面
-    collision_checker = BoxCollisionChecker(spider.COLLISION_CHECKER_SAT)
+    collision_checker = BoxCollisionChecker(method=spider.COLLISION_CHECKER_SAT)
 
     corridor = []
     for i in range(len(initial_guess.t)):
@@ -50,8 +50,8 @@ def generate_corridor_bboxes(initial_guess:Trajectory, bboxes:TrackingBoxList,
         if t == 0:
             continue
 
-        # collision_checker.setEgoVehicleBox(obb2vertices((x,y,ego_veh_size[0],ego_veh_size[1],heading)))
-        collision_checker.setObstacles(bboxes_vertices=bboxes.getBoxVertices(step=i))
+        # collision_checker.set_ego_box(obb2vertices((x,y,ego_veh_size[0],ego_veh_size[1],heading)))
+        collision_checker.set_obstacles(bboxes_vertices=bboxes.getBoxVertices(step=i))
 
         seed = np.float32([x-0.1, y-0.1, x+0.1, y+0.1])  # 坍缩为一个小区域,四个方向发散以扩展
         sign = [-1, -1, 1, 1]
@@ -66,7 +66,7 @@ def generate_corridor_bboxes(initial_guess:Trajectory, bboxes:TrackingBoxList,
                 temp_space = space.copy()
                 temp_space[j] += sign[j] * delta
 
-                collision_checker.setEgoVehicleBox(AABB_vertices(temp_space))
+                collision_checker.set_ego_box(AABB_vertices(temp_space))
 
                 if np.abs(temp_space[j] - seed[j]) > max_expand or collision_checker.check():
                     # 超界 或者 碰撞

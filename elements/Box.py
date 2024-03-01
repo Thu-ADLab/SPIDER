@@ -50,6 +50,10 @@ def vertices2obb(vertices):
         heading = np.arctan2(edges[1][1], edges[1][0])
     return [xc,yc,length,width,heading]
 
+def dilate(vertices, length_add, width_add):
+    xc, yc, length, width, heading = vertices2obb(vertices)
+    return obb2vertices((xc, yc, length+length_add, width+width_add, heading))
+
 
 class BoundingBox:
 
