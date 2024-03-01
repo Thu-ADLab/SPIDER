@@ -9,6 +9,7 @@ class Path:
         self.y = []
         self.heading = []
         self.curvature = []
+
         self.s = []
         self.l = []
 
@@ -32,6 +33,13 @@ class Path:
         pass
 
 class Trajectory(Path):
+
+    _sequential_properties = [
+        'a', 'centripetal_acceleration', 'curvature', 'heading', 'jerk', 'l',
+        's', 'steer', 'steer_velocity', 'v', 'x', 'y' , 'debug_info',
+        #'t' # 注意，t不应该被裁剪、串联等等
+    ]
+
     def __init__(self, steps, dt=0.1):
         super(Trajectory, self).__init__()
         self.steps = steps
@@ -75,6 +83,40 @@ class Trajectory(Path):
     def densify(self):
         # 时间维度的
         pass
+
+    def truncate(self, steps_num):
+        self.steps = steps_num # 有没有必要呢？
+        for prop_name in self._sequential_properties:
+            seq = getattr(self, prop_name)
+            if isinstance(seq, dict):
+                for key in seq:
+                    seq[key] = seq[key][:steps_num]
+                setattr(self, prop_name, seq)
+            else:
+                setattr(self, prop_name, seq[:steps_num])
+        return self
+
+    def __add__(self, other):
+        if isinstance(other, Trajectory):
+            return self.concat(other)
+        else:
+            raise ValueError("Addition not supported between Trajectory and non-Trajectory")
+
+    def concat(self, trajectory):
+        assert self.dt == trajectory.dt
+        # self.steps = self.steps + trajectory.steps # 有没有必要呢？
+
+        for prop_name in self._sequential_properties:
+            seq1, seq2 = getattr(self, prop_name), getattr(trajectory, prop_name)
+            if isinstance(seq1, dict):
+                for key in seq1:
+                    seq1[key] = np.concatenate((seq1[key], seq2[key]))
+                setattr(self, prop_name, seq1)
+            else:
+                setattr(self, prop_name, np.concatenate((seq1, seq2)))
+        return self
+
+
 
     def step(self, veh_model:Bicycle, accs, steers=None):
         # 要考虑轨迹第一个点是不是t=1*dt，这里认为是的

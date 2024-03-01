@@ -56,10 +56,10 @@ def demo():
     #     lane = Lane(idx, cline, width=3.5, speed_limit=60 / 3.6)
     #     local_map.lanes.append(lane)
     # # 感知信息
-    # tb_list = TrackingBoxList()
-    # tb_list.append(TrackingBox(obb=(50, 0, 5, 2, np.arctan2(0.2, 5)), vx=5, vy=0.2))
-    # tb_list.append(TrackingBox(obb=(100, 0, 5, 2, 0), vx=5, vy=0))
-    # tb_list.append(TrackingBox(obb=(200, -10, 1, 1, np.pi/2), vx=0, vy=1.0)) # 横穿马路
+    # obstacles = TrackingBoxList()
+    # obstacles.append(TrackingBox(obb=(50, 0, 5, 2, np.arctan2(0.2, 5)), vx=5, vy=0.2))
+    # obstacles.append(TrackingBox(obb=(100, 0, 5, 2, 0), vx=5, vy=0))
+    # obstacles.append(TrackingBox(obb=(200, -10, 1, 1, np.pi/2), vx=0, vy=1.0)) # 横穿马路
     #
     # lattice_planner = LatticePlanner()
     # lattice_planner.configure({
@@ -85,7 +85,7 @@ def demo():
     #     # 定位信息更新,本应该放在前面从gps拿，这里直接假设完美控制，在后面从控制拿了
     #     # ego_veh_state = ...
     #
-    #     traj = lattice_planner.plan(ego_veh_state, tb_list)  # , local_map)
+    #     traj = lattice_planner.plan(ego_veh_state, obstacles)  # , local_map)
     #
     #     # 可视化
     #     plt.cla()
@@ -93,7 +93,7 @@ def demo():
     #         plt.plot(lane.centerline[:, 0], lane.centerline[:, 1], color='gray', linestyle='--', lw=1.5)  # 画地图
     #     # vis.draw_ego_vehicle(ego_veh_state, color='green', fill=True, alpha=0.2, linestyle='-', linewidth=1.5) # 画自车
     #
-    #     for tb in tb_list:
+    #     for tb in obstacles:
     #         vis.draw_boundingbox(tb, color='black',fill=True, alpha=0.1, linestyle='-', linewidth=1.5)# 画他车
     #         # 画他车预测轨迹
     #         tb_pred_traj = np.column_stack((tb.x + traj.t * tb.vx, tb.y+traj.t*tb.vy))
@@ -116,7 +116,7 @@ def demo():
     #     ego_veh_state.kinematics.speed, ego_veh_state.kinematics.acceleration, ego_veh_state.kinematics.curvature \
     #         = traj.v[1], traj.a[1], traj.curvature[1]
     #
-    #     for tb in tb_list:
+    #     for tb in obstacles:
     #         tb.set_obb([tb.x+tb.vx*traj.dt, tb.y+tb.vy*traj.dt, tb.length, tb.width, tb.box_heading])
     #
     # plt.close()

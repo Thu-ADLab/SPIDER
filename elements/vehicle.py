@@ -23,10 +23,12 @@ class VehicleState:
     # length = 5.0
     # width = 2.0
     # 2D ONLY for now
-    def __init__(self, transform:Transform, velocity:Vector3D, acceleration:Vector3D, length=5.0, width=2.0):
-        self.transform = transform
-        self.velocity = velocity
-        self.acceleration = acceleration
+    def __init__(self, transform:Transform=None, velocity:Vector3D=None, acceleration:Vector3D=None,
+                 length=5.0, width=2.0):
+
+        self.transform = transform if not (transform is None) else Transform()
+        self.velocity = velocity if not (velocity is None) else Vector3D()
+        self.acceleration = acceleration if not (acceleration is None) else Vector3D()
         # todo: 标量值和矢量值如何在名字上区分呢？
         # self.speed = np.linalg.norm([velocity.x, velocity.y])
         # self.acc = np.linalg.norm([acceleration.x, acceleration.y])
@@ -78,6 +80,17 @@ class VehicleState:
             width=width
         )
 
+    @classmethod
+    def from_traj_step(cls, trajectory, step_index, length=5.0, width=2.0):
+        ego_state = cls(length=length, width=width)
+        idx = step_index
+        traj = trajectory
+        ego_state.transform.location.x, ego_state.transform.location.y, ego_state.transform.rotation.yaw \
+            = traj.x[idx], traj.y[idx], traj.heading[idx]
+        ego_state.kinematics.speed, ego_state.kinematics.acceleration, ego_state.kinematics.curvature \
+            = traj.v[idx], traj.a[idx], traj.curvature[idx]
+        return ego_state
+
 
 
 class KinematicState:
@@ -110,3 +123,8 @@ class FrenetKinematicState(KinematicState):
         self.l_2prime = None
         self.l_2dot = None
 
+
+if __name__ == '__main__':
+    temp = VehicleState()
+    a = 3
+    pass
