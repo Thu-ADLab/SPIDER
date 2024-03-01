@@ -33,7 +33,7 @@ class BaseBenchmark:
         pass
 
     @abstractmethod
-    def test(self, spider_planner, show_video:bool=False, save_video:bool=True):
+    def test(self, spider_planner, *args, **kwargs):
         '''
         给定一个planner，在设置好的环境里面开一遍，返回config中指定的metrics
         '''
@@ -57,22 +57,22 @@ class DummyBenchmark(BaseBenchmark):
     def __init__(self, config=None):
         super(DummyBenchmark, self).__init__(config)
         self.ego_veh_state = None
-        self.tb_list = None
+        self.obstacles = None
         self.local_map = None
 
-    # @classmethod
-    # def default_config(cls) -> dict:
-    #     """
-    #     :return: a configuration dict
-    #     """
-    #     return {
-    #         "max_steps": 100,
-    #         "random_seed": 666,
-    #         "offscreen_rendering": False,
-    #         "save_video": True,
-    #         "video_root": './videos/',
-    #         "video_name": 'benchmark.mp4'
-    #     }
+
+    @classmethod
+    def default_config(cls) -> dict:
+        """
+        :return: a configuration dict
+        """
+        return {
+            "random_seed": 666,
+            # "offscreen_rendering": False,
+            "save_video": True,
+            # "video_root": './videos/',
+            # "video_name": 'benchmark.mp4'
+        }
 
 
     def initial_environment(self):
@@ -109,11 +109,10 @@ class DummyBenchmark(BaseBenchmark):
         tb_list.append(TrackingBox(obb=(200, -10, 1, 1, np.pi / 2), vx=0, vy=1.0))  # 横穿马路
 
         self.ego_veh_state = ego_veh_state
-        self.tb_list = tb_list
+        self.obstacles = tb_list
         self.local_map = local_map
 
-
-    def test(self, spider_planner, show_video:bool=False, save_video:bool=True):
+    def test(self, spider_planner):
         '''
         给定一个planner，在设置好的环境里面开一遍，返回config中指定的metrics
         '''
@@ -127,7 +126,7 @@ class DummyBenchmark(BaseBenchmark):
         plt.figure(figsize=(14, 4))
         plt.axis('equal')
         plt.tight_layout()
-        snapshot = vis.SnapShot(True, 15)
+        snapshot = vis.SnapShot(True, 15, record_video=self.config["save_video"])
         ################## main loop ########################
         while True:
             if self.ego_veh_state.x() > 250: break
@@ -139,7 +138,7 @@ class DummyBenchmark(BaseBenchmark):
             # 定位信息更新,本应该放在前面从gps拿，这里直接假设完美控制，在后面从控制拿了
             # ego_veh_state = ...
 
-            traj = spider_planner.plan(self.ego_veh_state, self.tb_list)  # , local_map)
+            traj = spider_planner.plan(self.ego_veh_state, self.obstacles)  # , local_map)
 
             # 可视化
             plt.cla()
@@ -147,7 +146,7 @@ class DummyBenchmark(BaseBenchmark):
                 plt.plot(lane.centerline[:, 0], lane.centerline[:, 1], color='gray', linestyle='--', lw=1.5)  # 画地图
             # vis.draw_ego_vehicle(ego_veh_state, color='green', fill=True, alpha=0.2, linestyle='-', linewidth=1.5) # 画自车
 
-            for tb in self.tb_list:
+            for tb in self.obstacles:
                 vis.draw_boundingbox(tb, color='black', fill=True, alpha=0.1, linestyle='-', linewidth=1.5)  # 画他车
                 # 画他车预测轨迹
                 tb_pred_traj = np.column_stack((tb.x + traj.t * tb.vx, tb.y + traj.t * tb.vy))
@@ -174,13 +173,19 @@ class DummyBenchmark(BaseBenchmark):
             self.ego_veh_state.kinematics.speed, self.ego_veh_state.kinematics.acceleration, self.ego_veh_state.kinematics.curvature \
                 = traj.v[1], traj.a[1], traj.curvature[1]
 
-            for tb in self.tb_list:
+            for tb in self.obstacles:
                 tb.set_obb([tb.x + tb.vx * traj.dt, tb.y + tb.vy * traj.dt, tb.length, tb.width, tb.box_heading])
 
         plt.close()
         snapshot.print(3, 2, figsize=(15, 6))
         plt.show()
 
+
+    @classmethod
+    def get_environment_observation(cls):
+        benchmark = cls()
+        benchmark.initial_environment()
+        return benchmark.ego_veh_state, benchmark.obstacles, benchmark.local_map
 
     # def update_metrics(self, *args, **kwargs):
     #     pass
@@ -194,16 +199,16 @@ class DummyBenchmark(BaseBenchmark):
 
 if __name__ == '__main__':
     from spider.planner_zoo import LatticePlanner, BezierPlanner, PiecewiseLatticePlanner
-    # planner = LatticePlanner({
-    #     "steps": 15,
-    #     "dt": 0.2,
-    #     "end_l_candidates": (-3.5, 0, 3.5),
-    # })
-
-    planner = PiecewiseLatticePlanner({
+    planner = LatticePlanner({
         "steps": 15,
         "dt": 0.2,
+        "end_l_candidates": (-3.5, 0, 3.5),
     })
+
+    # planner = PiecewiseLatticePlanner({
+    #     "steps": 15,
+    #     "dt": 0.2,
+    # })
 
     benchmark = DummyBenchmark()
     benchmark.test(planner)

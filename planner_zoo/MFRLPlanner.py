@@ -310,7 +310,7 @@ if __name__ == '__main__':
             # 地图信息更新
 
             # 感知信息更新
-            # tb_list = TrackingBoxList()
+            # obstacles = TrackingBoxList()
 
             # 定位信息更新,本应该放在前面从gps拿，这里直接假设完美控制，在后面从控制拿了
             # ego_veh_state = ...
@@ -349,7 +349,7 @@ if __name__ == '__main__':
             # vertices = obb2vertices([ego_veh_state.x(), ego_veh_state.y(),5.,2.,ego_veh_state.yaw()])
             # vertices = np.vstack((vertices, vertices[0]))  # recurrent to close polyline
             # plt.plot(vertices[:, 0], vertices[:, 1], color='blue', linestyle='-', linewidth=1.5) # 画自车
-            # for tb in tb_list:
+            # for tb in obstacles:
             #     vertices = tb.vertices
             #     vertices = np.vstack((vertices, vertices[0]))  # recurrent to close polyline
             #     plt.plot(vertices[:, 0], vertices[:, 1], color='black', linestyle='-', linewidth=1.5)  # 画他车
@@ -425,7 +425,7 @@ if __name__ == '__main__':
                 # 地图信息更新
 
                 # 感知信息更新
-                # tb_list = TrackingBoxList()
+                # obstacles = TrackingBoxList()
 
                 # 定位信息更新,本应该放在前面从gps拿，这里直接假设完美控制，在后面从控制拿了
                 # ego_veh_state = ...
@@ -471,8 +471,8 @@ if __name__ == '__main__':
     #     lane = Lane(0, cline, width=3.5, speed_limit=30 / 3.6)
     #     local_map.lanes.append(lane)
     #     # 感知信息
-    #     tb_list = TrackingBoxList()
-    #     tb_list.append(TrackingBox(obb=(-3.5 / 2, 20, 5, 2, -math.pi / 2), vx=0, vy=-5))
+    #     obstacles = TrackingBoxList()
+    #     obstacles.append(TrackingBox(obb=(-3.5 / 2, 20, 5, 2, -math.pi / 2), vx=0, vy=-5))
     #
     #     # 定位信息
     #     ego_veh_state = VehicleState(
@@ -515,17 +515,17 @@ if __name__ == '__main__':
     #         # 地图信息更新
     #
     #         # 感知信息更新
-    #         for i in range(len(tb_list)):
-    #             tb = tb_list[i]
+    #         for i in range(len(obstacles)):
+    #             tb = obstacles[i]
     #             x, y, l, w, h = tb.obb
     #             x += tb.vx * rl_planner.config["dt"]
     #             y += tb.vy * rl_planner.config["dt"]
-    #             tb_list[i].set_obb((x, y, l, w, h))
+    #             obstacles[i].set_obb((x, y, l, w, h))
     #
     #         # 定位信息更新,本应该放在前面从gps拿，这里直接假设完美控制，在后面从控制拿了
     #         # ego_veh_state = ...
     #
-    #         traj = rl_planner.plan(ego_veh_state, tb_list, train=False)#, local_map)
+    #         traj = rl_planner.plan(ego_veh_state, obstacles, train=False)#, local_map)
     #
     #         if traj is None:
     #             break
@@ -537,7 +537,7 @@ if __name__ == '__main__':
     #         vertices = obb2vertices([ego_veh_state.x(), ego_veh_state.y(),5.,2.,ego_veh_state.yaw()])
     #         vertices = np.vstack((vertices, vertices[0]))  # recurrent to close polyline
     #         plt.plot(vertices[:, 0], vertices[:, 1], color='blue', linestyle='-', linewidth=1.5) # 画自车
-    #         for tb in tb_list:
+    #         for tb in obstacles:
     #             vertices = tb.vertices
     #             vertices = np.vstack((vertices, vertices[0]))  # recurrent to close polyline
     #             plt.plot(vertices[:, 0], vertices[:, 1], color='black', linestyle='-', linewidth=1.5)  # 画他车
@@ -591,8 +591,8 @@ if __name__ == '__main__':
     #     lane = Lane(0, cline, width=3.5, speed_limit=30 / 3.6)
     #     local_map.lanes.append(lane)
     #     # 感知信息
-    #     tb_list = TrackingBoxList()
-    #     tb_list.append(TrackingBox(obb=(-3.5 / 2, 20, 5, 2, -math.pi / 2), vx=0, vy=-5))
+    #     obstacles = TrackingBoxList()
+    #     obstacles.append(TrackingBox(obb=(-3.5 / 2, 20, 5, 2, -math.pi / 2), vx=0, vy=-5))
     #     # 定位信息
     #     # ego_veh_state = VehicleState(
     #     #     transform=Transform(
@@ -632,17 +632,17 @@ if __name__ == '__main__':
     #             # 地图信息更新
     #
     #             # 感知信息更新
-    #             for i in range(len(tb_list)):
-    #                 tb = tb_list[i]
+    #             for i in range(len(obstacles)):
+    #                 tb = obstacles[i]
     #                 x, y, l, w, h = tb.obb
     #                 x += tb.vx * rl_planner.config["dt"]
     #                 y += tb.vy * rl_planner.config["dt"]
-    #                 tb_list[i].set_obb((x, y, l, w, h))
+    #                 obstacles[i].set_obb((x, y, l, w, h))
     #
     #             # 定位信息更新,本应该放在前面从gps拿，这里直接假设完美控制，在后面从控制拿了
     #             # ego_veh_state = ...
     #
-    #             traj = rl_planner.plan(ego_veh_state, tb_list, train=True)  # , local_map)
+    #             traj = rl_planner.plan(ego_veh_state, obstacles, train=True)  # , local_map)
     #             rl_planner.learn()
     #
     #             if traj is None: # 表示done，需要reset

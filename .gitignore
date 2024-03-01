@@ -16,6 +16,7 @@ planner_zoo/*.avi
 elements/_pyxbld/
 visualize/matplotlib_cheatsheet/
 DEBUGtest/videos/
+DEBUGtest/*.avi
 
 *.bak
 upload.txt

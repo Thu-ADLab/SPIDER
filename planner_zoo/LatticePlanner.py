@@ -75,6 +75,8 @@ class LatticePlanner(BasePlanner):
             "end_v_candidates": tuple(i*60/3.6/3 for i in range(4)), # 改这一项的时候，要连着限速一起改了
             "end_T_candidates": (1,2,4,8), # s_dot, T采样生成纵向轨迹
 
+            "print_info": True,
+
             "constraint_flags": {
                 spider.CONSTRIANT_SPEED_UB,
                 spider.CONSTRIANT_SPEED_LB,
@@ -190,13 +192,15 @@ class LatticePlanner(BasePlanner):
         self._candidate_trajectories, self._candidate_trajectories_cost = sorted_candidates, sorted_cost
 
         if not (optimal_trajectory is None):
-            print("Optimal trajectory found! s_dot_end=%.2f,l_end=%.2f" %
-                  (optimal_trajectory.s_dot[-1], optimal_trajectory.l[-1]))
+            if self.config["print_info"]:
+                print("Optimal trajectory found! s_dot_end=%.2f,l_end=%.2f" %
+                      (optimal_trajectory.s_dot[-1], optimal_trajectory.l[-1]))
         else:
             warnings.warn("WARNING: NO feasible trajectory!")
 
         t2 = time.time()
-        print("Planning Succeed! Time: %.2f seconds, FPS: %.2f" % (t2 - t1, 1 / (t2 - t1)))
+        if self.config["print_info"]:
+            print("Planning Succeed! Time: %.2f seconds, FPS: %.2f" % (t2 - t1, 1 / (t2 - t1)))
 
         return optimal_trajectory
 

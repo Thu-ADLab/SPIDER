@@ -290,7 +290,7 @@ if __name__ == '__main__':
             # 地图信息更新
 
             # 感知信息更新
-            # tb_list = TrackingBoxList()
+            # obstacles = TrackingBoxList()
 
             # 定位信息更新,本应该放在前面从gps拿，这里直接假设完美控制，在后面从控制拿了
             # ego_veh_state = ...
@@ -370,7 +370,7 @@ if __name__ == '__main__':
                 # 地图信息更新
 
                 # 感知信息更新
-                # tb_list = TrackingBoxList()
+                # obstacles = TrackingBoxList()
 
                 # 定位信息更新,本应该放在前面从gps拿，这里直接假设完美控制，在后面从控制拿了
                 # ego_veh_state = ...

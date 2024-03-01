@@ -6,6 +6,7 @@ import numpy as np
 import pickle
 import io
 
+
 # plt.gca().set_facecolor('white')
 #     plt.gca().set_xticks([])
 #     plt.gca().set_yticks([])
@@ -25,6 +26,11 @@ def ego_centric_view(ego_x, ego_y, x_range=(-50.,50.), y_range=(-50.,50.), ax:pl
     ax.set_xlim(x_range[0] + ego_x, x_range[1]+ego_x)
     ax.set_ylim(y_range[0] + ego_y, y_range[1]+ego_y)
     return ax
+
+def adjust_canvas():
+    plt.figure(figsize=(14, 4))
+    plt.axis('equal')
+    plt.tight_layout()
 
 
 def get_figure_tight_layout(fig):
@@ -50,13 +56,32 @@ def _pkl_deep_copy(data):
     return pickle.load(buf)
 
 class SnapShot:
-    def __init__(self, auto_snap=False, auto_snap_intervals=1, max_album_size=None): # max_album_size还没用上
+    def __init__(self, auto_snap=False, auto_snap_intervals=1, max_album_size=None,
+                 record_video=False, **video_kwargs): # max_album_size还没用上
 
-        self.album = [] # : List[plt.Axes]
+        self.album = []
 
         self.auto_snap = auto_snap # 是否启用auto_snap机制：循环中每次都调用snap，间隔固定次数才会执行snap
         self.auto_snap_intervals = auto_snap_intervals
         self.snap_count = 0
+
+        self.record_video = False
+        if record_video:
+            import cv2
+            self.record_video = True
+            # todo: 下面的内容换成可以由video_kwargs设置，设默认值可以先设一个字典，然后update一下
+            video_path = './output.avi'
+            fourcc = cv2.VideoWriter_fourcc(*'XVID')
+            fps = 10
+            self.video_settings = (video_path, fourcc, fps)
+            self.video_writer = None
+            # self.video_writer = cv2.VideoWriter(self.video_path, fourcc, fps, (640, 480))
+
+    def _build_video_writer(self, image_example):
+        height, width = image_example.shape[:2]
+        import cv2
+        self.video_writer = cv2.VideoWriter(*self.video_settings, (width, height))
+        return self.video_writer
 
     def clear(self):
         self.album = []
@@ -67,17 +92,34 @@ class SnapShot:
         return len(self.album)
 
     def snap(self, ax:plt.Axes):
-        if self._snap_trigger():
-            # ax.axis('off')
+        if self._snap_trigger() or self.record_video:
             img = np.frombuffer(ax.figure.canvas.buffer_rgba(), dtype=np.uint8)
             bbox = ax.figure.bbox.bounds
             img = img.reshape((int(bbox[3]), int(bbox[2]), -1))
+
+
+        if self._snap_trigger():
+            # # ax.axis('off')
+            # img = np.frombuffer(ax.figure.canvas.buffer_rgba(), dtype=np.uint8)
+            # bbox = ax.figure.bbox.bounds
+            # img = img.reshape((int(bbox[3]), int(bbox[2]), -1))
             self.album.append(img.copy())
             # ax.axis('on')
             # self.album.append(ax)
+
+
+        if self.record_video:
+            if self.video_writer is None:
+                self._build_video_writer(img)
+            self.video_writer.write(img.copy()[:,:, 2::-1]) # 2是把透明度通道删去，-1是rgb转bgr
+
         self.snap_count += 1
 
-    def print(self, nrow, ncol, figsize=None):
+    def print(self, nrow, ncol, figsize=None, release_video=True):
+
+        if release_video and not (self.video_writer is None):
+            self.video_writer.release()
+
         max_num_one_fig = nrow * ncol
         album_size = self.album_size
 
