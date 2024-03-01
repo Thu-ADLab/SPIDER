@@ -17,6 +17,7 @@ elements/_pyxbld/
 visualize/matplotlib_cheatsheet/
 DEBUGtest/videos/
 DEBUGtest/*.avi
+DEBUGtest/*.mp4
 
 *.bak
 upload.txt
