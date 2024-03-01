@@ -51,7 +51,7 @@ def generate_corridor_bboxes(initial_guess:Trajectory, bboxes:TrackingBoxList,
             continue
 
         # collision_checker.set_ego_box(obb2vertices((x,y,ego_veh_size[0],ego_veh_size[1],heading)))
-        collision_checker.set_obstacles(bboxes_vertices=bboxes.getBoxVertices(step=i))
+        collision_checker.set_obstacles(bboxes_vertices=bboxes.get_vertices_at(step=i))
 
         seed = np.float32([x-0.1, y-0.1, x+0.1, y+0.1])  # 坍缩为一个小区域,四个方向发散以扩展
         sign = [-1, -1, 1, 1]
@@ -118,7 +118,7 @@ if __name__ == '__main__':
     for i, rect in enumerate(corridor):
         x1, y1, x2, y2 = rect
         draw_rectangle(x1,y1,x2,y2)
-        bboxes_vertices = bboxes.getBoxVertices(i)
+        bboxes_vertices = bboxes.get_vertices_at(i)
         for vertice in bboxes_vertices:
             draw_polygon(vertice,color='red')
             plt.pause(0.01)

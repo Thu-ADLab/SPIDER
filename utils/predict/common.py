@@ -10,7 +10,7 @@ class BasePredictor:
     def __init__(self):
         pass
 
-    def predict(self):
+    def predict(self, *args, **kwargs):
         pass
 
     def predict_box(self):

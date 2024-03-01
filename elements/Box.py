@@ -3,7 +3,8 @@ from typing import List, Sequence
 import warnings
 import spider
 from spider.elements.vector import rotate
-from spider.utils.predict.linear import linear_predict
+from spider.utils.predict.linear import vertices_linear_predict
+from spider.elements.vehicle import FrenetKinematicState
 
 
 
@@ -131,8 +132,19 @@ class TrackingBox(BoundingBox):
         self.pred_vertices = []
 
         # todo: 以规范形式定义prediction和history，很重要
-        self.prediction = None
+        self.prediction = None # sequence of x, y, theta?
         self.history = None
+
+        self.frenet_state = FrenetKinematicState()
+        self.frenet_prediction = None
+        self.frenet_history = None
+
+    # @property
+    # def frenet_prediction(self):
+    #     if self._frenet_prediction is None:
+    #         assert not (self.prediction is None), "TrackingBox cartesian prediction is not done!"
+    #         self._frenet_prediction = self.frenet_state.predict(self.prediction)
+    #     return self._frenet_prediction
 
     @classmethod
     def from_vertices(cls, vertices, vx=0., vy=0., id=0):
@@ -144,17 +156,34 @@ class TrackingBox(BoundingBox):
     def set_velocity(self, vx, vy):
         self.vx, self.vy = vx,vy
 
+    @property
+    def speed(self):
+        return np.sqrt(self.vx**2 + self.vy**2)
+
     def dilate(self,length_add, width_add):
         super(TrackingBox, self).dilate(length_add, width_add)
         if len(self.pred_vertices) > 0:
             warnings.warn("TrackingBox dilation after prediction Detected! This might cause incorrect prediction!")
 
     def predict(self, ts, methodflag=spider.PREDICTION_LINEAR):
+        # 不应该有这个方法，应该在外部的类中完成
         assert self.vertices is not None
         if methodflag == spider.PREDICTION_LINEAR:
-            self.pred_vertices = linear_predict(self.vertices, self.vx, self.vy, ts)
+            vx, vy, yaw = self.vx, self.vy, self.box_heading
+            xs, ys = self.x + np.asarray(ts) * self.vx, self.y + np.asarray(ts) * self.vy
+            yaws = np.ones_like(xs) * yaw
+            self.prediction = np.column_stack((xs, ys, yaws))
+            self.pred_vertices = self._pathseqence2verticeseqence(self.prediction)
         else:
             raise ValueError("Invalid method flag")
+
+    def _pathseqence2verticeseqence(self, path_sequence):
+        # prediction&history目前定义为x,y,theta序列，转换为vertices序列
+        vertice_seq = []
+        for x, y, yaw in path_sequence:
+            vertices = obb2vertices((x, y, self.length, self.width, yaw))
+            vertice_seq.append(vertices)
+        return vertice_seq
 
     def __str__(self):
         return "TrackingBox: id:%d, OBB:%s, velocity:(%.1f, %.1f)" % (self.id, str(self.obb), self.vx, self.vy)
@@ -175,7 +204,7 @@ class TrackingBoxList(list): # List[TrackingBox]
             tb.dilate(length_add, width_add)
         return self
 
-    def getBoxVertices(self, step=0):
+    def get_vertices_at(self, step=0):
         '''
         获取的是第step预测的，所有障碍物bbox的顶点集合
         有预测就预测 没预测就直接用当前的顶点

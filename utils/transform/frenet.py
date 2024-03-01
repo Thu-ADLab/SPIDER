@@ -3,6 +3,7 @@
 """
 import numpy as np
 import math
+from spider.elements import TrackingBoxList
 from spider.elements.curves import ParametricCubicSpline
 from spider.utils.geometry import find_nearest_point, point_to_segment_distance, resample_polyline
 from spider.elements.trajectory import FrenetTrajectory
@@ -45,9 +46,13 @@ from spider.vehicle_model.bicycle import curvature2steer
 
 
 class FrenetCoordinateTransformer:
-    def __init__(self):
+    def __init__(self, reference_line:np.ndarray=None, reference_line_csp=None, resample=False, resample_resolution=1.0):
         self.refer_line_arr = None # N行2列，[[x,y]*N]
         self.refer_line_csp = None
+
+        if not (reference_line is None):
+            self.set_reference_line(reference_line,reference_line_csp, resample, resample_resolution)
+
 
     def set_reference_line(self, reference_line:np.ndarray, reference_line_csp=None, resample=False, resample_resolution=1.0):
         if resample:
@@ -60,13 +65,13 @@ class FrenetCoordinateTransformer:
         else:
             self.refer_line_csp = reference_line_csp
 
-    def __check_validity(self,order:int):
+    def _check_validity(self, order:int):
         if self.refer_line_csp is None:
             raise ValueError("Reference line not set")
         if order<0 or order>2:
             raise ValueError("Invalid order!")
 
-    def __cart2frenet_order0(self, x, y):
+    def _cart2frenet_order0(self, x, y):
         nearest_idx, min_dist = find_nearest_point(np.array([x, y]), self.refer_line_arr)
 
         # 计算两个线段之间的距离并选择最短的作为l
@@ -108,12 +113,12 @@ class FrenetCoordinateTransformer:
         order =1 : x,y,speed,yaw -> s,l, s_dot, l_prime, l_dot
         order =2 : x,y,speed,yaw,acc,curvature -> s,l, s_dot, l_prime/l_dot, s_2dot, l_2prime, l_2dot
         """
-        self.__check_validity(order)
+        self._check_validity(order)
 
         frenet_state = FrenetKinematicState()
 
         # 零阶导
-        s, l = self.__cart2frenet_order0(x,y)
+        s, l = self._cart2frenet_order0(x, y)
         frenet_state.s, frenet_state.l = s, l
         if order == 0:
             return frenet_state
@@ -161,7 +166,7 @@ class FrenetCoordinateTransformer:
         order =2 : s,l, s_dot, l_prime/l_dot, s_2dot, l_2prime/l_2dot -> x,y,speed,yaw,acc,curvature
         """
 
-        self.__check_validity(order)
+        self._check_validity(order)
 
         frenet_state = FrenetKinematicState()
 
@@ -208,17 +213,17 @@ class FrenetCoordinateTransformer:
         return frenet_state
 
     def cart2frenet4state(self, state: KinematicState,  order: int):
-        self.__check_validity(order)
+        self._check_validity(order)
         return self.cart2frenet(state.x, state.y, state.speed, state.yaw,
                                 state.acceleration, state.curvature, order=order)
 
     def frenet2cart4state(self, state: FrenetKinematicState, order: int):
-        self.__check_validity(order)
+        self._check_validity(order)
         return self.frenet2cart(state.s, state.l, state.s_dot, state.l_dot, state.l_prime,
                                 state.s_2dot, state.l_2dot, state.l_2prime, order=order)
 
     def cart2frenet4traj(self, traj:FrenetTrajectory, order:int):
-        self.__check_validity(order)
+        self._check_validity(order)
 
         if order == 0:
             for i in range(traj.steps):
@@ -259,7 +264,7 @@ class FrenetCoordinateTransformer:
         return traj
 
     def frenet2cart4traj(self, traj:FrenetTrajectory, order:int):
-        self.__check_validity(order)
+        self._check_validity(order)
 
         if order == 0:
             for i in range(traj.steps):
@@ -310,8 +315,46 @@ class FrenetCoordinateTransformer:
 
         return traj
 
-    # @classmethod
-    # def
+    def cart2frenet4xyarr(self, x_arr, y_arr, yaw_arr=None):
+        # x_arr, y_arr = np.asarray(x_arr), np.asarray(y_arr)
+
+        s_arr, l_arr = [], []
+        for x, y in zip(x_arr, y_arr):
+            temp_state = self.cart2frenet(x, y, order=0)
+            s_arr.append(temp_state.s)
+            l_arr.append(temp_state.l)
+        s_arr, l_arr = np.asarray(s_arr), np.asarray(l_arr)
+
+        if yaw_arr is None:
+            # 零阶导
+            return s_arr, l_arr
+
+        frenet_yaw_arr = []
+        for s, yaw in zip(s_arr, yaw_arr):
+            rtheta = self.refer_line_csp.calc_yaw(s) # 参考线投影点处的切线角度
+            frenet_yaw_arr.append(yaw - rtheta)
+
+        return s_arr, l_arr, np.asarray(frenet_yaw_arr)
+
+    def cart2frenet4boxes(self, trackingbox_list:TrackingBoxList,
+                          convert_prediction=False, convert_history=False, *, order=0):
+        self._check_validity(order)
+        for tb in trackingbox_list:
+            x, y, _, _, yaw = tb.obb
+            if order == 0:
+                temp_state = self.cart2frenet(x, y, order=order)
+            elif order == 1:
+                temp_state = self.cart2frenet(x, y, tb.speed, yaw, order=order)
+            else:
+                raise ValueError
+            tb.frenet_state = temp_state
+
+            if convert_prediction:
+                tb.frenet_prediction = np.column_stack(self.cart2frenet4xyarr(*(tb.prediction.T)))
+            if convert_history:
+                tb.frenet_history = np.column_stack(self.cart2frenet4xyarr(*(tb.history.T)))
+        return trackingbox_list
+
 
 
 if __name__ == '__main__':

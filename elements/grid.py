@@ -169,7 +169,7 @@ class OccupancyGrid2D:
         channel = 3
         grid = cls(lon_range, lat_range, grid_resolution, channel)
 
-        bboxes_vertices = trackingbox_list.getBoxVertices()
+        bboxes_vertices = trackingbox_list.get_vertices_at()
 
         gt = GridTransformer([0, 0, np.pi / 3, 0, 0])
         image = (grid.get_occupancy() * 255).astype(np.uint8)
@@ -244,7 +244,7 @@ class OccupancyGrid2D:
         channel = 3
         grid = cls(lon_range, lat_range, grid_resolution, channel)
 
-        bboxes_vertices = trackingbox_list.getBoxVertices()
+        bboxes_vertices = trackingbox_list.get_vertices_at()
 
         image = (grid.get_occupancy() * 255).astype(np.uint8)
         for bbox in bboxes_vertices:

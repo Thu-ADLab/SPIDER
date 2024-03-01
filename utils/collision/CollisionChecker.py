@@ -66,7 +66,7 @@ class BoxCollisionChecker(BaseCollisionChecker):
             x, y, heading = traj.x[i], traj.y[i], traj.heading[i]
             ego_box_vertices = obb2vertices(
                 [x, y, self.ego_length+2*self.safe_dist[0], self.ego_width+2*self.safe_dist[1], heading])
-            collision = self.check(ego_box_vertices, predicted_obstacles.getBoxVertices(i))
+            collision = self.check(ego_box_vertices, predicted_obstacles.get_vertices_at(i))
             if collision:
                 return True
         return False

@@ -7,6 +7,7 @@ from spider.utils.collision.AABB import AABB_vertices
 from spider.elements import TrackingBox
 import spider.visualize as vis
 from spider.optimize.TrajectoryOptimizer import FrenetTrajectoryOptimizer
+from spider.utils.transform.frenet import FrenetCoordinateTransformer
 
 
 
@@ -39,6 +40,12 @@ for x, y, vx, vy in obs:
     bboxes.append(tb)
 bboxes.predict([dt * i for i in range(steps)])
 
+xs = np.linspace(0,80,80)
+ys = np.linspace(0,0,80)
+centerline = np.column_stack((xs, ys))
+transformer = FrenetCoordinateTransformer(centerline)
+bboxes = transformer.cart2frenet4boxes(bboxes, convert_prediction=True)
+
 
 
 
@@ -54,7 +61,7 @@ initial_frenet_trajectory.l_2dot.append(l_dd0)
 
 optim_traj = optim.optimize_traj(initial_frenet_trajectory,bboxes,offset_bound=(-3.5*0.5, 3.5*1.5),
                                  target_offset=target_l,target_offset_bound=target_l_bound)
-corridors = optim.get_corridors()
+corridors = optim.corridors
 
 for x, y, vx, vy in obs:
     vertices = AABB_vertices([x - veh_length / 2, y - veh_width / 2, x + veh_length / 2, y + veh_width / 2])

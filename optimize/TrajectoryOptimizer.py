@@ -38,7 +38,7 @@ def generate_corridor_bboxes(initial_guess:np.ndarray, bboxes:TrackingBoxList,
         # if t == 0:
         #     continue
 
-        collision_checker.set_obstacles(bboxes_vertices=bboxes.getBoxVertices(step=i))
+        collision_checker.set_obstacles(bboxes_vertices=bboxes.get_vertices_at(step=i))
 
         seed = np.float64([x-0.01, y-0.01, x+0.01, y+0.01])  # 坍缩为一个小区域,四个方向发散以扩展
         sign = [-1, -1, 1, 1]
@@ -242,7 +242,8 @@ class FrenetTrajectoryOptimizer(BaseOptimizer):
         # todo: 输入sl_pair_array & 初始横纵向状态
         pass
 
-    def get_corridors(self):
+    @property
+    def corridors(self):
         return self._corridors
 
 
@@ -250,6 +251,7 @@ class FrenetTrajectoryOptimizer(BaseOptimizer):
 if __name__ == '__main__':
     from spider.elements import TrackingBox
     from spider.visualize import draw_polygon
+    from spider.utils.transform.frenet import FrenetCoordinateTransformer
     import matplotlib.pyplot as plt
 
 
@@ -265,6 +267,12 @@ if __name__ == '__main__':
     veh_width = 2
     wheelbase = 3.0
 
+    xs = np.linspace(0, 80, 80)
+    ys = np.linspace(0, 0, 80)
+    centerline = np.column_stack((xs, ys))
+    transformer = FrenetCoordinateTransformer(centerline)
+
+
     # observation
     bboxes = TrackingBoxList()
     obs = [
@@ -278,6 +286,7 @@ if __name__ == '__main__':
         tb = TrackingBox.from_vertices(vertices=vertices, vx=vx, vy=vy)
         bboxes.append(tb)
     bboxes.predict([dt * i for i in range(steps)])
+    # bboxes = transformer.cart2frenet4boxes(bboxes, convert_prediction=True)
 
     s0, s_d0, s_dd0 = 0., 30 / 3.6, 0.
     l0, l_d0, l_dd0 = 0., 0., 0.
@@ -295,7 +304,7 @@ if __name__ == '__main__':
     initial_frenet_trajectory.l_2dot.append(l_dd0)
 
     optim_traj = optim.optimize_traj(initial_frenet_trajectory, bboxes, offset_bound=(-3.5*0.5, 3.5*1.5))
-    corridors = optim.get_corridors()
+    corridors = optim.corridors
 
     for x, y, vx, vy in obs:
         vertices = AABB_vertices([x - veh_length / 2, y - veh_width / 2, x + veh_length / 2, y + veh_width / 2])
