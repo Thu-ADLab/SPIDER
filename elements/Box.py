@@ -219,6 +219,20 @@ class TrackingBoxList(list): # List[TrackingBox]
                 bboxes_vertices.append(tb.pred_vertices[step])
         return bboxes_vertices
 
+    def get_frenet_vertices_at(self, step=0):
+        '''
+        这个函数命名非常奇怪说实话
+        获取的是第step预测的，所有障碍物bbox的顶点集合(frenet下）
+        有预测就预测 没预测就直接用当前的顶点
+        :param step: the ith step of prediction
+        :return:
+        '''
+        frenet_vertices = []
+        for tb in self:
+            s, l, frenet_yaw = tb.prediction[step]
+            frenet_vertices.append(obb2vertices([s, l, tb.length, tb.width, frenet_yaw]))
+        return frenet_vertices
+
     @classmethod
     def from_obbs(cls, obb_set_with_vel:Sequence, obbs_history=None, obbs_prediction=None, ids=None):
         '''

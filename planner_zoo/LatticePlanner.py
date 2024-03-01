@@ -27,7 +27,7 @@ from spider.constraints import CartConstriantChecker
 
 class LatticePlanner(BasePlanner):
     def __init__(self, config=None):
-        super(LatticePlanner, self).__init__()
+        super(LatticePlanner, self).__init__(config)
 
         self.config = self.default_config()
         if not (config is None):

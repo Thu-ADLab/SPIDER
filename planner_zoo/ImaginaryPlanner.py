@@ -15,7 +15,7 @@ from spider.planner_zoo.LatticePlanner import LatticePlanner
 
 class ImaginaryPlanner(BasePlanner):
     def __init__(self, config=None):
-        super(ImaginaryPlanner, self).__init__()
+        super(ImaginaryPlanner, self).__init__(config)
 
         self.config = self.default_config()
         if not (config is None):

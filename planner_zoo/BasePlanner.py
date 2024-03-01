@@ -2,7 +2,7 @@
 
 class BasePlanner:
     def __init__(self, config=None, *args, **kwargs):
-        self.config = {}
+        self.config = {} if config is None else config
 
     @property
     def steps(self):

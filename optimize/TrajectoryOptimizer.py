@@ -15,6 +15,7 @@ from spider.vehicle_model import Bicycle
 def generate_corridor_bboxes(initial_guess:np.ndarray, bboxes:TrackingBoxList,
                              x_bound=None, y_bound=None,
                              delta=0.1, max_expand=50.0,
+                             use_frenet=False
                              ):
     '''
     # todo: 没加上障碍物膨胀的功能，应该先根据自车搞一些近似的disks出来（嫌麻烦就设定1个圆盘），然后根据圆盘半径来设定膨胀的半径
@@ -37,8 +38,10 @@ def generate_corridor_bboxes(initial_guess:np.ndarray, bboxes:TrackingBoxList,
 
         # if t == 0:
         #     continue
-
-        collision_checker.set_obstacles(bboxes_vertices=bboxes.get_vertices_at(step=i))
+        if use_frenet:
+            collision_checker.set_obstacles(bboxes_vertices=bboxes.get_frenet_vertices_at(step=i))
+        else:
+            collision_checker.set_obstacles(bboxes_vertices=bboxes.get_vertices_at(step=i))
 
         seed = np.float64([x-0.01, y-0.01, x+0.01, y+0.01])  # 坍缩为一个小区域,四个方向发散以扩展
         sign = [-1, -1, 1, 1]
@@ -112,7 +115,7 @@ def getConsMat(s0,s_d0,s_dd0,l0,l_d0,l_dd0, target_l_bound,
     # veh_model = Bicycle(s0,l0, s_d0, s_dd0,heading=0., dt=dt, wheelbase=wheelbase)
     # traj.derivative(veh_model,xs=ss,ys=ls)
     # bboxes.predict(traj.t) # 放到外面去了
-    corridors = generate_corridor_bboxes(initial_guess, bboxes,x_bound=(-1,80), y_bound=l_bound)
+    corridors = generate_corridor_bboxes(initial_guess, bboxes,x_bound=(-1,80), y_bound=l_bound, use_frenet=True)
     #:return: corridor: [ [x1_min, y1_min, x1_max, y1_max],... ]
     slb,llb, sub,lub = corridors.T#[:,0],corridors[:,1],corridors[:,2],corridors[:,3]
     Aineq_list += [p.Ms,-p.Ms,p.Ml,-p.Ml]

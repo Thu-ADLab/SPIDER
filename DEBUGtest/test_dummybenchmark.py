@@ -15,12 +15,12 @@ from spider.planner_zoo import (LatticePlanner, BezierPlanner, PiecewiseLatticeP
 #     "end_T_candidates": (2, 4, 8),  # s_dot, T采样生成纵向轨迹
 # })
 
-# planner = PiecewiseLatticePlanner({
-#     "steps": 15,
-#     "dt": 0.2,
-# })
+planner = PiecewiseLatticePlanner({
+    "steps": 15,
+    "dt": 0.2,
+})
 
-planner = ImaginaryPlanner()
+# planner = ImaginaryPlanner()
 
 benchmark = DummyBenchmark()
 benchmark.test(planner)

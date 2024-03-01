@@ -56,7 +56,7 @@ while True:
 
 class MBRLPlanner(BasePlanner):
     def __init__(self, config=None, device=None):
-        super(MBRLPlanner, self).__init__()
+        super(MBRLPlanner, self).__init__(config)
 
         self.config = self.default_config()
         if not (config is None):
