@@ -8,6 +8,7 @@ import warnings
 import carla
 
 from spider.interface.carla.common import *
+from spider.interface.carla.visualize import Viewer
 
 
 class CarlaInterface:
@@ -160,13 +161,6 @@ class CarlaInterface:
         except RuntimeError:
             warnings.warn("Could not load map.\nPlease ensure that the map name is one of {}".format(self.available_maps))
         self.destroy()
-        # if layer_flag is None:
-        #     self.map = self.world.get_map(map_name)
-        # else:
-        #     self.map = self.world.get_map(map_name, layer_flag)
-
-        # todo: 完成，设置town05之类
-        pass
 
     def attach_all_view_cameras(self):
         # 重新取个名字。总共6个视角的相机，用来做BEV视角的
@@ -205,6 +199,19 @@ class CarlaInterface:
     def set_autolight(self):
         pass
 
+
+    def spawn_viewer(self, viewed_object=None, sensor_type="camera_rgb", view="third_person",
+                 recording=False, image_size=(1280, 720), lidar_range=80):
+        if viewed_object is None:
+            if self.hero is not None:
+                viewed_object = self.hero
+            else:
+                warnings.warn("No object to view. Please provide a viewed object first.")
+                return
+        if self.viewer is not None:
+            print("Found existing viewer. Destroying...")
+            self.viewer.destroy()
+        self.viewer = Viewer(viewed_object, sensor_type, view, recording, image_size, lidar_range)
 
     def spawn_hero(self, ego_x=None, ego_y=None, ego_yaw=None, blueprint_filter="vehicle*",
                    autopilot=False, autolight=True, only_four_wheel=True):
@@ -247,6 +254,11 @@ class CarlaInterface:
         if self.hero is None:
             raise RuntimeError(
                 "Player is not spawn. It might be due to incorrect position input or existing space occupancy.")
+
+        # set the main_viewer
+        self.spawn_viewer(self.hero)
+        # self.spawn_viewer(self.hero, sensor_type="lidar",view="bird_eye", image_size=(640,360))
+        # self.spawn_viewer(self.hero, sensor_type="camera_log_gray_depth", view="first_person", image_size=(640, 360))
 
         if self._sync:
             self.world.tick()
@@ -434,8 +446,21 @@ class CarlaInterface:
                 actor.destroy()
         print("Removed all NPCs.")
 
+
+    def render(self, display=None):
+        if self._rendering:
+            # main viewer rendering....
+            if self.viewer is None:
+                print("No viewer spawned yet, can not render")
+            else:
+                display = self.viewer.render(display)
+            # other sensors rendering, to complete...
+        return display
+
     def destroy_hero(self):
         # todo:删除player和所有与player连接的传感器actor
+        if self.viewer is not None:
+            self.viewer.destroy()
         if self.hero is not None:
             self.hero.destroy()
         self.hero = None

@@ -2,56 +2,142 @@ import pygame
 import os
 import math
 import datetime
+import weakref
 
 import carla
-from carla import ColorConverter as cc
 
 from spider.interface.carla.common import *
+from spider.interface.carla.presets import viewer_sensor_presets
 
 # Viewer to visualize the image
 
 class Viewer:
-    _available_views = ["first_person", "third_person", "bev", "left_side", "right_side"]
+    # _available_views = ["first_person", "third_person", "bird_eye", "left_side", "right_side"]
 
     _views_relative_transform = {
         "first_person": first_person_view_transform(),
         "third_person": third_person_view_transform(),
-        "bev": bev_transform(),
+        "bird_eye": bev_transform(),
         "left_side": side_view_transform(left=True),
         "right_side": side_view_transform(left=False)
     }
 
-    _default_img_size = (640, 640)
+    # _default_image_size = (1280, 720)
+    # _default_lidar_range = 80
 
-    _available_sensor_types = {
-            "camera_rgb": ['sensor.camera.rgb', cc.Raw, 'Camera RGB'],
-            "camera_depth": ['sensor.camera.depth', cc.Raw, 'Camera Depth (Raw)'],
-            "camera_gray_depth": ['sensor.camera.depth', cc.Depth, 'Camera Depth (Gray Scale)'],
-            "camera_log_gray_depth": ['sensor.camera.depth', cc.LogarithmicDepth, 'Camera Depth (Logarithmic Gray Scale)'],
-            "camera_seg": ['sensor.camera.semantic_segmentation', cc.Raw, 'Camera Semantic Segmentation (Raw)'],
-            "camera_seg_city": ['sensor.camera.semantic_segmentation', cc.CityScapesPalette,
-                                'Camera Semantic Segmentation (CityScapes Palette)'],
-            "lidar": ['sensor.lidar.ray_cast', None, 'Lidar (Ray-Cast)']
-    }
+    _sensor_presets = viewer_sensor_presets
 
-    def __init__(self):
+    _attachment_type = carla.AttachmentType.Rigid
+
+    def __init__(self, viewed_object:carla.Actor=None, sensor_type="camera_rgb", view="third_person",
+                 recording=False, image_size=(1280, 720), lidar_range=80):
         self.sensor = None
+        self.sensor_type = None
+        self.view = view
+        self.viewed_object = None
+
         self.surface = None
+        self.recording = recording
+        self.image_size = image_size
+        self.lidar_range = lidar_range
+
         self.image_array = None
 
-        self.recording = False
 
-    def render(self):
-        pass
+        if viewed_object is None:
+            print("No viewed object specified, cannot spawn sensor.")
+        else:
+            self.spawn_sensor(viewed_object, sensor_type, view)
 
-    def set_sensor(self):
-        pass
 
-    def change_view(self):
-        pass
+    @property
+    def sensor_type_info(self):
+        return self._sensor_presets[self.sensor_type]
 
-    def set_transform(self, transform):
-        pass
+    def spawn_sensor(self, object:carla.Actor, sensor_type="camera_rgb", view="third_person"):
+        '''
+        Spawn a sensor and attach it to the object.
+        :param object: The object to attach the sensor to.
+        :param sensor_type: The type of sensor to spawn.
+        :param view: The view of the sensor.
+        '''
+        assert sensor_type in self._sensor_presets, "Sensor type must be one of {}".format(self._sensor_presets.keys())
+        assert view in self._views_relative_transform, "View must be one of {}".format(self._views_relative_transform.keys())
+
+        self.sensor_type = sensor_type
+        self.view = view
+        self.viewed_object = object
+
+        if self.sensor is not None:
+            print("Found existing sensor, destroy it.")
+            self.destroy()
+
+        world = object.get_world()
+        # find the blueprint
+        bp_name = self.sensor_type_info[0]
+        bp = world.get_blueprint_library().find(bp_name)
+        if bp_name.startswith('sensor.camera'):
+            bp.set_attribute('image_size_x', str(self.image_size[0]))
+            bp.set_attribute('image_size_y', str(self.image_size[1]))
+        elif bp_name.startswith('sensor.lidar'):
+            bp.set_attribute('range', str(self.lidar_range))
+        # the transform for the certain view
+        tf = self._views_relative_transform[view]
+
+        self.sensor = world.spawn_actor(
+            bp, tf,
+            attach_to=object,
+            attachment_type=self._attachment_type
+        )
+
+        weak_self = weakref.ref(self) # pass the lambda a weak reference to self to avoid circular reference.
+        self.sensor.listen(lambda image: Viewer._parse_image(weak_self, image))
+
+        print("Viewer spawned: ", self.sensor_type_info[2])
+
+    def set_image_size(self, image_size_x, image_size_y):
+        self.image_size = (image_size_x, image_size_y)
+
+    def set_lidar_range(self, lidar_range):
+        self.lidar_range = lidar_range
+
+    def toggle_recording(self):
+        """Toggle recording on or off"""
+        self.recording = not self.recording
+        print('Recording %s' % ('On' if self.recording else 'Off'))
+
+    def change_view(self, view):
+        assert view in self._views_relative_transform, "View must be one of {}".format(
+            self._views_relative_transform.keys())
+        if self.viewed_object is None or self.sensor_type is None:
+            print("No sensor to change view.")
+        else:
+            self.spawn_sensor(self.viewed_object, self.sensor_type, view)
+            print("Viewer view changed to: ", view)
+
+    def change_sensor(self, sensor_type):
+        assert sensor_type in self._sensor_presets, "Sensor type must be one of {}".format(self._sensor_presets.keys())
+        if self.viewed_object is None or self.view is None:
+            print("No sensor to change")
+        else:
+            self.spawn_sensor(self.viewed_object, sensor_type, self.view)
+            print("Viewer sensor changed to: ", self.sensor_type_info[2])
+
+    def render(self, display=None):
+        """Render method"""
+        if display is None:
+            display = pygame.display.set_mode(self.image_size, pygame.HWSURFACE | pygame.DOUBLEBUF)
+        if self.surface is not None:
+            display.blit(self.surface, (0, 0))
+        return display
+
+
+    def destroy(self):
+        self.sensor.destroy()
+        self.sensor = None
+        self.surface = None
+        self.sensor_type = None
+        self.image_array = None
 
     # @property
     # def available_views:
@@ -62,22 +148,40 @@ class Viewer:
         if not self:
             return
         # 对于传感器的判断变一下
-        if self.sensors[self.index][0].startswith('sensor.lidar'):
+        if self.sensor_type_info[0].startswith('sensor.lidar'):
+            # # print("!!!!!!!!!!!!!!!", self.image_size)
+            # points = np.frombuffer(image.raw_data, dtype=np.dtype('f4'))
+            # points = np.reshape(points, (int(points.shape[0] / 4), 4))
+            # lidar_data = np.array(points[:, :2])
+            # # print(lidar_data)
+            # lidar_data *= min(self.image_size) / (2*self.lidar_range) # 100.0
+            # lidar_data += (0.5 * self.image_size[1], 0.5 * self.image_size[0])
+            # lidar_data = np.fabs(lidar_data)  # pylint: disable=assignment-from-no-return
+            # lidar_data = lidar_data.astype(np.int32)
+            # lidar_data = np.reshape(lidar_data, (-1, 2))
+            # lidar_img_size = (self.image_size[1], self.image_size[0], 3)
+            # lidar_img = np.zeros(lidar_img_size)
+            # lidar_img[tuple(lidar_data.T)] = (255, 255, 255)
+            # self.image_array = lidar_img
+            # self.surface = pygame.surfarray.make_surface(lidar_img)
+
+
             points = np.frombuffer(image.raw_data, dtype=np.dtype('f4'))
             points = np.reshape(points, (int(points.shape[0] / 4), 4))
             lidar_data = np.array(points[:, :2])
-            lidar_data *= min(self._default_img_size) / 100.0
-            lidar_data += (0.5 * self._default_img_size[0], 0.5 * self._default_img_size[1])
+            # print(lidar_data)
+            lidar_data *= min(self.image_size) / (2 * self.lidar_range)  # 100.0
+            lidar_data += (0.5 * self.image_size[0], 0.5 * self.image_size[1])
             lidar_data = np.fabs(lidar_data)  # pylint: disable=assignment-from-no-return
             lidar_data = lidar_data.astype(np.int32)
             lidar_data = np.reshape(lidar_data, (-1, 2))
-            lidar_img_size = (self._default_img_size[0], self._default_img_size[1], 3)
+            lidar_img_size = (self.image_size[0], self.image_size[1], 3)
             lidar_img = np.zeros(lidar_img_size)
             lidar_img[tuple(lidar_data.T)] = (255, 255, 255)
             self.image_array = lidar_img
             self.surface = pygame.surfarray.make_surface(lidar_img)
         else:
-            image.convert(self.sensors[self.index][1])
+            image.convert(self.sensor_type_info[1])
             array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
             array = np.reshape(array, (image.height, image.width, 4))
             array = array[:, :, :3]

@@ -3,6 +3,7 @@ from typing import Union,Sequence
 
 import carla
 import numpy as np
+import math
 
 from spider.interface.carla.presets import *
 
@@ -52,18 +53,19 @@ def third_person_view_transform(height=2.8, back_distance=5.5, lat_offset=0., pi
                                carla.Rotation(pitch=pitch, yaw=yaw, roll=0))
 
 
-def side_view_transform(lon_offset=10, lat_offset=10,left=False, absolute=False, hero_transform=None):
+def side_view_transform(lon_offset=5., lat_offset=10.,left=False, absolute=False, hero_transform=None):
     # 生成侧边视角的相机transform
     # left为True表示在车辆左侧，left为False表示在车辆右侧
 
     lat_offset = np.abs(lat_offset)
     if not absolute:
         if left:
-            return carla.Transform(carla.Location(x=lon_offset, y=lat_offset, z=0.),
+            return carla.Transform(carla.Location(x=lon_offset, y=-lat_offset, z=1.0),
                                    carla.Rotation(yaw=90))
         else:
-            return carla.Transform(carla.Location(x=lon_offset, y=-lat_offset, z=0.),
+            return carla.Transform(carla.Location(x=lon_offset, y=+lat_offset, z=1.0),
                                    carla.Rotation(yaw=-90))
+
     else:
         assert hero_transform is not None, "hero_transform must be provided for absolute side view transform"
 
@@ -84,7 +86,7 @@ def side_view_transform(lon_offset=10, lat_offset=10,left=False, absolute=False,
                                carla.Rotation(pitch=0, yaw=viewer_yaw, roll=0))
 
 
-def bev_transform(height=50, lon_offset=0, lat_offset=0, absolute=False, hero_transform=None):
+def bev_transform(height=50., lon_offset=0., lat_offset=0., absolute=False, hero_transform=None):
     # 对于lat offset 车左为正方向。对于lon offset 车前为正方向。
     # 若absolute为True，则返回的transform为世界坐标系，否则为hero的自车坐标系下的相对transform。
     if absolute:

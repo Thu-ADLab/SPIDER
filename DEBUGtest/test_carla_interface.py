@@ -1,38 +1,47 @@
 
 from spider.interface.carla.CarlaInterface import CarlaInterface
 import carla
+import pygame
 
 from tqdm import tqdm
 
 # host = '192.168.3.107'
 host = "101.5.228.94"
+# host = '127.0.0.1'
 cport = 2000
 tmport = 8000
 env = CarlaInterface(host, cport, tmport)
 
-# env.spawn_hero()
-# env.bev_spectator(250)
-maps = env.client.get_available_maps()
-print(maps)
+try:
 
-env.load_map('Town10HD_Opt', map_layers=carla.MapLayer.Ground)
-# env.random_weather(True)
+    # env.spawn_hero()
+    # env.bev_spectator(250)
+    maps = env.client.get_available_maps()
+    print(maps)
 
-env.spawn_hero(autopilot=True)
-# env.bev_spectator(20, 5, 5)
+    # env.load_map('Town10HD_Opt', map_layers=carla.MapLayer.Ground)
+    env.load_map('Town10HD')
+    # env.random_weather(True)
 
-for i in tqdm(range(1000)):
+    env.spawn_hero(autopilot=True)
+    env.bev_spectator(100, 5, 5)
 
-    env.world.tick()
+    for i in tqdm(range(1000)):
 
-    env.side_view_spectator()
-    # env.third_person_spectator()
-    # env.first_person_spectator()
-    # env.bev_spectator()
+        env.world.tick()
 
-    # loc = env.hero.get_location()
-    # loc.z = 20
-    # env.spectator.set_location(loc)
+        env.render()
+        pygame.display.flip()
 
-env.destroy()
-pass
+        # env.side_view_spectator()
+        # env.third_person_spectator()
+        # env.first_person_spectator()
+        # env.bev_spectator()
+
+        # loc = env.hero.get_location()
+        # loc.z = 20
+        # env.spectator.set_location(loc)
+
+finally:
+    env.destroy()
+

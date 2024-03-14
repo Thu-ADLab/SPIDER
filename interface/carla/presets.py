@@ -1,4 +1,17 @@
 import carla
+from carla import ColorConverter as cc
+
+viewer_sensor_presets = {
+    # blueprint, color, description
+    "camera_rgb": ['sensor.camera.rgb', cc.Raw, 'Camera RGB'],
+    "camera_depth": ['sensor.camera.depth', cc.Raw, 'Camera Depth (Raw)'],
+    "camera_gray_depth": ['sensor.camera.depth', cc.Depth, 'Camera Depth (Gray Scale)'],
+    "camera_log_gray_depth": ['sensor.camera.depth', cc.LogarithmicDepth, 'Camera Depth (Logarithmic Gray Scale)'],
+    "camera_seg": ['sensor.camera.semantic_segmentation', cc.Raw, 'Camera Semantic Segmentation (Raw)'],
+    "camera_seg_city": ['sensor.camera.semantic_segmentation', cc.CityScapesPalette,
+                        'Camera Semantic Segmentation (CityScapes Palette)'],
+    "lidar": ['sensor.lidar.ray_cast', None, 'Lidar (Ray-Cast)']
+}
 
 SUN_PRESETS = {
     'day': (45.0, 0.0),
@@ -9,6 +22,13 @@ WEATHER_PRESETS = {
     'clear': [10.0, 0.0, 0.0, 5.0, 0.0, 0.0, 0.2, 0.0, 0.0, 0.0, 0.0331],
     'overcast': [80.0, 0.0, 0.0, 50.0, 2.0, 0.75, 0.1, 10.0, 0.0, 0.03, 0.0331],
     'rain': [100.0, 80.0, 90.0, 100.0, 7.0, 0.75, 0.1, 100.0, 0.0, 0.03, 0.0331]}
+
+
+
+
+
+
+
 
 LABEL_TO_CARLIGHT = {
     'None' : carla.VehicleLightState.NONE,
