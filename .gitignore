@@ -19,6 +19,10 @@ DEBUGtest/videos/
 DEBUGtest/*.avi
 DEBUGtest/*.mp4
 
+interface/carla/example
+interface/carla/carla_veh_light
+interface/carla/PythonAPI
+
 *.bak
 upload.txt
 todo.txt
