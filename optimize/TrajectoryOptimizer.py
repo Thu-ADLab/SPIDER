@@ -8,7 +8,7 @@ from spider.optimize.common import FrenetTrajOptimParam
 from spider.elements.trajectory import Path, Trajectory, FrenetTrajectory
 from spider.elements import TrackingBoxList, OccupancyGrid2D
 from spider.utils.collision.CollisionChecker import BoxCollisionChecker
-from spider.utils.collision.AABB import AABB_vertices
+from spider.utils.collision.AABB import aabb2vertices
 from spider.vehicle_model import Bicycle
 
 
@@ -21,6 +21,8 @@ def generate_corridor_bboxes(initial_guess:np.ndarray, bboxes:TrackingBoxList,
     # todo: 没加上障碍物膨胀的功能，应该先根据自车搞一些近似的disks出来（嫌麻烦就设定1个圆盘），然后根据圆盘半径来设定膨胀的半径
     initial_guess: xy pair sequence or sl pair sequence, [ [x1, y1], [x2, y2]... ]
     return: corridor: [ [x1_min, y1_min, x1_max, y1_max],... ]
+
+    注意：如果use_frenet为True，那么返回的则是s_min, l_min...
     '''
 
     # lon_offset为负表示在几何中心后方
@@ -57,7 +59,7 @@ def generate_corridor_bboxes(initial_guess:np.ndarray, bboxes:TrackingBoxList,
                 temp_space = space.copy()
                 temp_space[j] += sign[j] * delta
 
-                collision_checker.set_ego_box(AABB_vertices(temp_space))
+                collision_checker.set_ego_box(aabb2vertices(temp_space))
 
                 if np.abs(temp_space[j] - seed[j]) > max_expand or collision_checker.check() or \
                         (road_bound[j]-temp_space[j])*sign[j]<0:
@@ -117,7 +119,7 @@ def getConsMat(s0,s_d0,s_dd0,l0,l_d0,l_dd0, target_l_bound,
     # bboxes.predict(traj.t) # 放到外面去了
     corridors = generate_corridor_bboxes(initial_guess, bboxes,x_bound=(-1,80), y_bound=l_bound, use_frenet=True)
     #:return: corridor: [ [x1_min, y1_min, x1_max, y1_max],... ]
-    slb,llb, sub,lub = corridors.T#[:,0],corridors[:,1],corridors[:,2],corridors[:,3]
+    slb,llb, sub,lub = corridors.T#[:,0],corridor[:,1],corridor[:,2],corridor[:,3]
     Aineq_list += [p.Ms,-p.Ms,p.Ml,-p.Ml]
     bineq_list += [sub,-slb,lub,-llb]
 
@@ -196,7 +198,7 @@ class FrenetTrajectoryOptimizer(BaseOptimizer):
         self.steps = steps
         self.dt = dt
         self.param = FrenetTrajOptimParam(steps, dt)
-        self._corridors = None
+        self._corridor = None
         pass
 
     def optimize_traj(self,
@@ -231,7 +233,7 @@ class FrenetTrajectoryOptimizer(BaseOptimizer):
         optim_traj.s = s = optim_traj_arr[:self.steps, 0] # size of [N,]
         optim_traj.l = l = optim_traj_arr[self.steps:, 0] # size of [N,]
 
-        self._corridors = corridors
+        self._corridor = corridors
         return optim_traj
 
 
@@ -246,8 +248,8 @@ class FrenetTrajectoryOptimizer(BaseOptimizer):
         pass
 
     @property
-    def corridors(self):
-        return self._corridors
+    def corridor(self):
+        return self._corridor
 
 
 
@@ -285,7 +287,7 @@ if __name__ == '__main__':
     ]
 
     for x, y, vx, vy in obs:
-        vertices = AABB_vertices([x - veh_length / 2, y - veh_width / 2, x + veh_length / 2, y + veh_width / 2])
+        vertices = aabb2vertices([x - veh_length / 2, y - veh_width / 2, x + veh_length / 2, y + veh_width / 2])
         tb = TrackingBox.from_vertices(vertices=vertices, vx=vx, vy=vy)
         bboxes.append(tb)
     bboxes.predict([dt * i for i in range(steps)])
@@ -307,14 +309,14 @@ if __name__ == '__main__':
     initial_frenet_trajectory.l_2dot.append(l_dd0)
 
     optim_traj = optim.optimize_traj(initial_frenet_trajectory, bboxes, offset_bound=(-3.5*0.5, 3.5*1.5))
-    corridors = optim.corridors
+    corridors = optim.corridor
 
     for x, y, vx, vy in obs:
-        vertices = AABB_vertices([x - veh_length / 2, y - veh_width / 2, x + veh_length / 2, y + veh_width / 2])
+        vertices = aabb2vertices([x - veh_length / 2, y - veh_width / 2, x + veh_length / 2, y + veh_width / 2])
         draw_polygon(vertices, color='black')
 
     for aabb in corridors:
-        vertices = AABB_vertices(aabb)
+        vertices = aabb2vertices(aabb)
         draw_polygon(vertices, color='green', lw=0.3)
 
     plt.plot([0, 50], [3.5 / 2, 3.5 / 2], 'k--')
