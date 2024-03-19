@@ -126,7 +126,7 @@ class Trajectory(Path):
             veh_model.step(a,st,dt=self.dt)
             self.appendStateFromModel(veh_model)
 
-    def derivative(self,veh_model:Bicycle,xs,ys):
+    def derivative(self,veh_model:Bicycle,xs,ys): # todo:这一块整个逻辑写的很乱，后面可以考虑改一改
         # 要考虑轨迹第一个点是不是t=0，这里认为是的
         assert np.linalg.norm([veh_model.x-xs[0], veh_model.y-ys[0]]) <= 0.2
         self.clearState()
@@ -161,6 +161,7 @@ class Trajectory(Path):
         self.steer.append(veh_model.steer)
         self.heading.append(veh_model.heading)
         self.steer_velocity.append(veh_model.steer_velocity)
+        self.curvature.append(veh_model.curvature)
         if len(self.t) == 0:
             self.t.append(0.)
         else:

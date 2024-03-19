@@ -164,6 +164,9 @@ class FrenetCoordinateTransformer:
         order =0 : s,l -> x,y
         order =1 : s,l, s_dot, l_prime/l_dot -> x,y,speed,yaw
         order =2 : s,l, s_dot, l_prime/l_dot, s_2dot, l_2prime/l_2dot -> x,y,speed,yaw,acc,curvature
+
+        # note: if l_dot and l_prime are both provided, then l_prime takes effect
+        #       if l_2dot and l_2prime are both provided, then l_2prime takes effect
         """
 
         self._check_validity(order)
@@ -273,9 +276,9 @@ class FrenetCoordinateTransformer:
                 traj.y.append(temp_state.y)
 
         elif order == 1:
-            if len(traj.l_prime) == traj.steps:
+            if len(traj.l_dot) == 0: #len(traj.l_prime) == traj.steps:
                 traj.l_dot = [None] * traj.steps
-            elif len(traj.l_dot) == traj.steps:
+            elif len(traj.l_prime) == 0:# len(traj.l_dot) == traj.steps:
                 traj.l_prime = [None] * traj.steps
             else:
                 raise ValueError("Lack of 1-order information") # 其实还少了一项对s_dot的判断
@@ -289,15 +292,15 @@ class FrenetCoordinateTransformer:
                 traj.heading.append(temp_state.yaw)
 
         elif order == 2:
-            if len(traj.l_prime) == traj.steps:
+            if len(traj.l_dot) == 0:  # len(traj.l_prime) == traj.steps:
                 traj.l_dot = [None] * traj.steps
-            elif len(traj.l_dot) == traj.steps:
+            elif len(traj.l_prime) == 0:  # len(traj.l_dot) == traj.steps:
                 traj.l_prime = [None] * traj.steps
             else:
                 raise ValueError("Lack of 1-order information")
-            if len(traj.l_2prime) == traj.steps:
+            if len(traj.l_2dot) == 0: #len(traj.l_2prime) == traj.steps:
                 traj.l_2dot = [None] * traj.steps
-            elif len(traj.l_2dot) == traj.steps:
+            elif len(traj.l_2prime) == 0: #len(traj.l_2dot) == traj.steps:
                 traj.l_2prime = [None] * traj.steps
             else:
                 raise ValueError("Lack of 2-order information")
@@ -355,6 +358,9 @@ class FrenetCoordinateTransformer:
                 tb.frenet_history = np.column_stack(self.cart2frenet4xyarr(*(tb.history.T)))
         return trackingbox_list
 
+    # @staticmethod
+    # def lat_derivative_convert(): # todo:以后想一下怎么加入，l_dot和l_prime的互相转化，以及l_2dot和l_2prime的互相转化
+    #     pass
 
 
 if __name__ == '__main__':

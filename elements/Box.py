@@ -1,14 +1,24 @@
 import numpy as np
 from typing import List, Sequence
 import warnings
+from copy import deepcopy
+
 import spider
 from spider.elements.vector import rotate
 from spider.utils.predict.linear import vertices_linear_predict
 from spider.elements.vehicle import FrenetKinematicState
 
 
+def minmax(arr):
+    return np.min(arr), np.max(arr)
 
-def AABB_vertices(AABB):
+def vertices2aabb(polygon_vertices:np.ndarray):
+    # 计算一个多边形的最小AABB包围框，这个多边形不一定是AABB的box
+    xmin, xmax = minmax(polygon_vertices[:, 0])
+    ymin, ymax = minmax(polygon_vertices[:, 1])
+    return xmin, ymin, xmax, ymax
+
+def aabb2vertices(AABB):
     '''
 
     :param AABB: xmin, ymin, xmax, ymax
@@ -85,7 +95,7 @@ class BoundingBox:
         return bbox
 
     def set_obb(self, obb):
-        self.obb = obb#np.asarray(obb)
+        self.obb = np.asarray(obb)
         self.vertices = obb2vertices(obb)
 
     def set_vertices(self, vertices):
@@ -98,10 +108,12 @@ class BoundingBox:
     #     obb[3] += radius
     #     self.set_obb(obb)
     def dilate(self,length_add, width_add):
-        obb = self.obb.copy()
+        obb = np.asarray(self.obb)
         obb[2] += length_add
         obb[3] += width_add
         self.set_obb(obb)
+        # from spider.visualize import draw_obb
+        # draw_obb(self.obb, color="red")
 
     @property
     def x(self): return self.obb[0]
@@ -120,6 +132,9 @@ class BoundingBox:
 
     def __str__(self):
         return "BoundingBox: OBB:%s" % str(self.obb)
+
+    def copy(self):
+        return deepcopy(self)
 
 
 
@@ -162,8 +177,11 @@ class TrackingBox(BoundingBox):
 
     def dilate(self,length_add, width_add):
         super(TrackingBox, self).dilate(length_add, width_add)
-        if len(self.pred_vertices) > 0:
-            warnings.warn("TrackingBox dilation after prediction Detected! This might cause incorrect prediction!")
+        # if len(self.pred_vertices) > 0:
+        #   warnings.warn("TrackingBox dilation after prediction Detected! This might cause incorrect prediction!")
+        if (self.pred_vertices is not None) and (len(self.pred_vertices)>0):
+            self.pred_vertices = self._pathseqence2verticeseqence(self.prediction)
+
 
     def predict(self, ts, methodflag=spider.PREDICTION_LINEAR):
         # 不应该有这个方法，应该在外部的类中完成
@@ -179,6 +197,8 @@ class TrackingBox(BoundingBox):
 
     def _pathseqence2verticeseqence(self, path_sequence):
         # prediction&history目前定义为x,y,theta序列，转换为vertices序列
+        if path_sequence is None or len(path_sequence) == 0:
+            return path_sequence
         vertice_seq = []
         for x, y, yaw in path_sequence:
             vertices = obb2vertices((x, y, self.length, self.width, yaw))
@@ -201,7 +221,9 @@ class TrackingBoxList(list): # List[TrackingBox]
 
     def dilate(self,length_add, width_add):
         for tb in self:
+                # warnings.warn("TrackingBoxList dilation after prediction Detected! This might cause incorrect prediction!")
             tb.dilate(length_add, width_add)
+
         return self
 
     def get_vertices_at(self, step=0):
@@ -221,7 +243,7 @@ class TrackingBoxList(list): # List[TrackingBox]
 
     def get_frenet_vertices_at(self, step=0):
         '''
-        这个函数命名非常奇怪说实话
+        这个函数命名非常奇怪说实话，本质上和get_vertices_at是一样的，只不过一个是提前存好的。
         获取的是第step预测的，所有障碍物bbox的顶点集合(frenet下）
         有预测就预测 没预测就直接用当前的顶点
         :param step: the ith step of prediction
@@ -229,7 +251,7 @@ class TrackingBoxList(list): # List[TrackingBox]
         '''
         frenet_vertices = []
         for tb in self:
-            s, l, frenet_yaw = tb.prediction[step]
+            s, l, frenet_yaw = tb.frenet_prediction[step]
             frenet_vertices.append(obb2vertices([s, l, tb.length, tb.width, frenet_yaw]))
         return frenet_vertices
 
@@ -248,6 +270,9 @@ class TrackingBoxList(list): # List[TrackingBox]
         for obb_info, id in zip(obb_set_with_vel, ids):
             tbox_list.append(TrackingBox(obb=obb_info[:5], vx=obb_info[5], vy=obb_info[6], id=id))
         return tbox_list
+
+    def copy(self):
+        return deepcopy(self)
 
 
 # todo: 应该允许更多几何形状的物体，比如圆形物体的输入，所以应该改为TrackingObjectList

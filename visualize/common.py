@@ -57,7 +57,7 @@ def _pkl_deep_copy(data):
 
 class SnapShot:
     def __init__(self, auto_snap=False, auto_snap_intervals=1, max_album_size=None,
-                 record_video=False, **video_kwargs): # max_album_size还没用上
+                 record_video=False, video_path='./output.avi', **video_kwargs): # max_album_size还没用上
 
         self.album = []
 
@@ -70,7 +70,7 @@ class SnapShot:
             import cv2
             self.record_video = True
             # todo: 下面的内容换成可以由video_kwargs设置，设默认值可以先设一个字典，然后update一下
-            video_path = './output.avi'
+            # video_path =
             fourcc = cv2.VideoWriter_fourcc(*'XVID')
             fps = 10
             self.video_settings = (video_path, fourcc, fps)
@@ -94,9 +94,12 @@ class SnapShot:
     def snap(self, ax:plt.Axes):
         if self._snap_trigger() or self.record_video:
             img = np.frombuffer(ax.figure.canvas.buffer_rgba(), dtype=np.uint8)
-            bbox = ax.figure.bbox.bounds
-            img = img.reshape((int(bbox[3]), int(bbox[2]), -1))
-
+            try: # todo:这边搞不清楚怎么回事，有时候上面work有时候下面work，暂时先这样子写吧
+                bbox = ax.figure.bbox.bounds
+                img = img.reshape((int(bbox[3]), int(bbox[2]), -1))
+            except:
+                w, h = ax.figure.canvas.get_width_height()
+                img = img.reshape((h, w, 4))
 
         if self._snap_trigger():
             # # ax.axis('off')

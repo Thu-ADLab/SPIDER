@@ -89,7 +89,7 @@ if __name__ == '__main__':
     track_steps = 2
     engine = DoctorStrange(30, 0.2, planner, track_steps=track_steps)
 
-    ego_state, obstacles, local_map = DummyBenchmark.get_environment_observation()
+    ego_state, obstacles, local_map = DummyBenchmark.get_environment_presets()
     ego_state.velocity.x = 1.0
     ego_state.calc_kinematics()
 

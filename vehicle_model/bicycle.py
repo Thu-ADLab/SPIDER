@@ -22,9 +22,10 @@ class Bicycle:
                  dt=0.1, wheelbase=3.,):
         # self.state = []
         # self.control = []
-        self.setKinematics(x, y, v, a, heading, steer, steer_velocity)
         self.dt = dt
         self.wheelbase = wheelbase
+        self.setKinematics(x, y, v, a, heading, steer, steer_velocity)
+
 
     def setKinematics(self, x, y, v, a, heading, steer, steer_velocity=0.):
         self.x = x
@@ -34,6 +35,7 @@ class Bicycle:
         self.velocity = v
         self.acceleration = a
         self.steer_velocity = steer_velocity
+        self.curvature = steer2curvature(steer, wheelbase=self.wheelbase)
 
     def step(self, a, steer=None, steer_velocity=None, dt=0.):
         if dt==0.:
@@ -61,7 +63,7 @@ class Bicycle:
         dv = v - self.velocity
         a = dv/dt
         dheading = heading-self.heading
-        steer = math.atan(dheading * self.wheelbase / dt / self.velocity)
+        steer = math.atan(dheading * self.wheelbase / dt / self.velocity) if self.velocity != 0 else 0
         steer_velocity = (steer - self.steer)/dt
         self.setKinematics(x, y, v, a, heading, steer, steer_velocity)
 

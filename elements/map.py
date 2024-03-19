@@ -149,8 +149,9 @@ class LocalMap:
 
 
 class RoutedLocalMap(LocalMap):
-    def __init__(self):
-        super(RoutedLocalMap, self).__init__()
+    def __init__(self, lanes:Sequence[Lane]=(), scene_type=ScenarioType.Multilane, section_id=-1,
+                 network=None, traffic_signs=None):
+        super(RoutedLocalMap, self).__init__(lanes, scene_type, section_id, network, traffic_signs)
         # 全局导航信息，暂时用不到
         self.route = None
         # 局部导航信息

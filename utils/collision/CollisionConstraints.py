@@ -4,7 +4,7 @@ from spider.elements.trajectory import Trajectory
 from spider.utils.collision.CollisionChecker import BoxCollisionChecker
 # from utils.collision.SAT import SAT_check
 import numpy as np
-from spider.elements.Box import obb2vertices,AABB_vertices,TrackingBox,TrackingBoxList
+from spider.elements.Box import obb2vertices,aabb2vertices,TrackingBox,TrackingBoxList
 import spider
 
 
@@ -66,7 +66,7 @@ def generate_corridor_bboxes(initial_guess:Trajectory, bboxes:TrackingBoxList,
                 temp_space = space.copy()
                 temp_space[j] += sign[j] * delta
 
-                collision_checker.set_ego_box(AABB_vertices(temp_space))
+                collision_checker.set_ego_box(aabb2vertices(temp_space))
 
                 if np.abs(temp_space[j] - seed[j]) > max_expand or collision_checker.check():
                     # 超界 或者 碰撞

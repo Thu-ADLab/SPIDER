@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import spider.elements as elm
+from spider.elements.Box import aabb2vertices
 from spider.visualize.surface import draw_obb, draw_polygon
 
 
@@ -77,9 +78,16 @@ def draw_trajectory_3d():
     '''
     pass
 
-def draw_corridor_boxes_3d():
+def draw_corridor_3d():
     pass
 
+def draw_corridor(corridor,*args, **kwargs):
+    '''
+    要求corridor的形式是corridor: [ [x1_min, y1_min, x1_max, y1_max],... ]
+    '''
+    for aabb in corridor:
+        vertices = aabb2vertices(aabb)
+        draw_polygon(vertices, *args, **kwargs)
 
 
 def show_occupancy():
