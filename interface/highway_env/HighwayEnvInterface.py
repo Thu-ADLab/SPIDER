@@ -26,7 +26,7 @@ class HighwayEnvInterface:
                  veh_length=5.0,
                  veh_width=2.0):
 
-        self._env = env # 注意，由于python是引用传递，所以这个_env完全等价于外部的env!
+        self._env = env # 注意，由于python是引用传递，所以这个_env完全等价于外部的env
         self._env_config = env.unwrapped.config
 
         # 车长车宽没考虑
@@ -51,11 +51,30 @@ class HighwayEnvInterface:
 
     # def observe_env(self):
     #     obs, info = self._env.
+    @property
+    def observation(self):
+        return self._env.observation_type.observe()
+
+    # @staticmethod
+    # def calc_reward(highway_env, observation, action):
+    #     return reward
 
     def reset(self):
         # todo: qzl: 想一想有没有什么更多的需要reset的
         self._routed_local_map = None
         return self._env.reset()
+
+    def step(self, action) -> Tuple["Observation", float, bool, bool, dict]:
+        """
+        Perform an action and step the environment dynamics.
+
+        The action is executed by the ego-vehicle, and all other vehicles on the road performs their default behaviour
+        for several simulation timesteps until the next decision making step.
+
+        :param action: the action performed by the ego-vehicle
+        :return: a tuple (observation, reward, terminated, truncated, info)
+        """
+        return self._env.step(action)
 
     def wrap_observation(self, observation) \
             -> Tuple[VehicleState, Union[TrackingBoxList, OccupancyGrid2D], RoutedLocalMap]:

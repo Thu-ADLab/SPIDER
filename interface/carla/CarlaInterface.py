@@ -1,5 +1,5 @@
 # from spider.interface.BaseBenchmark import BaseBenchmark
-from typing import Sequence
+from typing import Sequence, Tuple
 
 import random
 import sys
@@ -9,6 +9,7 @@ import carla
 
 from spider.interface.carla.common import *
 from spider.interface.carla.visualize import Viewer
+from spider.elements import RoutedLocalMap, VehicleState, TrackingBoxList
 
 
 class CarlaInterface:
@@ -51,7 +52,12 @@ class CarlaInterface:
 
         settings = self.world.get_settings()
         settings.no_rendering_mode = not self._rendering
+        settings.synchronous_mode = self._sync  # Enables synchronous mode
+        if self._sync:
+            settings.fixed_delta_seconds = 0.05  # 可变时间步长
         self.world.apply_settings(settings)
+
+        self.traffic_manager.set_synchronous_mode(self._sync)
         # self.traffic_manager.set_global_distance_to_leading_vehicle(2.5)
 
 
@@ -59,6 +65,8 @@ class CarlaInterface:
 
         self._default_vehicle_bp_filter = "vehicle.*"
         self._default_walker_bp_filter = "walker.pedestrian.*"
+
+    ############## useful functions ###############
 
     @property
     def actors(self):
@@ -97,13 +105,13 @@ class CarlaInterface:
         return self.world.get_spectator()
 
     # todo: 把以下四个视角的spectator切换都转为一个函数
-    def bev_spectator(self, height=50, lon_offset=0, lat_offset=0):
+    def bev_spectator(self, height=50, lon_offset=0, lat_offset=0, vertical=True):
         if self.hero is None:
             hero_transform = self.spectator.get_transform()
         else:
             hero_transform = self.hero.get_transform()
 
-        spec_transform = bev_transform(height,lon_offset,lat_offset, absolute=True, hero_transform=hero_transform)
+        spec_transform = bev_transform(height,lon_offset,lat_offset,vertical=vertical, absolute=True, hero_transform=hero_transform)
         self.spectator.set_transform(spec_transform)
 
     def third_person_spectator(self, height=2.5, back_distance=5.5, lat_offset=0., pitch=-8.0,):
@@ -161,6 +169,10 @@ class CarlaInterface:
         except RuntimeError:
             warnings.warn("Could not load map.\nPlease ensure that the map name is one of {}".format(self.available_maps))
         self.destroy()
+
+    @property
+    def debug(self):
+        return self.world.debug
 
     def attach_all_view_cameras(self):
         # 重新取个名字。总共6个视角的相机，用来做BEV视角的
@@ -247,18 +259,21 @@ class CarlaInterface:
         self.hero = self.world.try_spawn_actor(blueprint, spawn_point)  # 有可能存在无法spawn的可能
         modify_vehicle_physics(self.hero)
 
-        self.hero.set_autopilot(autopilot)
-        if autolight:
-            set_autolight(self.hero, self.traffic_manager)
-
         if self.hero is None:
             raise RuntimeError(
                 "Player is not spawn. It might be due to incorrect position input or existing space occupancy.")
 
+        self.hero.set_autopilot(autopilot)
+        if autolight:
+            set_autolight(self.hero, self.traffic_manager)
+
         # set the main_viewer
         self.spawn_viewer(self.hero)
+        # self.spawn_viewer(self.hero, sensor_type="camera_rgb", view="bird_eye")
+        # self.spawn_viewer(self.hero, sensor_type="camera_rgb", view="right_side")
         # self.spawn_viewer(self.hero, sensor_type="lidar",view="bird_eye", image_size=(640,360))
-        # self.spawn_viewer(self.hero, sensor_type="camera_log_gray_depth", view="first_person", image_size=(640, 360))
+        # self.spawn_viewer(self.hero, sensor_type="camera_log_gray_depth", view="first_person",
+        #                   image_size=(640, 360), recording=True)
 
         if self._sync:
             self.world.tick()
@@ -440,10 +455,18 @@ class CarlaInterface:
 
     def remove_all_npc(self):
         npc_names = [self._manual_npc_name, self._auto_npc_name, self._walker_name]
-        for actor in self.actors:
-            if actor.attributes.get('role_name', None) in npc_names:
-                # actor.attributes is a dict, get() uses None as a default value
-                actor.destroy()
+        vehicles = self.world.get_actors().filter("vehicle.*")
+        walkers = self.world.get_actors().filter("walker.*")
+        # for walker in walkers:
+        #     walker.stop() # stop the navigation of walkers
+
+        hero_id = self.hero.id if self.hero is not None else None
+        all_ids = [veh.id for veh in vehicles if veh.id != hero_id]
+        all_ids += [walker.id for walker in walkers]
+
+        # destroy pedestrian (actor and controller)
+        self.client.apply_batch([carla.command.DestroyActor(x) for x in all_ids])
+
         print("Removed all NPCs.")
 
 
@@ -464,10 +487,69 @@ class CarlaInterface:
         if self.hero is not None:
             self.hero.destroy()
         self.hero = None
+        self.viewer = None
         print("Destroyed hero.")
 
     def destroy(self):
         self.destroy_hero()
         self.remove_all_npc()
 
+    ############## spider interface ###############
+
+    # def get
+
+    def wrap_observation(self, valid_distance=100) \
+            -> Tuple[VehicleState, Union[TrackingBoxList, "OccupancyGrid2D"], RoutedLocalMap]:
+
+        vehicles = self.world.get_actors().filter('vehicle.*')
+        walkers = self.world.get_actors().filter("walker.pedestrian.")
+
+
+
+        # 自车数据
+        ego_veh = world.player
+        ego_veh_info = get_vehicle_info(ego_veh)
+        egox, egoy = ego_veh_info[:2]
+        print("ego")
+        print(ego_veh_info)
+
+        # 他车数据
+        other_veh_info = []
+        dist2 = []
+        vehicles = world.world.get_actors().filter('vehicle.*')
+        for veh in vehicles:
+            if veh.attributes['role_name'] != 'hero':
+                veh_info = get_vehicle_info(veh)
+                tempx, tempy = veh_info[:2]
+                dx, dy = tempx - egox, tempy - egoy
+                if -valid_distance < dx < valid_distance and -valid_distance < dy < valid_distance: # distance_threshold
+                    # dist2.append(dx**dx + dy**dy)
+                    other_veh_info.append((veh_info, dx ** 2 + dy ** 2))
+
+
+def get_actor_info(actor:carla.Actor)->dict:
+    """
+    获取车辆的基本信息，包括位置、方向角和车身尺寸，以及在x和y方向上的速度和加速度。
+
+    Args:
+        actor: carla.Actor，代表要查询的车辆。
+
+    """
+    transform = actor.get_transform()
+    length = actor.bounding_box.extent.x * 2.0
+    width = actor.bounding_box.extent.y * 2.0
+    velocity = actor.get_velocity()
+    acceleration = actor.get_acceleration()
+    return {
+        "x": transform.location.x,
+        "y": transform.location.y,
+        "length": length,
+        "width": width,
+        "yaw": transform.rotation.yaw,
+        "vx": velocity.x,
+        "vy": velocity.y,
+        "ax": acceleration.x,
+        "ay": acceleration.y
+    }
+    # return location.x, location.y,  length, width, rotation.yaw, velocity.x, velocity.y
 

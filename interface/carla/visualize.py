@@ -64,13 +64,13 @@ class Viewer:
         assert sensor_type in self._sensor_presets, "Sensor type must be one of {}".format(self._sensor_presets.keys())
         assert view in self._views_relative_transform, "View must be one of {}".format(self._views_relative_transform.keys())
 
-        self.sensor_type = sensor_type
-        self.view = view
-        self.viewed_object = object
-
         if self.sensor is not None:
             print("Found existing sensor, destroy it.")
             self.destroy()
+
+        self.sensor_type = sensor_type
+        self.view = view
+        self.viewed_object = object
 
         world = object.get_world()
         # find the blueprint
@@ -109,18 +109,20 @@ class Viewer:
     def change_view(self, view):
         assert view in self._views_relative_transform, "View must be one of {}".format(
             self._views_relative_transform.keys())
-        if self.viewed_object is None or self.sensor_type is None:
+        if self.viewed_object is None:
             print("No sensor to change view.")
         else:
-            self.spawn_sensor(self.viewed_object, self.sensor_type, view)
+            sensor_type = "camera_rgb" if self.sensor_type is None else self.sensor_type
+            self.spawn_sensor(self.viewed_object, sensor_type, view)
             print("Viewer view changed to: ", view)
 
     def change_sensor(self, sensor_type):
         assert sensor_type in self._sensor_presets, "Sensor type must be one of {}".format(self._sensor_presets.keys())
-        if self.viewed_object is None or self.view is None:
+        if self.viewed_object is None:
             print("No sensor to change")
         else:
-            self.spawn_sensor(self.viewed_object, sensor_type, self.view)
+            view = "third_person" if self.view is None else self.view
+            self.spawn_sensor(self.viewed_object, sensor_type, view)
             print("Viewer sensor changed to: ", self.sensor_type_info[2])
 
     def render(self, display=None):
@@ -133,7 +135,8 @@ class Viewer:
 
 
     def destroy(self):
-        self.sensor.destroy()
+        if self.sensor is not None:
+            self.sensor.destroy()
         self.sensor = None
         self.surface = None
         self.sensor_type = None
@@ -189,7 +192,7 @@ class Viewer:
             self.image_array = array  # qzl: 保存一波
             self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
         if self.recording:
-            image.save_to_disk('_out/%08d' % image.frame)
+            image.save_to_disk('_out/%08d' % image.frame) # todo: 这只是保存图像，改成录像功能
 
 
 

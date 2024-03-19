@@ -86,7 +86,7 @@ def side_view_transform(lon_offset=5., lat_offset=10.,left=False, absolute=False
                                carla.Rotation(pitch=0, yaw=viewer_yaw, roll=0))
 
 
-def bev_transform(height=50., lon_offset=0., lat_offset=0., absolute=False, hero_transform=None):
+def bev_transform(height=50., lon_offset=10., lat_offset=0., vertical=False, absolute=False, hero_transform=None):
     # 对于lat offset 车左为正方向。对于lon offset 车前为正方向。
     # 若absolute为True，则返回的transform为世界坐标系，否则为hero的自车坐标系下的相对transform。
     if absolute:
@@ -95,11 +95,13 @@ def bev_transform(height=50., lon_offset=0., lat_offset=0., absolute=False, hero
         yaw_rad = np.radians(yaw)
         x = hero_transform.location.x + lon_offset * np.cos(yaw_rad) + lat_offset * np.sin(yaw_rad)
         y = hero_transform.location.y + lon_offset * np.sin(yaw_rad) - lat_offset * np.cos(yaw_rad)
+        cam_yaw = yaw - 90 if vertical else yaw
         return carla.Transform(carla.Location(x=x, y=y, z=height),
-                                carla.Rotation(pitch=-90, yaw=yaw, roll=0))
+                                carla.Rotation(pitch=-90, yaw=cam_yaw, roll=0))
     else:
+        cam_yaw = 0 if vertical else -90
         return carla.Transform(carla.Location(x=lon_offset, y=lat_offset, z=height),
-                               carla.Rotation(pitch=-90, yaw=0, roll=0))
+                               carla.Rotation(pitch=-90, yaw=cam_yaw, roll=0))
 
 #################### weather ############################
 def generate_random_weather(preset_combination=True):
