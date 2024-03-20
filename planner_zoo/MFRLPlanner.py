@@ -285,8 +285,7 @@ if __name__ == '__main__':
             acceleration=Vector3D(0, 0, 0)
         )
 
-        rl_planner = MFRLPlanner()
-        rl_planner.configure({"closed_loop": False})
+        rl_planner = MFRLPlanner({"closed_loop": False})
 
         if not (q_network_model_filename is None):
             rl_planner.load_model(q_network_model_filename)
@@ -484,8 +483,7 @@ if __name__ == '__main__':
     #         acceleration=Vector3D(0, 0, 0)
     #     )
     #
-    #     rl_planner = MFRLPlanner()
-    #     rl_planner.configure({
+    #     rl_planner = MFRLPlanner({
     #         "closed_loop": False,
     #
     #         "end_l_candidates": (-0.8, 0, 0.8),
@@ -603,8 +601,7 @@ if __name__ == '__main__':
     #     #     acceleration=Vector3D(0, 0, 0)
     #     # )
     #
-    #     rl_planner = MFRLPlanner()
-    #     rl_planner.configure({
+    #     rl_planner = MFRLPlanner({
     #         "end_l_candidates": (-0.8, 0, 0.8),
     #         "steps": 20,
     #         "max_speed": 30 / 3.6,

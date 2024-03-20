@@ -20,7 +20,6 @@ class ImaginaryPlanner(BasePlanner):
         self.config = self.default_config()
         if not (config is None):
             self.config.update(config)
-            # self.configure(config)
 
         self._atom_planner = LatticePlanner(self.config["planner_config"])
         self._predictor = None

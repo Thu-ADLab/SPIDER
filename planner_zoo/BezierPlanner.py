@@ -27,7 +27,6 @@ class BezierPlanner(BasePlanner):
         self.config = self.default_config()
         if not (config is None):
             self.config.update(config)
-            # self.configure(config)
 
         self.local_map = RoutedLocalMap()
         self.coordinate_transformer = FrenetCoordinateTransformer() # 要维护几个坐标系呢？
@@ -77,8 +76,6 @@ class BezierPlanner(BasePlanner):
             },
         }
 
-    def configure(self, config: dict):
-        self.__init__(config)
 
     def constraint_check(self, sorted_candidate_trajectories:List[Trajectory], sorted_cost, obstacles:TrackingBoxList):
         for traj, cost in zip(sorted_candidate_trajectories, sorted_cost):

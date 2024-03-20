@@ -86,19 +86,6 @@ class PiecewiseLatticePlanner(BasePlanner):
             },
         }
 
-    def configure(self, config: dict):
-        self.__init__(config)
-        # if config:
-            # self.config.update(config)
-        # self.speed_bound = [self.config["min_speed"], self.config["max_speed"]]
-        # self.acc_bound = [-self.config["max_deceleration"], self.config["max_acceleration"]]
-        # self.max_curvature = self.config["max_curvature"]
-        # self.end_s_candidates = self.config["end_s_candidates"]
-        # self.end_d_candidates = self.config["end_d_candidates"]
-        # self.end_v_candidates = self.config["end_v_candidates"]
-        # self.end_T_candidates = self.config["end_T_candidates"]
-
-
     def get_candidate_traj_with_cost(self):
         return self._candidate_trajectories, self._candidate_trajectories_cost
 
@@ -230,8 +217,7 @@ if __name__ == '__main__':
         tb_list.append(TrackingBox(obb=(50, 0, 5, 2, 0), vx=0, vy=0))
         tb_list.append(TrackingBox(obb=(100, 0, 5, 2, 0), vx=0, vy=0))
 
-        lattice_planner = PiecewiseLatticePlanner()
-        lattice_planner.configure({"end_l_candidates": (-3.5, 0, 3.5)})
+        lattice_planner = PiecewiseLatticePlanner({"end_l_candidates": (-3.5, 0, 3.5)})
         lattice_planner.set_local_map(local_map)
 
         save_video = True
@@ -330,8 +316,7 @@ if __name__ == '__main__':
         tb_list = TrackingBoxList()
         tb_list.append(TrackingBox(obb=(-3.5/2, 20, 5, 2, -math.pi/2), vx=0, vy=-5))
 
-        lattice_planner = PiecewiseLatticePlanner()
-        lattice_planner.configure({
+        lattice_planner = PiecewiseLatticePlanner({
             "end_l_candidates": (-0.8, 0, 0.8),
             "steps": 20,
             "max_speed": 30/3.6,

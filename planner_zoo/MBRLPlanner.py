@@ -119,9 +119,6 @@ class MBRLPlanner(BasePlanner):
             "end_T_candidates": (3, 5)  # s_dot, T采样生成纵向轨迹
         }
 
-    def configure(self, config: dict):
-        self.__init__(config)
-
     def get_candidate_trajectories(self):
         return self._candidate_trajectories
 
@@ -276,8 +273,7 @@ if __name__ == '__main__':
             acceleration=Vector3D(0, 0, 0)
         )
 
-        rl_planner = MBRLPlanner()
-        rl_planner.configure({"closed_loop": False})
+        rl_planner = MBRLPlanner({"closed_loop": False})
 
         if not (transition_model_filename is None):
             rl_planner.agent.load_transition_model(transition_model_filename)

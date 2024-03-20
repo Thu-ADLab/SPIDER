@@ -61,8 +61,7 @@ def demo():
     # obstacles.append(TrackingBox(obb=(100, 0, 5, 2, 0), vx=5, vy=0))
     # obstacles.append(TrackingBox(obb=(200, -10, 1, 1, np.pi/2), vx=0, vy=1.0)) # 横穿马路
     #
-    # lattice_planner = LatticePlanner()
-    # lattice_planner.configure({
+    # lattice_planner = LatticePlanner({
     #     "steps":15,
     #     "dt":0.2,
     #     "end_s_candidates": (20, 40, 60),
