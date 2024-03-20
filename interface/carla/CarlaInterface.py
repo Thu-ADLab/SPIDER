@@ -12,8 +12,8 @@ import spider.elements.Box
 from spider.interface.carla.common import *
 from spider.interface.carla.visualize import Viewer
 from spider.elements import RoutedLocalMap, VehicleState, TrackingBoxList, TrackingBox, Lane, Trajectory
-# from spider.interface.carla._route_utils import GlobalRoutePlanner
 from spider.utils.geometry import resample_polyline
+# from spider.interface.carla._route_utils import GlobalRoutePlanner
 
 
 class CarlaInterface:
@@ -225,23 +225,45 @@ class CarlaInterface:
     def attach_collision_sensor_to_hero(self):
         pass
 
-    def set_autopilot(self,  target='all', enable=True):
-        if not (target in self._target_options):
-            raise ValueError("target must be one of {}".format(self._target_options))
-        if target == 'hero':
-            if self.hero is not None:
-                self.hero.set_autopilot(enable)
-            else:
-                warnings.warn("Hero vehicle is not spawned yet. Can not set autopilot mode!")
-        elif target == 'npc':
-            for veh in self.npc_vehicles:
-                veh.set_autopilot(enable)
-        else: # all
-            for veh in self.vehicles:
-                veh.set_autopilot(enable)
+    def set_autopilot(self, target:Union[str, carla.Actor]='all', enable=True):
+        if isinstance(target, str):
+            if not (target in self._target_options):
+                raise ValueError("target must be one of {}".format(self._target_options))
+            if target == 'hero':
+                if self.hero is not None:
+                    self.hero.set_autopilot(enable)
+                else:
+                    warnings.warn("Hero vehicle is not spawned yet. Can not set autopilot mode!")
+            elif target == 'npc':
+                for veh in self.npc_vehicles:
+                    veh.set_autopilot(enable)
+            else: # all
+                for veh in self.vehicles:
+                    veh.set_autopilot(enable)
+        else:
+            target.set_autopilot(enable)
 
-    def set_autolight(self):
-        pass
+    def set_autolight(self, target:Union[str, carla.Actor]='all', enable=True):
+        '''
+        Notice that only those vehicles that registered in the traffic manager can be set autolight.
+        '''
+
+        if isinstance(target, str):
+            if not (target in self._target_options):
+                raise ValueError("target must be one of {}".format(self._target_options))
+            if target == 'hero':
+                if self.hero is not None:
+                    set_autolight(self.hero, self.traffic_manager, enable)
+                else:
+                    warnings.warn("Hero vehicle is not spawned yet. Can not set autolight mode!")
+            elif target == 'npc':
+                for veh in self.npc_vehicles:
+                    set_autolight(veh, self.traffic_manager, enable)
+            else: # all
+                for veh in self.vehicles:
+                    set_autolight(veh, self.traffic_manager, enable)
+        else:
+            set_autolight(target, self.traffic_manager, enable)
 
 
     def spawn_viewer(self, viewed_object=None, sensor_type="camera_rgb", view="third_person",

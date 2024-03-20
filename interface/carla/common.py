@@ -8,6 +8,7 @@ import math
 from spider.interface.carla.presets import *
 from spider.interface.carla._route_utils import *
 from spider.interface.carla._control_utils import *
+from spider.interface.carla._light_utils import *
 
 
 # from _weather_utils import *
