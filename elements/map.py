@@ -7,7 +7,7 @@ import spider
 from spider.elements.curves import ParametricCubicSpline
 from spider.elements.vehicle import VehicleState
 from spider.utils import transform
-from spider.utils.geometry import resample_polyline, generate_parallel_line
+from spider.utils.geometry import resample_polyline, generate_parallel_line, find_nearest_point, cumulated_distances
 
 """
 当前场景：flag，Multi-lane / Junction
@@ -86,7 +86,7 @@ class LocalMap:
         self.section_id = section_id
         self.lanes = list(lanes) # 这里指的是自车可以走的lanes
 
-        self.network = network # qzl:FUTURE VERSION
+        self.network = network # qzl:FUTURE VERSION 路网怎么表述？有向图？
 
         self.traffic_signs = traffic_signs # qzl:FUTURE VERSION
 
@@ -154,13 +154,52 @@ class RoutedLocalMap(LocalMap):
         super(RoutedLocalMap, self).__init__(lanes, scene_type, section_id, network, traffic_signs)
         # 全局导航信息，暂时用不到
         self.route = None
+        self.route_arr = None
         # 局部导航信息
         self.exit_lanes_idx = [] # 目标车道的序号集合
         self.distance_to_critical_point = 0.0  # todo:这个按道理需要结合自车定位特征，应该放到外面
         self.traffic_light_state = TrafficLight.Green
 
-# if __name__ == '__main__':
-#     def a(x:LaneLine):
-#         print("okkk")
-#
-#     xx = LaneLine()
+
+    def truncate_route_arr(self, ego_x, ego_y, front_distance=150, back_distance=50):
+        '''
+        ego_x, ego_y: 自车位置
+        roi_radius: 感兴趣区域的距离自车的辐射半径
+        '''
+        if self.route_arr is None:
+            raise ValueError("No route array to truncate!")
+
+        nearest_point_idx, _ = find_nearest_point([ego_x, ego_y], self.route_arr)
+
+        cum_dist = cumulated_distances(self.route_arr)
+        nearest_point_mileage = cum_dist[nearest_point_idx]
+
+        start_mileage = max(0.0,  nearest_point_mileage - back_distance)
+        end_mileage = min(cum_dist[-1], nearest_point_idx + front_distance)
+
+        start_idx = np.where(cum_dist <= start_mileage)[0][-1] # 找到第一个小于等于start_mileage的点
+        end_idx = np.where(cum_dist >= end_mileage)[0][0] # 找到第一个大于等于end_mileage的索引
+
+        return self.route_arr[start_idx:end_idx]
+
+
+    # def truncate_route_arr(self, ego_x, ego_y, roi_radius):
+    # 此函数弃用，roi_radius的方式不妥
+    #     '''
+    #     ego_x, ego_y: 自车位置
+    #     roi_radius: 感兴趣区域的距离自车的辐射半径
+    #     '''
+    #     if self.route_arr is None:
+    #         raise ValueError("No route array to truncate!")
+    #
+    #     ego_dist = np.sqrt((self.route_arr[:, 0] - ego_x) ** 2 + (self.route_arr[:, 1] - ego_y) ** 2)
+    #
+    #     min_dist_idx = np.argmin(ego_dist)
+    #     radius_threshold = roi_radius# max([250, ego_dist[min_dist_idx] + 100])
+    #
+    #     idxs = np.where(ego_dist[:min_dist_idx] > radius_threshold)[0]
+    #     start_idx = 0 if len(idxs) == 0 else idxs[-1]
+    #
+    #     idxs = np.where(ego_dist[min_dist_idx:] > radius_threshold)[0]
+    #     end_idx = len(self.route_arr) - 1 if len(idxs) == 0 else idxs[0]
+    #     return self.route_arr[start_idx:end_idx]

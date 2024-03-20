@@ -7,10 +7,12 @@ class Node:
 class Edge:
     def __init__(self):
         pass
-
-class Graph:
-    def __init__(self):
-        pass
+#
+# class Graph:
+#     def __init__(self):
+#         self.edges = None
+#         self.nodes = None
+#         self.
 
 
 

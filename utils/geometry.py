@@ -30,6 +30,17 @@ def resample_polyline(line, resolution):
 
     return np.array([x,y]).T
 
+def cumulated_distances(polyline:np.ndarray):
+    """
+    Calculate the cumulated distances along a polyline
+    :param polyline: array([[x0,y0], [x1,y1], ...])
+    :return:
+    """
+    polyline = np.asarray(polyline)
+    diff = np.diff(polyline, axis=0)
+    dist = np.linalg.norm(diff, axis=1)
+    return np.insert(np.cumsum(dist), 0, 0.0)
+
 
 def generate_parallel_line(polyline:np.ndarray, dist, left_or_right=spider.DIRECTION_LEFT):
     # todo: 看看需不需要修改，尤其是转化为矢量运算，现在可能效率比较低
@@ -54,8 +65,8 @@ def generate_parallel_line(polyline:np.ndarray, dist, left_or_right=spider.DIREC
     return parallel_line
 
 
-def find_nearest_point(point: np.ndarray, target_points):
-    x,y = point
+def find_nearest_point(point, target_points):
+    x, y = point
 
     all_dist2 = (target_points[:, 0] - x) ** 2 + (target_points[:, 1] - y) ** 2
 

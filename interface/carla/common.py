@@ -6,6 +6,8 @@ import numpy as np
 import math
 
 from spider.interface.carla.presets import *
+from spider.interface.carla._route_utils import *
+from spider.interface.carla._control_utils import *
 
 
 # from _weather_utils import *
@@ -185,7 +187,7 @@ def get_car_light(actor) -> carla.VehicleLightState:
         light_state = carla.VehicleLightState.NONE
     return light_state
 
-########################################
+###############vehicle physics#####################
 
 def modify_vehicle_physics(vehicle_actor):
     #If actor is not a vehicle, we cannot use the physics control
@@ -193,5 +195,99 @@ def modify_vehicle_physics(vehicle_actor):
         physics_control = vehicle_actor.get_physics_control() # get the last physics control applied to the vehicle
         physics_control.use_sweep_wheel_collision = True
         vehicle_actor.apply_physics_control(physics_control)
-    except Exception:
-        pass
+    except Exception as e:
+        print(e)
+
+
+############# spider interface ######################
+def get_actor_info(actor:carla.Actor)->dict:
+    """
+    获取车辆的基本信息，包括位置、方向角和车身尺寸，以及在x和y方向上的速度和加速度。
+
+    Args:
+        actor: carla.Actor，代表要查询的车辆。
+
+    """
+    transform = actor.get_transform()
+    length = actor.bounding_box.extent.x * 2.0
+    width = actor.bounding_box.extent.y * 2.0
+    velocity = actor.get_velocity()
+    acceleration = actor.get_acceleration()
+    return {
+        "x": transform.location.x,
+        "y": transform.location.y,
+        "length": length,
+        "width": width,
+        "yaw": transform.rotation.yaw * math.pi / 180.0,
+        "vx": velocity.x,
+        "vy": velocity.y,
+        "ax": acceleration.x,
+        "ay": acceleration.y
+    }
+
+
+####################### map tools ################################
+def get_neighboring_waypoints(current_waypoint):
+    '''
+    给定一个当前waypoint，返回相邻车道的对应的waypoints，相邻车道的定义为可以换道
+    '''
+    if current_waypoint is None:
+        return []
+    if current_waypoint.is_junction:
+        return [current_waypoint]
+
+    multilane_waypoints = [current_waypoint]
+
+    lc_flag, wp = current_waypoint.lane_change, current_waypoint
+    while lc_flag == carla.LaneChange.Both or lc_flag == carla.LaneChange.Left:
+        wp = wp.get_left_lane()
+        multilane_waypoints = [wp] + multilane_waypoints
+        lc_flag = wp.lane_change
+
+    lc_flag, wp = current_waypoint.lane_change, current_waypoint
+    while lc_flag == carla.LaneChange.Both or lc_flag == carla.LaneChange.Right:
+        wp = wp.get_right_lane()
+        multilane_waypoints =  multilane_waypoints + [wp]
+        lc_flag = wp.lane_change
+    return multilane_waypoints
+
+def waypointseq2array(waypoint_sequence):
+    return np.array([[wp.transform.location.x, wp.transform.location.y] for wp in waypoint_sequence])
+
+
+def get_turning_direction(edge, threshold=math.radians(60)):
+    entry_vec, exit_vec = edge['entry_vector'], edge['exit_vector']
+    theta1 = np.arctan2(entry_vec[1], entry_vec[0])
+    theta2 = np.arctan2(exit_vec[1], exit_vec[0])
+    delta_theta = theta2 - theta1
+    if delta_theta < -threshold:
+        return "RIGHT"
+    elif delta_theta > threshold:
+        return "LEFT"
+    else:
+        return "STRAIGHT"
+
+
+def isStraight(edge):
+    if edge['type'] != RoadOption.LANEFOLLOW:
+        return False
+    # if edge['intersection'] and get_turning_direction(edge)!="STRAIGHT":
+    #     return False
+    if edge['intersection'] and not (edge['entry_waypoint'].get_left_lane() or edge['entry_waypoint'].get_right_lane()):
+        # 临时用的，意思是不许上匝道（匝道是单或双车道）
+        return False
+    return True
+
+
+def find_nearest_waypoint_index(target_location, waypoints):
+    min_dist2 = float('inf')
+    nearest_index = None
+    for i, wp in enumerate(waypoints):
+        wp_loc = wp.transform.location
+        dist2 = (target_location.x - wp_loc.x) ** 2 + (target_location.y - wp_loc.y) ** 2  # math.sqrt()
+        if dist2 < min_dist2:
+            min_dist2 = dist2
+            nearest_index = i
+    return nearest_index
+
+

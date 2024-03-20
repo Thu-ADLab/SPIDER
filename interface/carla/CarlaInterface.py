@@ -1,4 +1,5 @@
 # from spider.interface.BaseBenchmark import BaseBenchmark
+import math
 from typing import Sequence, Tuple
 
 import random
@@ -7,9 +8,12 @@ import warnings
 
 import carla
 
+import spider.elements.Box
 from spider.interface.carla.common import *
 from spider.interface.carla.visualize import Viewer
-from spider.elements import RoutedLocalMap, VehicleState, TrackingBoxList
+from spider.elements import RoutedLocalMap, VehicleState, TrackingBoxList, TrackingBox, Lane, Trajectory
+# from spider.interface.carla._route_utils import GlobalRoutePlanner
+from spider.utils.geometry import resample_polyline
 
 
 class CarlaInterface:
@@ -20,6 +24,8 @@ class CarlaInterface:
     _walker_name = "walker"
 
     _target_options = ["npc", "hero", "all"]
+
+    _map_resolution = 1.0
 
     def __init__(self,
                  client_host='127.0.0.1',
@@ -60,8 +66,20 @@ class CarlaInterface:
         self.traffic_manager.set_synchronous_mode(self._sync)
         # self.traffic_manager.set_global_distance_to_leading_vehicle(2.5)
 
-
         self.viewer = None # the main viewer for visualization
+
+
+        # navigation settings
+        self.origin: carla.Location = None
+        self.destination: carla.Location = None
+        self.route: Sequence[Tuple[carla.Waypoint, RoadOption]] = None
+        self._route_arr = None
+        self._router = GlobalRoutePlanner(self.world.get_map(), sampling_resolution=self._map_resolution)
+
+        # control settings
+        self._control_dt = 0.2 # 控制时间间隔
+        self._controller:VehiclePIDController = None # VehiclePIDController(self._vehicle)
+
 
         self._default_vehicle_bp_filter = "vehicle.*"
         self._default_walker_bp_filter = "walker.pedestrian.*"
@@ -81,6 +99,30 @@ class CarlaInterface:
         # 其实也可以是记录下来spawn时候的actor id，然后用id来索引
         all_veh = self.vehicles
         return [veh for veh in all_veh if veh.attributes['role_name'] != self._hero_name]
+
+    @property
+    def ego_size(self):
+        '''
+        Return the size of the ego vehicle.
+        '''
+        if self.hero is None:
+            warnings.warn("Hero vehicle is not spawned yet.")
+            return (5.0, 2.0)
+        length = self.hero.bounding_box.extent.x * 2.0
+        width = self.hero.bounding_box.extent.y * 2.0
+        return (length, width)
+
+
+    def get_random_point(self) -> carla.Transform:
+        spawn_points = self.map.get_spawn_points()
+        spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
+        return spawn_point
+
+    def get_nearest_waypoint(self) -> carla.Waypoint:
+        assert self.hero is not None, "Hero vehicle is not spawned yet."
+        current_location = self.hero.get_location()  # general
+        return self.world.get_map().get_waypoint(current_location)
+
 
     @property
     def blueprint_library(self):
@@ -142,8 +184,7 @@ class CarlaInterface:
         self.spectator.set_transform(spec_transform)
 
     def get_actors_by_type(self, filter_string):
-        # todo: 完成
-        pass
+        return self.world.get_actors().filter(filter_string)
 
     def get_actors_by_ids(self, ids):
         return self.world.get_actors(ids)
@@ -180,15 +221,6 @@ class CarlaInterface:
 
     def attach_camera_to_hero(self, view): #camera_bp, pos=carla.Location(x=1.5, z=2.4)):
         pass
-        # if self.hero is None:
-        #     warnings.warn("Hero vehicle is not spawned yet.")
-        #     return None
-        #
-        # transform = carla.Transform(pos)
-        # transform.rotation = transform.get_forward_vector().rotate(carla.Rotation(0.0, 180.0, 0.0))
-        # cam = self.world.spawn_actor(camera_bp, transform, attach_to=self.hero)
-        # self.sensors.append(cam)
-        # return cam
 
     def attach_collision_sensor_to_hero(self):
         pass
@@ -226,19 +258,20 @@ class CarlaInterface:
         self.viewer = Viewer(viewed_object, sensor_type, view, recording, image_size, lidar_range)
 
     def spawn_hero(self, ego_x=None, ego_y=None, ego_yaw=None, blueprint_filter="vehicle*",
-                   autopilot=False, autolight=True, only_four_wheel=True):
+                   destination:carla.Location=None, autopilot=False, autolight=True, only_four_wheel=True):
 
         if ego_x is None or ego_y is None or ego_yaw is None:
             # did not provide ego position, randomly pick one
             print("Provide no transform of ego vehicle, try to randomly pick one.")
-            spawn_points = self.map.get_spawn_points()
-            spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
+            spawn_point = self.get_random_point()
+            spawn_point.location.z += 0.5
         else:
             initial_transform = carla.Transform()
             initial_transform.location = carla.Location(ego_x, ego_y, 2.5)
             # todo: how to set the location height?
             initial_transform.rotation = carla.Rotation(pitch=0.0, yaw=ego_yaw, roll=0.0)
             spawn_point = initial_transform
+
 
         if self.hero is not None:
             print("Found existing hero. Destroying...")
@@ -257,15 +290,30 @@ class CarlaInterface:
         blueprint.set_attribute('role_name', self._hero_name)
 
         self.hero = self.world.try_spawn_actor(blueprint, spawn_point)  # 有可能存在无法spawn的可能
-        modify_vehicle_physics(self.hero)
-
         if self.hero is None:
             raise RuntimeError(
                 "Player is not spawn. It might be due to incorrect position input or existing space occupancy.")
 
+        modify_vehicle_physics(self.hero)
         self.hero.set_autopilot(autopilot)
         if autolight:
             set_autolight(self.hero, self.traffic_manager)
+
+
+        # routing
+        self.origin = spawn_point.location
+        if not autopilot:
+            route_length = 0
+            while route_length < 100 / self._map_resolution:
+                self.destination = self.get_random_point().location if destination is None else destination
+                self.route = self._router.trace_route(self.origin, self.destination) # waypoint, road_option
+                route_length = len(self.route)
+            self._route_arr = waypointseq2array([wp_info[0] for wp_info in self.route])
+            self._route_arr = resample_polyline(self._route_arr, self._map_resolution)
+            # self.route = self.map.compute_route(self.origin.location, self.destination.location)
+
+        # control
+        self._controller = VehiclePIDController(self.hero, self._control_dt)
 
         # set the main_viewer
         self.spawn_viewer(self.hero)
@@ -501,55 +549,87 @@ class CarlaInterface:
     def wrap_observation(self, valid_distance=100) \
             -> Tuple[VehicleState, Union[TrackingBoxList, "OccupancyGrid2D"], RoutedLocalMap]:
 
+        assert self.hero is not None, "Hero not spawned!"
+
+        # ego vehicle
+        info = get_actor_info(self.hero)
+        ego_veh_state = VehicleState.from_kine_states(
+            info["x"], info["y"], info["yaw"], info["vx"], info["vy"],# info["ax"], info["ay"],
+            length=info["length"], width=info["width"] # 注意，这里获取的length和width，在外部也要用这个值
+        )
+        egox, egoy = info["x"], info["y"]
+
+        # other vehicle
+        roi = (egox - valid_distance, egoy - valid_distance,
+               egox + valid_distance, egoy + valid_distance)
         vehicles = self.world.get_actors().filter('vehicle.*')
-        walkers = self.world.get_actors().filter("walker.pedestrian.")
+        walkers = self.world.get_actors().filter("walker.*")
+        hero_id = self.hero.id
+        all_npc_ids = [veh.id for veh in vehicles if veh.id != hero_id]
+        all_npc_ids += [walker.id for walker in walkers]
+
+        tb_list = TrackingBoxList()
+        for actor in self.world.get_actors(all_npc_ids):
+            info = get_actor_info(actor)
+            if (roi[0] < info["x"] < roi[2]) and (roi[1] < info["y"] < roi[3]):
+                tb_list.append(TrackingBox(obb=(info["x"], info["y"], info["length"], info["width"], info["yaw"]),
+                                           vx=info["vx"], vy=info["vy"], id=actor.id))
+
+        routed_local_map = RoutedLocalMap()
+        if self._route_arr is not None and self.route is not None:
+            routed_local_map.route = self.route
+            routed_local_map.route_arr = self._route_arr
+            route_virtual_lane = Lane(-1, routed_local_map.truncate_route_arr(egox,egoy))
+            routed_local_map.lanes.append(route_virtual_lane)
+
+        # todo: 目前没有补充，lanes仅包含routing给定的。但其实应该有其他车道。找到距离最近的route里面的waypoint，找相邻车道
+        # nearest_wp = self.get_nearest_waypoint()
+        # neighboring_wps = get_neighboring_waypoints(nearest_wp)
+        # for idx, wp in enumerate(neighboring_wps):
+        #     in_node, out_node = self._router._localize(wp.transform.location)
+        #     edge = self._router._graph.edges[in_node, out_node]
+        #     path = edge['path']#[edge['entry_waypoint']] + edge['path'] + [edge['exit_waypoint']]
+        #     # path is a list of waypoints
+        #     routed_local_map.lanes.append(Lane(idx, waypointseq2array(path)))
+
+        return ego_veh_state, tb_list, routed_local_map
+
+    def convert_to_action(self, trajectory:Trajectory):
+        assert self.hero is not None, "Hero not spawned!"
+
+        if trajectory is None:
+            print("\033[31m Provide no trajectory to track! Try to hold still... \033[0m")
+            return self._controller.get_fallback_control()
 
 
+        # 这里搞成插值最好，目前是找最近索引，相当于是最近邻插值
+        # target_index = int(round(trajectory.dt / self._control_dt))
 
-        # 自车数据
-        ego_veh = world.player
-        ego_veh_info = get_vehicle_info(ego_veh)
-        egox, egoy = ego_veh_info[:2]
-        print("ego")
-        print(ego_veh_info)
+        hero_trans = self.hero.get_transform()
+        idx = 1
+        yaw_deg = trajectory.heading[idx] * 180 / math.pi
+        target_point_transform = carla.Transform(
+            carla.Location(x=trajectory.x[idx], y=trajectory.y[idx], z=hero_trans.location.z),
+            carla.Rotation(roll=hero_trans.rotation.roll, yaw=yaw_deg, pitch=hero_trans.rotation.pitch)
+        )
+        target_speed = trajectory.v[1] * 3.6 # qzl: in km/h
 
-        # 他车数据
-        other_veh_info = []
-        dist2 = []
-        vehicles = world.world.get_actors().filter('vehicle.*')
-        for veh in vehicles:
-            if veh.attributes['role_name'] != 'hero':
-                veh_info = get_vehicle_info(veh)
-                tempx, tempy = veh_info[:2]
-                dx, dy = tempx - egox, tempy - egoy
-                if -valid_distance < dx < valid_distance and -valid_distance < dy < valid_distance: # distance_threshold
-                    # dist2.append(dx**dx + dy**dy)
-                    other_veh_info.append((veh_info, dx ** 2 + dy ** 2))
+        control = self._controller.run_step(target_speed, target_point_transform)
+        control.manual_gear_shift = False
+        return control
 
+    def conduct_trajectory(self, trajectory:Trajectory):
+        control = self.convert_to_action(trajectory)
+        self.hero.apply_control(control)
+        # print(control)
 
-def get_actor_info(actor:carla.Actor)->dict:
-    """
-    获取车辆的基本信息，包括位置、方向角和车身尺寸，以及在x和y方向上的速度和加速度。
-
-    Args:
-        actor: carla.Actor，代表要查询的车辆。
-
-    """
-    transform = actor.get_transform()
-    length = actor.bounding_box.extent.x * 2.0
-    width = actor.bounding_box.extent.y * 2.0
-    velocity = actor.get_velocity()
-    acceleration = actor.get_acceleration()
-    return {
-        "x": transform.location.x,
-        "y": transform.location.y,
-        "length": length,
-        "width": width,
-        "yaw": transform.rotation.yaw,
-        "vx": velocity.x,
-        "vy": velocity.y,
-        "ax": acceleration.x,
-        "ay": acceleration.y
-    }
+    def has_arrived(self, dist_thresh=5) -> bool:
+        # 这里只是粗略位置判断
+        ego_x, ego_y = self.hero.get_location().x, self.hero.get_location().y
+        des_x, des_y = self.destination.x, self.destination.y
+        if (des_x - ego_x) ** 2 + (des_y - ego_y) ** 2 < dist_thresh**2:
+            return True
+        else:
+            return False
     # return location.x, location.y,  length, width, rotation.yaw, velocity.x, velocity.y
 

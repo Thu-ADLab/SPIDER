@@ -9,9 +9,11 @@ def draw_polygon(vertices, *args, fill=False, **kwargs):
     # plt.plot(vertices[:, 0], vertices[:, 1], *args, **kwargs)
 
     if fill:
+        # 这里设计的key不太好，想想重新设计一下
         face_alpha = kwargs['alpha'] if 'alpha' in kwargs else 1.0
-        edge_alpha = 0.8
-        kwargs['alpha'] = None
+        edge_alpha = kwargs['edge_alpha'] if 'edge_alpha' in kwargs else 0.8
+        if 'alpha' in kwargs: kwargs.pop('alpha')
+        if 'edge_alpha' in kwargs: kwargs.pop('edge_alpha')
     # if fill:
     #     if 'color' in kwargs and 'alpha' in kwargs:
     #         kwargs['edgecolor'] = to_rgba(kwargs['color'], 0.8)

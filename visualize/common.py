@@ -27,8 +27,8 @@ def ego_centric_view(ego_x, ego_y, x_range=(-50.,50.), y_range=(-50.,50.), ax:pl
     ax.set_ylim(y_range[0] + ego_y, y_range[1]+ego_y)
     return ax
 
-def adjust_canvas():
-    plt.figure(figsize=(14, 4))
+def prepare_figure(figsize=(6, 6), *args, **kwargs): # figsize=(14, 4)
+    plt.figure(figsize=figsize, *args, **kwargs)
     plt.axis('equal')
     plt.tight_layout()
 
@@ -66,6 +66,7 @@ class SnapShot:
         self.snap_count = 0
 
         self.record_video = False
+        self.video_writer = None
         if record_video:
             import cv2
             self.record_video = True
@@ -74,7 +75,7 @@ class SnapShot:
             fourcc = cv2.VideoWriter_fourcc(*'XVID')
             fps = 10
             self.video_settings = (video_path, fourcc, fps)
-            self.video_writer = None
+
             # self.video_writer = cv2.VideoWriter(self.video_path, fourcc, fps, (640, 480))
 
     def _build_video_writer(self, image_example):

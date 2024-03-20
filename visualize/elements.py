@@ -5,11 +5,16 @@ import numpy as np
 import spider.elements as elm
 from spider.elements.Box import aabb2vertices
 from spider.visualize.surface import draw_obb, draw_polygon
+from spider.visualize.line import draw_polyline
 
 
+# def draw_vehicle_state(vehicle_state):
+#
 
 def draw_local_map(local_map: Union[elm.LocalMap,elm.RoutedLocalMap]):
-    pass
+    for lane in local_map.lanes:
+        plt.plot(lane.centerline[:, 0], lane.centerline[:, 1], color='gray', linestyle='--', lw=1.5)  # 画地图
+
 
 def draw_lane(lane: elm.Lane):
     pass
@@ -17,8 +22,12 @@ def draw_lane(lane: elm.Lane):
 def draw_ego_vehicle(ego_veh_state: elm.VehicleState, *args, fill=False, **kwargs):
     return draw_obb(ego_veh_state.obb, *args, fill=fill, **kwargs)
 
-def draw_trackingbox_list():
-    pass
+def draw_trackingbox_list(trackingbox_list, draw_prediction=True, draw_history=False, *args, **kwargs):
+    for tb in trackingbox_list:
+        draw_boundingbox(tb, color='black', fill=True, alpha=0.1, linestyle='-', linewidth=1.5)  # 画他车
+        if draw_prediction and (tb.prediction is not None) and (len(tb.prediction) > 0):
+            draw_polyline(tb.prediction[:,:2], show_buffer=True, buffer_dist=tb.width * 0.5, buffer_alpha=0.1,
+                          color='C3')
 
 def draw_boundingbox(bbox: elm.BoundingBox, *args, fill=False, **kwargs):
     return draw_polygon(bbox.vertices, *args, fill=fill, **kwargs)
@@ -45,16 +54,22 @@ def draw_path(path:elm.Path, *args, **kwargs):
     return draw_trajectory(path, *args, **kwargs)
 
 def draw_trajectory(traj: Union[elm.Path, elm.Trajectory, elm.FrenetTrajectory], *args,
-                    show_footprint=False, footprint_size=(5., 2.), footprint_fill=True, footprint_alpha=0.1,  **kwargs):
+                    show_footprint=False, footprint_size=(5., 2.), footprint_fill=True, footprint_alpha=0.3,
+                    gradual_transparency=True, **kwargs):
     lines = plt.plot(traj.x, traj.y,  *args, **kwargs)
 
+    _min_face_alpha = 0.1
+    _min_edge_alpha = 0.5
     if show_footprint:
         length, width = footprint_size
         color = lines[0].get_color()
         footprint_alpha = footprint_alpha if footprint_fill else 0.8 # 填充就按设定的透明度来，否则默认0.8
 
-        for x, y, yaw in zip(traj.x, traj.y, traj.heading):
-            draw_obb((x, y, length, width, yaw), fill=footprint_fill, alpha=footprint_alpha, color=color)
+        alphas = np.linspace(footprint_alpha, _min_face_alpha, traj.steps) if gradual_transparency else [footprint_alpha] * traj.steps
+        edge_alphas = np.linspace(0.8, _min_edge_alpha, traj.steps) if gradual_transparency else [footprint_alpha] * traj.steps
+        for i, (x, y, yaw) in enumerate(zip(traj.x, traj.y, traj.heading)):
+            draw_obb((x, y, length, width, yaw), fill=footprint_fill, color=color,
+                     alpha=alphas[i], edge_alpha=edge_alphas[i])
 
     return lines
 

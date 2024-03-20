@@ -70,7 +70,7 @@ class LatticePlanner(BasePlanner):
             "max_deceleration": 10,
             # "max_centripetal_acceleration" : 100,
             "max_curvature": 100,
-            "safe_distance": (1.0, 0.2),
+            "safe_distance": (1.0, 0.2),  # 目前好像还没用
             "end_s_candidates": (10,20,40,60),
             "end_l_candidates": (-3.5, 0, 3.5),# (-0.8,0,0.8), # s,d采样生成横向轨迹 (-3.5, 0, 3.5), #
             "end_v_candidates": tuple(i*60/3.6/3 for i in range(4)), # 改这一项的时候，要连着限速一起改了

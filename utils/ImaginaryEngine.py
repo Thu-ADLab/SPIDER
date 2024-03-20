@@ -119,7 +119,7 @@ if __name__ == '__main__':
         vis.draw_ego_vehicle(ego_state, color='C0', fill=True, alpha=0.3, linestyle='-', linewidth=1.5)  # 画自车
         vis.ego_centric_view(ego_state.x(), ego_state.y(), [-20, 80], [-5, 5])
 
-    vis.adjust_canvas()
+    vis.prepare_figure()
     # 可视化
     while ego_state.x() < 240:
         traj, truncated = engine.imagine(ego_state, obstacles, local_map)

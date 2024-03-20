@@ -20,7 +20,7 @@ def demo():
     from spider.planner_zoo import LatticePlanner
 
     planner = LatticePlanner({
-        "steps": 15,
+        "steps": 20,
         "dt": 0.2,
         "end_s_candidates": (20, 40, 60),
         "end_l_candidates": (-3.5, 0, 3.5),
