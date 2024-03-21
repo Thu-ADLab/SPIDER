@@ -1,11 +1,17 @@
 from spider.interface.BaseBenchmark import DummyBenchmark
-from spider.planner_zoo import (LatticePlanner, BezierPlanner, PiecewiseLatticePlanner, ImaginaryPlanner,
-                                OptimizedLatticePlanner)
-planner = LatticePlanner({
-    "steps": 20,
-    "dt": 0.2,
-    "end_l_candidates": (-3.5, 0, 3.5),
+from spider.planner_zoo import *
+
+benchmark = DummyBenchmark({
+    "save_video": True
 })
+
+# planner = LatticePlanner({
+#     "steps": 20,
+#     "dt": 0.2,
+#     "end_l_candidates": (-3.5, 0, 3.5),
+# })
+
+planner = DummyPlanner()
 
 # planner = BezierPlanner({
 #     "steps": 20,
@@ -26,8 +32,5 @@ planner = LatticePlanner({
 # planner = OptimizedLatticePlanner({})
 
 
-benchmark = DummyBenchmark({
-    "save_video": True
-})
 benchmark.test(planner)
 
