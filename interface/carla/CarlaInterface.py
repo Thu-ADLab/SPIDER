@@ -539,6 +539,14 @@ class CarlaInterface:
 
         print("Removed all NPCs.")
 
+    def reset(self):
+        # todo: 写一个config，储存这些信息。
+        self.destroy()
+        self.spawn_hero()
+        self.generate_traffic()
+
+
+
 
     def render(self, display=None):
         if self._rendering:

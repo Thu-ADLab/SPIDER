@@ -47,7 +47,7 @@ try:
     # env.random_weather(True)
 
     env.spawn_hero(autopilot=False)
-    env.generate_traffic(50)
+    env.generate_traffic(50,10)
 
     env.bev_spectator(30, 5, 5, True)
     # env.side_view_spectator(left=False)
@@ -55,7 +55,7 @@ try:
     # env.first_person_spectator()
 
     # env.viewer.change_view("bird_eye")
-    vis.prepare_figure()
+    vis.figure()
 
     delta_steps = 1#int(planner.dt /0.05)#/ 0.05)
     traj = None

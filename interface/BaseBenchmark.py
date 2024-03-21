@@ -26,6 +26,10 @@ class BaseBenchmark:
             "video_name": 'benchmark.mp4'
         }
 
+
+    def reset(self):
+        return self.initial_environment()
+
     @abstractmethod
     def initial_environment(self):
         '''
@@ -34,7 +38,7 @@ class BaseBenchmark:
         pass
 
     @abstractmethod
-    def test(self, spider_planner, *args, **kwargs):
+    def test(self, spider_planner, log=False):
         '''
         给定一个planner，在设置好的环境里面开一遍，返回config中指定的metrics
         '''
@@ -99,11 +103,20 @@ class DummyBenchmark(BaseBenchmark):
             "ego_veh_length": 5.0,
             "ego_veh_width": 2.0,
             # "offscreen_rendering": False,
+            "rendering": True,
+            "snapshot": True,
             "save_video": False,
             # "video_path": None,
             "video_root": './',
             "video_name": None#'benchmark.mp4'
         }
+
+
+    def set_rendering(self, rendering=True):
+        self.config["rendering"] = rendering
+
+    def set_snapshot(self, snapshot=True):
+        self.config["snapshot"] = snapshot
 
 
     def initial_environment(self):
@@ -118,7 +131,7 @@ class DummyBenchmark(BaseBenchmark):
         # 感知信息
         self.obstacles = deepcopy(self._init_obstacles)
 
-    def test(self, spider_planner):
+    def test(self, spider_planner, log=False):
         '''
         给定一个planner，在设置好的环境里面开一遍，返回config中指定的metrics
         '''
@@ -129,19 +142,21 @@ class DummyBenchmark(BaseBenchmark):
         self.initial_environment()
         spider_planner.set_local_map(self.local_map)
 
-        plt.figure(figsize=(14, 4))
-        plt.axis('equal')
-        plt.tight_layout()
+        if self.config["rendering"]:
+            vis.figure(figsize=(14, 4))
 
-        video_name = type(spider_planner).__name__ + '.avi' if self.config["video_name"] is None else self.config["video_name"]
-        snapshot = vis.SnapShot(True, 15, record_video=self.config["save_video"],
-                                video_path=self.config["video_root"]+video_name)
+            if self.config["snapshot"]:
+                video_name = type(spider_planner).__name__ + '.avi' if self.config["video_name"] is None else self.config["video_name"]
+                snapshot = vis.SnapShot(True, 15, record_video=self.config["save_video"],
+                                        video_path=self.config["video_root"]+video_name)
         ################## main loop ########################
         try:
             while True:
-                if self.ego_veh_state.x() > 250: break
+                if self.ego_veh_state.x() > 250:
+                    break
 
-                plt.cla()
+                if self.config["rendering"]:
+                    plt.cla()
 
                 # 地图信息更新
 
@@ -156,38 +171,41 @@ class DummyBenchmark(BaseBenchmark):
                     raise RuntimeError("DummyBenchmark receives no feasible trajectory!")
 
                 # 可视化
+                if self.config["rendering"]:
 
-                for lane in self.local_map.lanes:
-                    plt.plot(lane.centerline[:, 0], lane.centerline[:, 1], color='gray', linestyle='--', lw=1.5)  # 画地图
-                # vis.draw_ego_vehicle(ego_veh_state, color='green', fill=True, alpha=0.2, linestyle='-', linewidth=1.5) # 画自车
+                    for lane in self.local_map.lanes:
+                        plt.plot(lane.centerline[:, 0], lane.centerline[:, 1], color='gray', linestyle='--', lw=1.5)  # 画地图
+                    # vis.draw_ego_vehicle(ego_veh_state, color='green', fill=True, alpha=0.2, linestyle='-', linewidth=1.5) # 画自车
 
-                for tb in self.obstacles:
-                    vis.draw_boundingbox(tb, color='black', fill=True, alpha=0.1, linestyle='-', linewidth=1.5)  # 画他车
-                    # 画他车预测轨迹
-                    tb_pred_traj = np.column_stack((tb.x + np.asarray(traj.t) * tb.vx, tb.y + np.asarray(traj.t) * tb.vy))
-                    vis.draw_polyline(tb_pred_traj, show_buffer=True, buffer_dist=tb.width * 0.5, buffer_alpha=0.1,
-                                      color='C3')
+                    for tb in self.obstacles:
+                        vis.draw_boundingbox(tb, color='black', fill=True, alpha=0.1, linestyle='-', linewidth=1.5)  # 画他车
+                        # 画他车预测轨迹
+                        tb_pred_traj = np.column_stack((tb.x + np.asarray(traj.t) * tb.vx, tb.y + np.asarray(traj.t) * tb.vy))
+                        vis.draw_polyline(tb_pred_traj, show_buffer=True, buffer_dist=tb.width * 0.5, buffer_alpha=0.1,
+                                          color='C3')
 
-                vis.draw_ego_history(self.ego_veh_state, '-', lw=1, color='gray')  # 画自车历史
-                vis.draw_trajectory(traj, '.-', show_footprint=True, color='C2')  # 画轨迹
-                if "control_points" in traj.debug_info: # bezier planner
-                    pts = traj.debug_info["control_points"]
-                    plt.plot(pts[:,0], pts[:,1], 'or')
-                # if "corridor" in traj.debug_info: # optimizer planner
-                #     vis.draw_corridor(traj.debug_info["corridor"], color='green', linewidth=0.5)
-                if "initial_trajectory" in traj.debug_info:
-                    vis.draw_trajectory(traj.debug_info["initial_trajectory"], '--', color="black")
+                    vis.draw_ego_history(self.ego_veh_state, '-', lw=1, color='gray')  # 画自车历史
+                    vis.draw_trajectory(traj, '.-', show_footprint=True, color='C2')  # 画轨迹
+                    if "control_points" in traj.debug_info: # bezier planner
+                        pts = traj.debug_info["control_points"]
+                        plt.plot(pts[:,0], pts[:,1], 'or')
+                    # if "corridor" in traj.debug_info: # optimizer planner
+                    #     vis.draw_corridor(traj.debug_info["corridor"], color='green', linewidth=0.5)
+                    if "initial_trajectory" in traj.debug_info:
+                        vis.draw_trajectory(traj.debug_info["initial_trajectory"], '--', color="black")
 
 
 
-                vis.draw_ego_vehicle(self.ego_veh_state, color='C0', fill=True, alpha=0.3, linestyle='-', linewidth=1.5)  # 画自车
-                # plt.axis('equal')
-                # plt.tight_layout()
-                vis.ego_centric_view(self.ego_veh_state.x(), self.ego_veh_state.y(), [-20, 80], [-5, 5])
-                # plt.xlim([ego_veh_state.x() - 20, ego_veh_state.x() + 80])
-                # plt.ylim([ego_veh_state.y() - 5, ego_veh_state.y() + 5])
-                plt.pause(0.01)
-                snapshot.snap(plt.gca())
+                    vis.draw_ego_vehicle(self.ego_veh_state, color='C0', fill=True, alpha=0.3, linestyle='-', linewidth=1.5)  # 画自车
+                    # plt.axis('equal')
+                    # plt.tight_layout()
+                    vis.ego_centric_view(self.ego_veh_state.x(), self.ego_veh_state.y(), [-20, 80], [-5, 5])
+                    # plt.xlim([ego_veh_state.x() - 20, ego_veh_state.x() + 80])
+                    # plt.ylim([ego_veh_state.y() - 5, ego_veh_state.y() + 5])
+                    plt.pause(0.01)
+
+                    if self.config["snapshot"]:
+                        snapshot.snap(plt.gca())
 
                 # 控制+定位，假设完美控制到下一个轨迹点
                 self.ego_veh_state.transform.location.x, self.ego_veh_state.transform.location.y, self.ego_veh_state.transform.rotation.yaw \
@@ -201,9 +219,11 @@ class DummyBenchmark(BaseBenchmark):
             print(e)
 
         finally:
-            plt.close()
-            snapshot.print(3, 2, figsize=(15, 6))
-            plt.show()
+            if self.config["rendering"]:
+                plt.close()
+                if self.config["snapshot"]:
+                    snapshot.print(3, 2, figsize=(15, 6))
+                    plt.show()
 
 
     @classmethod
