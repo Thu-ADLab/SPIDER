@@ -31,7 +31,7 @@ plt.plot(transformer.refer_line_csp.s, transformer.refer_line_csp.y , '.')
 plt.subplot(133)
 plt.plot(cline_interp[:,0], cline_interp[:,1])
 
-traj = Trajectory.from_trajectory_array(traj_arr, dt=0.1)
+traj = Trajectory.from_trajectory_array(traj_arr, dt=0.1,calc_derivative=False)
 frenet_traj = transformer.cart2frenet4traj(traj, order=0)
 plt.figure()
 plt.plot(frenet_traj.s, frenet_traj.l)

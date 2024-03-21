@@ -27,7 +27,7 @@ def ego_centric_view(ego_x, ego_y, x_range=(-50.,50.), y_range=(-50.,50.), ax:pl
     ax.set_ylim(y_range[0] + ego_y, y_range[1]+ego_y)
     return ax
 
-def prepare_figure(figsize=(6, 6), *args, **kwargs): # figsize=(14, 4)
+def figure(figsize=(6, 6), *args, **kwargs): # figsize=(14, 4)
     plt.figure(figsize=figsize, *args, **kwargs)
     plt.axis('equal')
     plt.tight_layout()
@@ -158,7 +158,7 @@ class SnapShot:
     def _snap_trigger(self) -> bool:
         # 返回是否触发执行snap
         # 是否启用了auto_snap机制，如果没启用直接snap
-        # 循环中每次都调用snap，间隔固定次数才会执行snap
+        # 循环中每次都调用snap，间隔固定次数才会真正执行snap
         if self.auto_snap:
             return self.snap_count % self.auto_snap_intervals == 0
         else:

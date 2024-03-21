@@ -106,7 +106,7 @@ class HighwayEnvInterface:
 
         return ego_veh_state, perception, local_map
 
-    def convert_to_action(self, planner_output, planner_dt=None, gain_coef=1.1, wheelbase=3.0):
+    def convert_to_action(self, planner_output, gain_coef=1.1, wheelbase=3.0):
         if planner_output is None:
             raise AssertionError("The planner outputs NO results. Please check whether it can find a valid solution, and it is recommended to add a fallback trajectory generation scheme.")
 
@@ -140,13 +140,16 @@ class HighwayEnvInterface:
         else:  # 控制量
             raise NotImplementedError("control not supported now...")
 
-    def conduct_output(self, planner_output, planner_dt=None):
+    def conduct_trajectory(self, trajectory):
+        action = self.convert_to_action(trajectory, trajectory.dt)
+        return self._env.step(action)
+
+    def conduct_output(self, planner_output):
         '''
         qzl: 应该写成直接执行动作呢还是写成输出对应格式的动作呢？
         '''
         if self.output_flag == spider.OUTPUT_TRAJECTORY:  # 轨迹
-            action = self.convert_to_action(planner_output,planner_dt)
-            return self._env.step(action)
+            return self.conduct_trajectory(planner_output)
         else:  # 控制量
             raise NotImplementedError("not supported now...")
 

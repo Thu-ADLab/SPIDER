@@ -15,13 +15,16 @@ class CartConstriantChecker(BaseConstraintChecker):
 
         if not ("constraint_flags" in config):
             self.config.update({
-                "constraint_flags":{
-                    CONSTRIANT_SPEED_UB,
-                    CONSTRIANT_SPEED_LB,
-                    CONSTRIANT_ACCELERATION,
-                    CONSTRIANT_DECELERATION,
-                    CONSTRIANT_CURVATURE}
+                "constraint_flags": set()
             })
+            # self.config.update({
+            #     "constraint_flags":{
+            #         CONSTRIANT_SPEED_UB,
+            #         CONSTRIANT_SPEED_LB,
+            #         CONSTRIANT_ACCELERATION,
+            #         CONSTRIANT_DECELERATION,
+            #         CONSTRIANT_CURVATURE}
+            # })
 
         self.kinematics_feasibility_check = ConstraintCollection(self.config).aggregate()  # 这是一个函数
         self.collision_checker = collision_checker  # 这是一个对象

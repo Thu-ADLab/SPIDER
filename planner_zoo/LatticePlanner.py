@@ -59,8 +59,8 @@ class LatticePlanner(BasePlanner):
         """
         return {
             "output": spider.OUTPUT_TRAJECTORY,
-            "steps": 50,
-            "dt": 0.1,
+            "steps": 20,
+            "dt": 0.2,
             "ego_veh_length": 5.0,
             "ego_veh_width": 2.0,
             "max_speed": 65/3.6,

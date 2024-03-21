@@ -229,14 +229,18 @@ class TrackingBoxList(list): # List[TrackingBox]
     def get_vertices_at(self, step=0):
         '''
         获取的是第step预测的，所有障碍物bbox的顶点集合
-        有预测就预测 没预测就直接用当前的顶点
+        有预测就预测 没预测就返回空
         :param step: the ith step of prediction
         :return:
         '''
         bboxes_vertices = []
         for tb in self:
-            if step == 0 or len(tb.pred_vertices) <= step:
+            if len(tb.pred_vertices) == 0:
+                warnings.warn("Tracking box {} has not predicted yet!".format(tb.id))
+            if step == 0:
                 bboxes_vertices.append(tb.vertices)
+            elif step >= len(tb.pred_vertices):
+                continue
             else:
                 bboxes_vertices.append(tb.pred_vertices[step])
         return bboxes_vertices
@@ -254,6 +258,18 @@ class TrackingBoxList(list): # List[TrackingBox]
             s, l, frenet_yaw = tb.frenet_prediction[step]
             frenet_vertices.append(obb2vertices([s, l, tb.length, tb.width, frenet_yaw]))
         return frenet_vertices
+
+    def sort_by_dist(self, x, y):
+        '''
+        按照离(x,y)的距离进行排序
+        '''
+        self.sort(key=lambda tb:(tb.x-x) **2 + (tb.y-y) **2)
+        return self
+
+    def sort_by_ids(self):
+        '''按照id排序'''
+        self.sort(key=lambda tb:tb.id)
+        return self
 
     @classmethod
     def from_obbs(cls, obb_set_with_vel:Sequence, obbs_history=None, obbs_prediction=None, ids=None):
