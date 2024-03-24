@@ -154,7 +154,8 @@ class Viewer:
 
     def destroy(self):
         if self.sensor is not None:
-            self.sensor.destroy()
+            # print("WARNING: sensor found, it should be destroyed")
+            self.sensor.destroy() # 有时候会莫名其妙carla服务器崩溃
         self.sensor = None
         self.surface = None
         self.sensor_type = None

@@ -8,7 +8,11 @@ os.environ.setdefault('PATH', '')
 from collections import deque
 import gym
 from gym import spaces
-import cv2
+import spider
+try:
+    import cv2
+except (ModuleNotFoundError, ImportError) as e:
+    cv2 = spider._virtual_import("cv2", e)
 
 cv2.ocl.setUseOpenCL(False)
 

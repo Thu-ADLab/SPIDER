@@ -1,15 +1,18 @@
 from typing import Union
 import numpy as np
-from cvxopt import matrix, solvers
 
+import spider
+try:
+    import cvxopt
+except (ModuleNotFoundError, ImportError) as e:
+    cvxopt = spider._virtual_import("cvxopt", e)
 
 from spider.optimize.BaseOptimizer import BaseOptimizer
 from spider.optimize.common import FrenetTrajOptimParam
-from spider.elements.trajectory import Path, Trajectory, FrenetTrajectory
-from spider.elements import TrackingBoxList, OccupancyGrid2D
+from spider.elements import TrackingBoxList, OccupancyGrid2D, FrenetTrajectory
 from spider.utils.collision.CollisionChecker import BoxCollisionChecker
 from spider.utils.collision.AABB import aabb2vertices
-from spider.vehicle_model import Bicycle
+# from spider.vehicle_model import Bicycle
 
 
 def generate_corridor_bboxes(initial_guess:np.ndarray, bboxes:TrackingBoxList,
@@ -224,8 +227,9 @@ class FrenetTrajectoryOptimizer(BaseOptimizer):
                                                        traj_sl_array, perception, offset_bound, param=self.param)
 
 
-        Q, f, Aineq, bineq, Aeq, beq = [matrix(i.astype(np.float64)) for i in [Q, f, Aineq, bineq, Aeq, beq]]
-        sol = solvers.qp(Q, f, Aineq, bineq, Aeq, beq)  # kktsolver='ldl', options={'kktreg':1e-9}
+        Q, f, Aineq, bineq, Aeq, beq = [cvxopt.matrix(i.astype(np.float64))
+                                            for i in [Q, f, Aineq, bineq, Aeq, beq]]
+        sol = cvxopt.solvers.qp(Q, f, Aineq, bineq, Aeq, beq)  # kktsolver='ldl', options={'kktreg':1e-9}
 
         optim_traj_arr = np.array(sol['x']) # size of [2N, 1] squeeze的过程在下面赋值的时候加了0的列索引
         optim_traj = FrenetTrajectory(traj.steps, traj.dt)

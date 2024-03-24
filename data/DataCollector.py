@@ -12,6 +12,8 @@ import tqdm
 
 class DataCollector:
     # 要重新写，跟interface配合很不好。应该就是利用interface随机初始化环境。然后一直执行。
+    # 流程应该是collector -> 本地json文件 -> data_factory读取本地数据并返回dataloader(需要经过state encode) -> 训练
+
     def __init__(self,
                  planner: spider.planner_zoo.BasePlanner,
                  interface: spider.interface.BaseInterface=None,

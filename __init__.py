@@ -1,5 +1,6 @@
 import importlib as _importlib
 from spider.param import *
+from spider._virtual_import import _virtual_import, _try_import, _try_import_from
 # from spider import constraints
 # from spider import elements, utils, sampler, evaluator, interface, vehicle_model
 # from spider import motion_planning, path_planning

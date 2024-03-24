@@ -311,44 +311,77 @@ class CarlaInterface:
             blueprint.set_attribute('color', color)
         blueprint.set_attribute('role_name', self._hero_name)
 
-        self.hero = self.world.try_spawn_actor(blueprint, spawn_point)  # 有可能存在无法spawn的可能
-        if self.hero is None:
+        hero = self.world.try_spawn_actor(blueprint, spawn_point)  # 有可能存在无法spawn的可能
+        if hero is None:
             raise RuntimeError(
                 "Player is not spawn. It might be due to incorrect position input or existing space occupancy.")
 
+        self.set_hero(hero, destination, autopilot, autolight)
+
+        # modify_vehicle_physics(self.hero)
+        # self.hero.set_autopilot(autopilot)
+        # if autolight:
+        #     set_autolight(self.hero, self.traffic_manager)
+        #
+        #
+        # # routing
+        # self.origin = spawn_point.location
+        # if not autopilot:
+        #     route_length = 0
+        #     while route_length < 100 / self._map_resolution:
+        #         self.destination = self.get_random_point().location if destination is None else destination
+        #         self.route = self._router.trace_route(self.origin, self.destination) # waypoint, road_option
+        #         route_length = len(self.route)
+        #     self._route_arr = waypointseq2array([wp_info[0] for wp_info in self.route])
+        #     self._route_arr = resample_polyline(self._route_arr, self._map_resolution)
+        #     # self.route = self.map.compute_route(self.origin.location, self.destination.location)
+        #
+        # # control
+        # self._controller = VehiclePIDController(self.hero, self._control_dt)
+        #
+        # # set the main_viewer
+        # self.spawn_viewer(self.hero)
+        # # self.spawn_viewer(self.hero, sensor_type="camera_rgb", view="bird_eye")
+        # # self.spawn_viewer(self.hero, sensor_type="camera_rgb", view="right_side")
+        # # self.spawn_viewer(self.hero, sensor_type="lidar",view="bird_eye", image_size=(640,360))
+        # # self.spawn_viewer(self.hero, sensor_type="camera_log_gray_depth", view="first_person",
+        # #                   image_size=(640, 360), recording=True)
+
+        if self._sync:
+            self.world.tick()
+        else:
+            self.world.wait_for_tick()
+
+    def set_hero(self, hero: carla.Actor, destination:carla.Location=None, autopilot=False, autolight=True):
+        if self.hero is not None:
+            print("Found existing hero. Destroying...")
+            self.destroy_hero()
+
+        self.hero = hero
         modify_vehicle_physics(self.hero)
         self.hero.set_autopilot(autopilot)
         if autolight:
             set_autolight(self.hero, self.traffic_manager)
 
-
         # routing
-        self.origin = spawn_point.location
+        self.origin = hero.get_location()
         if not autopilot:
             route_length = 0
             while route_length < 100 / self._map_resolution:
                 self.destination = self.get_random_point().location if destination is None else destination
-                self.route = self._router.trace_route(self.origin, self.destination) # waypoint, road_option
+                self.route = self._router.trace_route(self.origin, self.destination)  # waypoint, road_option
                 route_length = len(self.route)
             self._route_arr = waypointseq2array([wp_info[0] for wp_info in self.route])
             self._route_arr = resample_polyline(self._route_arr, self._map_resolution)
             # self.route = self.map.compute_route(self.origin.location, self.destination.location)
+        else:
+            print("autopilot actor does not have a destination")
 
         # control
         self._controller = VehiclePIDController(self.hero, self._control_dt)
 
         # set the main_viewer
         self.spawn_viewer(self.hero)
-        # self.spawn_viewer(self.hero, sensor_type="camera_rgb", view="bird_eye")
-        # self.spawn_viewer(self.hero, sensor_type="camera_rgb", view="right_side")
-        # self.spawn_viewer(self.hero, sensor_type="lidar",view="bird_eye", image_size=(640,360))
-        # self.spawn_viewer(self.hero, sensor_type="camera_log_gray_depth", view="first_person",
-        #                   image_size=(640, 360), recording=True)
-
-        if self._sync:
-            self.world.tick()
-        else:
-            self.world.wait_for_tick()
 
     def spawn_npc_vehicles(self, vehicle_num, vehicle_filter="vehicle*", spawn_points=None,
                            autopilot=True, autolight=True, only_four_wheel=False):
@@ -534,8 +567,9 @@ class CarlaInterface:
         all_ids = [veh.id for veh in vehicles if veh.id != hero_id]
         all_ids += [walker.id for walker in walkers]
 
-        # destroy pedestrian (actor and controller)
-        self.client.apply_batch([carla.command.DestroyActor(x) for x in all_ids])
+        # self.client.apply_batch([carla.command.DestroyActor(x) for x in all_ids])
+        for actor in self.world.get_actors(all_ids):
+            actor.destroy()
 
         print("Removed all NPCs.")
 

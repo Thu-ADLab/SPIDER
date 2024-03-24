@@ -192,7 +192,7 @@ class DummyBenchmark(BaseBenchmark):
                     # if "corridor" in traj.debug_info: # optimizer planner
                     #     vis.draw_corridor(traj.debug_info["corridor"], color='green', linewidth=0.5)
                     if "initial_trajectory" in traj.debug_info:
-                        vis.draw_trajectory(traj.debug_info["initial_trajectory"], '--', color="black")
+                        vis.draw_trajectory(traj.debug_info["initial_trajectory"], '--', color="black", show_footprint=False)
 
 
 

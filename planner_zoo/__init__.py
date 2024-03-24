@@ -7,4 +7,6 @@ from spider.planner_zoo.ImaginaryPlanner import ImaginaryPlanner
 from spider.planner_zoo.OptimizedLatticePlanner import OptimizedLatticePlanner
 from spider.planner_zoo.FallbackPlanner import FallbackPlanner
 
-
+# import spider
+# FallbackPlanner = spider._try_import_from("spider.planner_zoo.FallbackPlanner", "FallbackPlanner")
+# ImaginaryPlanner = spider._try_import_from("spider.planner_zoo.ImaginaryPlanner", "ImaginaryPlanner")

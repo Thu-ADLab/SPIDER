@@ -258,7 +258,11 @@ if __name__ == '__main__':
     from spider.elements.Box import obb2vertices
     import spider.visualize as vis
     import matplotlib.pyplot as plt
-    import cv2
+    import spider
+    try:
+        import cv2
+    except (ModuleNotFoundError, ImportError) as e:
+        cv2 = spider._virtual_import("cv2", e)
 
 
     def test(q_network_model_filename=None, save_video=False):

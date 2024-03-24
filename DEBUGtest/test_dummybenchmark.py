@@ -5,13 +5,12 @@ benchmark = DummyBenchmark({
     "save_video": True
 })
 
-# planner = LatticePlanner({
-#     "steps": 20,
-#     "dt": 0.2,
-#     "end_l_candidates": (-3.5, 0, 3.5),
-# })
+planner = LatticePlanner({
+    "steps": 20,
+    "dt": 0.2,
+})
 
-planner = DummyPlanner()
+# planner = DummyPlanner()
 
 # planner = BezierPlanner({
 #     "steps": 20,
@@ -30,6 +29,8 @@ planner = DummyPlanner()
 # planner = ImaginaryPlanner()
 
 # planner = OptimizedLatticePlanner({})
+
+# planner = FallbackPlanner()
 
 
 benchmark.test(planner)

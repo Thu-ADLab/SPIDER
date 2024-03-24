@@ -6,6 +6,12 @@ import numpy as np
 import pickle
 import io
 
+try:
+    import cv2
+except (ModuleNotFoundError, ImportError) as e:
+    import spider
+    cv2 = spider._virtual_import("cv2", e)
+
 
 # plt.gca().set_facecolor('white')
 #     plt.gca().set_xticks([])
@@ -68,7 +74,6 @@ class SnapShot:
         self.record_video = False
         self.video_writer = None
         if record_video:
-            import cv2
             self.record_video = True
             # todo: 下面的内容换成可以由video_kwargs设置，设默认值可以先设一个字典，然后update一下
             # video_path =
@@ -80,7 +85,6 @@ class SnapShot:
 
     def _build_video_writer(self, image_example):
         height, width = image_example.shape[:2]
-        import cv2
         self.video_writer = cv2.VideoWriter(*self.video_settings, (width, height))
         return self.video_writer
 

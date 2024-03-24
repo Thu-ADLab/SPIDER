@@ -1,6 +1,10 @@
 import numpy as np
 import math
-import cv2
+import spider
+try:
+    import cv2
+except (ModuleNotFoundError, ImportError) as e:
+    cv2 = spider._virtual_import("cv2", e)
 
 from spider.elements.Box import TrackingBoxList
 import os
