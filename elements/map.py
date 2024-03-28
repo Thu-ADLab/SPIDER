@@ -54,9 +54,9 @@ class Lane:
 
         # qzl: maybe useful in FUTURE VERSIONS below
         self.bidirectional = False
-        self.traffic_flow = 0
-        self.traffic_density = 0
-        self.average_speed = 0 # qzl:这三个都是交通特性，动态地图可以给出；详见greenshields模型
+        self.traffic_flow = 0.
+        self.traffic_density = 0.
+        self.average_speed = 0. # qzl:这三个都是交通特性，动态地图可以给出；详见greenshields模型
 
 
     # def densify(self, ds=1.0): # 在geometry里面
@@ -76,6 +76,27 @@ class Lane:
         if self._right_laneline is None:
             self._right_laneline = generate_parallel_line(self.centerline, self.width / 2.0, spider.DIRECTION_RIGHT)
         return self._right_laneline
+
+    def to_dict(self):
+        return {
+            "type": self.__class__.__name__,
+            "id": self.id,
+            "virtual": self.virtual,
+            "centerline": np.asarray(self.centerline).tolist(),
+
+            "left_laneline": np.asarray(self.left_laneline).tolist(),
+            "right_laneline": np.asarray(self.right_laneline).tolist(),
+            "left_lane_change": self.left_lane_change,
+            "right_lane_change": self.right_lane_change,
+
+            "width": self.width,
+            "speed_limit": self.speed_limit,
+            "bidirectional": self.bidirectional,
+
+            "traffic_flow": self.traffic_flow,
+            "traffic_density": self.traffic_density,
+            "average_speed": self.average_speed
+        }
 
 
 class LocalMap:
@@ -145,6 +166,16 @@ class LocalMap:
 
         return cls(lanes, **lmap_kwargs)
 
+    def to_dict(self):
+        return {
+            "type": self.__class__.__name__,
+            "scenario_type": self.type.name,
+            "section_id": self.section_id,
+            "lanes": [lane.to_dict() for lane in self.lanes],
+            "network": None, # 目前还没有规范化network的形式
+            "traffic_signs": None # 目前还没有规范化traffic_signs的形式
+        }
+
 
 
 
@@ -154,7 +185,7 @@ class RoutedLocalMap(LocalMap):
         super(RoutedLocalMap, self).__init__(lanes, scene_type, section_id, network, traffic_signs)
         # 全局导航信息，暂时用不到
         self.route = None
-        self.route_arr = None
+        self.route_arr:np.ndarray = None
         # 局部导航信息
         self.exit_lanes_idx = [] # 目标车道的序号集合
         self.distance_to_critical_point = 0.0  # todo:这个按道理需要结合自车定位特征，应该放到外面
@@ -181,6 +212,16 @@ class RoutedLocalMap(LocalMap):
         end_idx = np.where(cum_dist >= end_mileage)[0][0] # 找到第一个大于等于end_mileage的索引
 
         return self.route_arr[start_idx:end_idx]
+
+    def to_dict(self):
+        d = super(RoutedLocalMap, self).to_dict()
+        d["type"] = self.__class__.__name__
+        d['exit_lanes_idx'] = self.exit_lanes_idx
+        # d['route'] = self.route
+        d['route_arr'] = None if self.route_arr is None else self.route_arr.tolist()
+        d['distance_to_critical_point'] = self.distance_to_critical_point
+        d['traffic_light_state'] = self.traffic_light_state.name
+        return d
 
 
     # def truncate_route_arr(self, ego_x, ego_y, roi_radius):

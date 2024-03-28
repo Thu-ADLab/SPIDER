@@ -165,7 +165,7 @@ class DummyBenchmark(BaseBenchmark):
                 # 定位信息更新,本应该放在前面从gps拿，这里直接假设完美控制，在后面从控制拿了
                 # ego_veh_state = ...
 
-                traj = spider_planner.plan(deepcopy(self.ego_veh_state), deepcopy(self.obstacles))  # , local_map)
+                traj = spider_planner.plan(deepcopy(self.ego_veh_state), deepcopy(self.obstacles), None)  # , self.local_map
 
                 if traj is None:
                     raise RuntimeError("DummyBenchmark receives no feasible trajectory!")
@@ -215,6 +215,7 @@ class DummyBenchmark(BaseBenchmark):
 
                 for tb in self.obstacles:
                     tb.set_obb([tb.x + tb.vx * traj.dt, tb.y + tb.vy * traj.dt, tb.length, tb.width, tb.box_heading])
+
         except Exception as e:
             print(e)
 

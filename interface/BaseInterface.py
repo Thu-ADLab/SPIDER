@@ -23,8 +23,13 @@ class BaseInterface:
     def convert_to_action(self, planner_output):
         pass
 
+
+    # todo:这里不对，environment应该和reward 以及 done 解耦开！ 因为实际上reward以及done与否都是取决于人类评判的标准，不是环境客观决定的
     def is_done(self) -> bool:
-        return  False
+        return False
+
+    def calc_reward(self) -> float:
+        return 0.0
 
 class DummyInterface(BaseInterface):
     def __init__(self):

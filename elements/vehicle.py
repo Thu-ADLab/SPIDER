@@ -91,6 +91,16 @@ class VehicleState:
             = traj.v[idx], traj.a[idx], traj.curvature[idx]
         return ego_state
 
+    def to_dict(self):
+        return { # 暂时没有存3D的高度信息
+            "type": self.__class__.__name__,
+            "location": [self.x(), self.y()],
+            "size": [self.length, self.width],
+            "yaw": self.yaw(),
+            "velocity": [self.velocity.x, self.velocity.y],
+            "acceleration": [self.acceleration.x, self.acceleration.y]
+        }
+
 
 
 class KinematicState:

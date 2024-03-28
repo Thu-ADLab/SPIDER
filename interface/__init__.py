@@ -1,3 +1,4 @@
+#todo: 到底应该叫做wrapper还是interface？？？
 from spider.interface.BaseInterface import BaseInterface, DummyInterface
 from spider.interface.BaseBenchmark import BaseBenchmark, DummyBenchmark
 

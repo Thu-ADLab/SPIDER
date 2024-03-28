@@ -13,6 +13,11 @@ class BasePlanner:
         self.local_map = None
 
 
+        # 数据闭环
+        self._activate_log_buffer:bool = False
+        self._log_buffer:spider.data.LogBuffer = None
+
+
     @classmethod
     def default_config(cls) -> dict:
         """
@@ -48,6 +53,23 @@ class BasePlanner:
     @property
     def length(self):
         return self.config.get("ego_veh_length", 0.0)
+
+    @property
+    def log_buffer(self):
+        return self._log_buffer
+        # if self._activate_log_buffer:
+        #     return self._log_buffer
+        # else:
+        #     return None
+
+    def set_log_buffer(self, log_buffer=None):
+        self._activate_log_buffer = True #not self._activate_log_buffer if enable is None else enable
+        if log_buffer is not None:
+            self._log_buffer = log_buffer
+
+    def toggle_log_buffer(self, enable:bool=None):
+        self._activate_log_buffer = not self._activate_log_buffer if enable is None else enable
+
 
     def configure(self, config: dict):
         warnings.warn("Method configure() is going to be deprecated. Re-instantiate a planner instead! ",

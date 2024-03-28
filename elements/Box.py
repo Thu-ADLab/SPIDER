@@ -67,8 +67,19 @@ def dilate(vertices, length_add, width_add):
 
 
 class BoundingBox:
+    _class_name_dict = {
+        -1: "unknown",
+        0: "car",
+        1: "person",
+        2: "building",
+        3: "traffic light",
+        4: "traffic sign",
+        5: "truck",
+        6: "bicycle",
+        7: "motorcycle"
+    }
 
-    def __init__(self, obb=None, *, vertices=None):
+    def __init__(self, obb=None, class_label=-1, *, vertices=None):
         '''
         # 现在obb和vertices一起输入造成混淆，已经分出from_vertices方法
         :param vertices: a list(4) of four vertices of bounding box
@@ -76,6 +87,7 @@ class BoundingBox:
         '''
         self.obb = None
         self.vertices = None
+        self.class_label = int(class_label)
 
         if vertices is not None: # 未来把这个if下的删掉，并且将BBOX和trackingbox输入的vertices删去，即可
             warnings.warn("The initialization of BBOX will support vertices input NO MORE! Please use from_vertices instead!",
@@ -130,25 +142,38 @@ class BoundingBox:
     @property
     def width(self): return self.obb[3]
 
+    @property
+    def class_name(self):
+        return self._class_name_dict.get(self.class_label, "unknown")
+
     def __str__(self):
-        return "BoundingBox: OBB:%s" % str(self.obb)
+        return "BoundingBox: OBB:%s, class:%s" % (str(self.obb), self.class_name)
 
     def copy(self):
         return deepcopy(self)
 
+    def to_dict(self):
+        return {
+            "type": self.__class__.__name__, #self.__class__.__name__ 暂时是把包名什么的一起带上比较好
+            "class": self.class_name,
+            "location": [float(self.x), float(self.y)],
+            "size": [float(self.length), float(self.width)],
+            "yaw": float(self.box_heading),
+        }
+
 
 
 class TrackingBox(BoundingBox):
-    def __init__(self, obb=None, vx=0., vy=0., id=0, *, vertices=None):
-        super(TrackingBox, self).__init__(obb, vertices=vertices)
+    def __init__(self, obb=None, vx=0., vy=0., id=0, class_label=-1, *, vertices=None):
+        super(TrackingBox, self).__init__(obb, class_label, vertices=vertices)
         self.id = id
         self.vx = vx
         self.vy = vy
         self.pred_vertices = []
 
         # todo: 以规范形式定义prediction和history，很重要
-        self.prediction = None # sequence of x, y, theta?
-        self.history = None
+        self.prediction: np.ndarray = None # sequence of x, y, theta?
+        self.history: np.ndarray = None
 
         self.frenet_state = FrenetKinematicState()
         self.frenet_prediction = None
@@ -206,10 +231,27 @@ class TrackingBox(BoundingBox):
         return vertice_seq
 
     def __str__(self):
-        return "TrackingBox: id:%d, OBB:%s, velocity:(%.1f, %.1f)" % (self.id, str(self.obb), self.vx, self.vy)
+        return "TrackingBox: id:%d, class:%s, OBB:%s, velocity:(%.1f, %.1f)" % \
+               (self.id,self.class_name, str(self.obb), self.vx, self.vy)
 
+    def to_dict(self, temporal_info=False):
+        d = super(TrackingBox, self).to_dict()
+        d.update({
+            "type": self.__class__.__name__,
+            "id": self.id,
+            "velocity": [self.vx, self.vy],
+        })
 
-class TrackingBoxList(list): # List[TrackingBox]
+        # 下面两个属性都是时序属性，不是直接的当前帧观测量，所以不需要记录
+        # The following two attributes are both temporal attributes and not direct measurements of the current frame
+        if temporal_info:
+            d.update({
+                "history": None if self.history is None else self.history.tolist(),
+                "prediction": None if self.prediction is None else self.prediction.tolist(),
+            })
+        return d
+
+class TrackingBoxList(List[TrackingBox]): # list
     def __init__(self, seq:Sequence[TrackingBox]=()):
         super(TrackingBoxList, self).__init__(seq)
 
@@ -289,6 +331,10 @@ class TrackingBoxList(list): # List[TrackingBox]
 
     def copy(self):
         return deepcopy(self)
+
+    def to_dictlist(self):
+        # 这个名字有歧义啊...尽量不要调用
+        return [tb.to_dict() for tb in self]
 
 
 # todo: 应该允许更多几何形状的物体，比如圆形物体的输入，所以应该改为TrackingObjectList

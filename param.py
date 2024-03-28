@@ -57,6 +57,16 @@ COLLISION_CHECKER_AABB = _assignment()
 COLLISION_CHECKER_DISK = _assignment()
 COLLISION_CHECKER_OCC = _assignment()
 
+####################### DATA ######################
+# for data closed-loop engine
+DATASET_FORMAT_JSON = _assignment(0) # 将log buffer以json格式存储
+DATASET_FORMAT_TENSOR = _assignment() # 将log buffer以tensor格式存储
+DATASET_FORMAT_RAW = _assignment() # 将log buffer以原始数据格式存储
+
+LOAD_TYPE_DATALOADER = _assignment(0) # 读取数据 并 转化为dataloader
+LOAD_TYPE_RAW = _assignment() # 读取数据 并 保持原始数据格式
+
+
 ####################### RL ######################
 # NN MODE FLAG
 NN_TRAIN_MODE = _assignment(0)
