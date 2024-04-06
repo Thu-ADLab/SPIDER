@@ -36,6 +36,8 @@ class BaseNeuralPlanner(BasePlanner):
             "dt": 0.2,
             "device": torch.device("cuda" if torch.cuda.is_available() else "cpu"),
             "print_info": True,
+
+            "model_path": './model.pth' # todo:以后加上若干epoch自动保存的功能
         })
         return config
 
@@ -66,11 +68,14 @@ class BaseNeuralPlanner(BasePlanner):
     def configure(self, config: dict):
         raise RuntimeError("Neural planner does not support. Re-instantiate a planner instead! ")
 
-    @abstractmethod
-    def load_state_dict(self): pass
 
-    @abstractmethod
-    def save_state_dict(self): pass
+    def load_state_dict(self, path):
+        path = self.config["model_path"] if path is None else path
+        self.policy.load_state_dict(torch.load(path))
+
+    def save_state_dict(self, path=None):
+        path = self.config["model_path"] if path is None else path
+        torch.save(self.policy.state_dict(), path)
 
     def train_mode(self):
         self.policy.train()

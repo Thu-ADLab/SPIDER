@@ -23,7 +23,8 @@ DEBUGtest/videos/
 DEBUGtest/*.avi
 DEBUGtest/*.mp4
 DEBUGtest/*.png
-DEBUGtest/dataset*
+**/dataset*
+**/tensorboard
 
 interface/carla/example
 interface/carla/carla_veh_light

@@ -114,6 +114,11 @@ class OfflineLogDataset(OfflineExpDataset):
 
         return state, action, reward, done, next_state
 
+    def get_dataloader(self, *args, **kwargs):
+        '''batch_size = 50,shuffle = False,sampler=None,batch_sampler = None,num_workers = 0,
+        collate_fn = pin_memory = False,drop_last = False,timeout = 0,worker_init_fn = None,'''
+        return torch.utils.data.DataLoader(self, *args, **kwargs)
+
 
     def _load_data(self, pathfile):
         if self.file_format == spider.DATA_FORMAT_RAW:
