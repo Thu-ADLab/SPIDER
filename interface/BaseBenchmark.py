@@ -151,7 +151,8 @@ class DummyBenchmark(BaseBenchmark):
                                         video_path=self.config["video_root"]+video_name)
         ################## main loop ########################
         try:
-            while True:
+            for i in range(150):
+            # while True:
                 if self.ego_veh_state.x() > 250:
                     break
 
