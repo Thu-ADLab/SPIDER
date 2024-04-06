@@ -19,5 +19,7 @@ def __getattr__(name):
     if name == "Box":
         raise ValueError("spider.elements.Box has been renamed as spider.elements.box (small case).")
 
+    else:
+        raise AttributeError("module 'spider.elements' has no attribute '{}'".format(name))
 
 
