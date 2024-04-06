@@ -59,12 +59,20 @@ COLLISION_CHECKER_OCC = _assignment()
 
 ####################### DATA ######################
 # for data closed-loop engine
-DATASET_FORMAT_JSON = _assignment(0) # 将log buffer以json格式存储
-DATASET_FORMAT_TENSOR = _assignment() # 将log buffer以tensor格式存储
-DATASET_FORMAT_RAW = _assignment() # 将log buffer以原始数据格式存储
+DATA_FORMAT_JSON = _assignment(0) # 将log buffer以json格式存储
+DATA_FORMAT_TENSOR = _assignment() # 将log buffer以tensor格式存储
+DATA_FORMAT_RAW = _assignment() # 将log buffer以原始数据格式存储
 
-LOAD_TYPE_DATALOADER = _assignment(0) # 读取数据 并 转化为dataloader
-LOAD_TYPE_RAW = _assignment() # 读取数据 并 保持原始数据格式
+DATA_TYPE_LOG = _assignment(0)
+DATA_TYPE_EXP = _assignment()
+
+DATA_GT_PLAN = _assignment(0)  # 真值数据为plan
+DATA_GT_TRACE = _assignment()  # 真值数据为trace
+
+
+
+# LOAD_TYPE_DATALOADER = _assignment(0) # 读取数据 并 转化为dataloader
+# LOAD_TYPE_RAW = _assignment() # 读取数据 并 保持原始数据格式
 
 
 ####################### RL ######################

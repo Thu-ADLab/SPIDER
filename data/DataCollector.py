@@ -8,6 +8,9 @@ import spider.elements as elm
 
 import tqdm
 
+'''
+abandoned
+'''
 
 
 class DataCollectorBACKUP:

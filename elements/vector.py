@@ -76,11 +76,11 @@ def rotate(array, anchor, angle, clockwise=False):
     delta_array[..., 1] -= anchor[1]
     if clockwise:
         angle = -angle
-    rot = np.array([
+    transposed_rot = np.array([
         [np.cos(angle), np.sin(angle)],
         [-np.sin(angle), np.cos(angle)]
     ])
-    delta_array = delta_array @ rot
+    delta_array = delta_array @ transposed_rot
     delta_array[..., 0] += anchor[0]
     delta_array[..., 1] += anchor[1]
     return delta_array

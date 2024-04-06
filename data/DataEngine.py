@@ -15,11 +15,11 @@ class DataEngine:
                  save_data=True,  # 只有save data为True时，以下参数才有意义
                  episode_save=True,
                  data_root='./dataset/',
-                 file_format=spider.DATASET_FORMAT_JSON,
+                 file_format=spider.DATA_FORMAT_JSON,
                  file_prefix='log',
                  max_log_saves=1000000,
-                 data_augumentor=None, # 数据增广
-                 data_labeller=None # 自动标注
+                 data_augumentor=None,  # 数据增广
+                 data_labeller=None  # 自动标注
                  ):
 
         # online log buffer

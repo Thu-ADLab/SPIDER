@@ -5,8 +5,6 @@ import random
 from collections import deque
 from abc import abstractmethod
 import os
-import json
-import pickle
 
 import torch
 import torch.nn as nn
@@ -14,11 +12,11 @@ import torch.nn as nn
 
 import spider
 import spider.elements as elm
-from spider.data.common import format_suffix
 from spider.data.decorators import *
+from spider.data.data_factory import *
 
 _default_max_len = 10000
-_default_max_saves = 10000
+_default_max_records = 10000
 
 # todo：以后加一个更加通用的databuffer，以及其装饰器。存任意形式的数据，并且保存到本地数据集。支持任意形式的函数的输入
 
@@ -29,30 +27,35 @@ class BaseBuffer(deque):
                  maxlen=_default_max_len,
                  # 保存到本地数据集的参数
                  data_root='./dataset/',
-                 file_prefix='data',
-                 file_format=spider.DATASET_FORMAT_RAW,
+                 subdir_prefix='segment',
+                 file_format=spider.DATA_FORMAT_RAW,
                  # 下面是自动保存离线数据集时候的参数
                  autosave=True,  # 只有autosave为True时，以下参数才有意义
                  autosave_max_intervals=1000,
-                 autosave_episode_done=True,  # done信号了要不要保存一次数据到本地, 如果不保存就是固定intervals
-                 max_saves=_default_max_saves,
+                 new_seg_when_done=True,  # done信号了要不要保存一次数据到本地, 如果不保存就是固定intervals
+                 max_records=_default_max_records,
                  ):
 
         super(BaseBuffer, self).__init__(maxlen=maxlen)
 
         self._autosave: bool = autosave
-        self._autosave_episode_done: bool = autosave_episode_done  # done信号了要不要保存一次数据到本地
+        self._new_seg_when_done: bool = new_seg_when_done  # done信号了要不要保存一次数据到本地
         self._autosave_max_intervals: int = autosave_max_intervals
         assert autosave_max_intervals <= maxlen, "autosave_max_intervals should not be larger than maxlen"
 
         self.data_root = data_root
-        self.filename_prefix = file_prefix
+        self.sub_dir:str = None
+        self._sub_dir_prefix = subdir_prefix
         self.file_format = file_format
 
-        self._count_saves = 0
-        self.max_saves = int(max_saves)
+        self.seg_idx = 0 # 当前的segment index
+        self.record_idx = 0 # 在当前的segment中，保存到了第几条record
+        self.count_records = 0 # 总共保存了多少条record
+        self.max_records = int(max_records)
 
-        self._filename_index_length = len(str(self.max_saves - 1))  # 判断几位数的方式好像不太好
+        self._subdir_index_length = len(str(self.max_records - 1))  # 判断几位数的方式好像不太好
+        self._filename_index_length = len(str(self._autosave_max_intervals - 1))
+
 
         self._save_target_slice = [0, 0] # 记录当前episode的起始和结束位置(左闭右开)
 
@@ -61,13 +64,14 @@ class BaseBuffer(deque):
             "forward": None,
             "feedback": None
         }
-        self._STORE_FORWARD_ONLY = False
+        self._STORE_FORWARD_ONLY = True # 以后加在参数里面
         # self._STORE_FORWARD_FEEDBACK = False
         # _STORE_FORWARD_ONLY若为True，则record_forward后自动存入buffer，清除record
         # _STORE_FORWARD_ONLY若为False，则record完毕forward后，等待record_feedback后再自动存入buffer，清除record
 
         if self._autosave:
             self._prepare_data_root()
+            self._update_sub_dir(self.seg_idx)  # 从0开始创建子文件夹
 
     # def record_timestamp(self, timestamp):
     #     self._temp_record["timestamp"] = float(timestamp)
@@ -117,7 +121,9 @@ class BaseBuffer(deque):
         pass
 
     @abstractmethod
-    def replay(self, *args, **kwargs): # todo:想清楚replay函数到底是想实现什么功能
+    def replay(self, *args, **kwargs):
+        # todo:想清楚replay函数到底是想实现什么功能。
+        #  0406：一个新的想法！！replay应该选定某一个或某几个片段。返回一个迭代器/生成器，一直返回某个离线的log片段
         pass
 
     @abstractmethod
@@ -133,9 +139,9 @@ class BaseBuffer(deque):
         self._save_target_slice = [0, 0]
 
     def release(self):
-        if self._autosave and not self.enough_saves():
-            if self._save_target_slice[1] - self._save_target_slice[0]>0:
-                self.save()
+        # if self._autosave and not self.enough_saves():
+        #     if self._save_target_slice[1] - self._save_target_slice[0]>0:
+        #         self.save()
         self.clear()
 
 
@@ -148,15 +154,22 @@ class BaseBuffer(deque):
 
     def enough_saves(self) -> bool:
         # 检查是否已经保存了足够的数据，如果达到阈值，则不再保存
-        return self._count_saves >= self.max_saves
+        return self.count_records >= self.max_records
 
 
+    def _update_sub_dir(self, seg_idx):
+        self.seg_idx = seg_idx
+        sub_dir_name = self._sub_dir_prefix + str(seg_idx).zfill(self._subdir_index_length)
+        self.sub_dir = os.path.join(self.data_root, sub_dir_name)
+        self.record_idx = 0
 
+        if not os.path.exists(self.sub_dir):
+            os.makedirs(self.sub_dir)
 
-    def _get_filepath(self, idx):
-        filename = self.filename_prefix + str(idx).zfill(self._filename_index_length)\
+    def _get_filepath(self, record_idx):
+        filename = str(record_idx).zfill(self._subdir_index_length) \
                    + format_suffix[self.file_format]
-        return os.path.join(self.data_root, filename)
+        return os.path.join(self.sub_dir, filename)
 
     def _prepare_data_root(self):
         if not os.path.exists(self.data_root):
@@ -196,20 +209,35 @@ class BaseBuffer(deque):
         else:
             self._save_target_slice[1] += 1
 
-    def _autosave_check(self, done):
+    def _segment_end(self, done):
+        '''
+        :param done: 是否结束当前episode
+        :return: 是否需要分割segment
+        '''
+        if self._new_seg_when_done and done:
+            return True
+        if self.record_idx >= self._autosave_max_intervals:
+            return True
+        return False
+
+    def _autosave_check(self):
         '''检查是否需要自动保存到本地数据集'''
         if self._autosave:
             if self.enough_saves():
-                print("NOTICE: Buffer has already saved enough experiences ({} records). ".format(self._count_saves) +
+                print("NOTICE: Buffer has already saved enough data ({} records). ".format(self.count_records) +
                       "Will no more autosave offline dataset.")
                 return False
+            else:
+                return True
+        else:
+            return False
 
-            if self._autosave_episode_done and done:
-                return True
-            idx1, idx2 = self._save_target_slice
-            if idx2 - idx1 >= self._autosave_max_intervals:
-                return True
-        return False
+            # if self._autosave_episode_done and done:
+            #     return True
+        #     idx1, idx2 = self._save_target_slice
+        #     if idx2 - idx1 >= self._autosave_max_intervals:
+        #         return True
+        # return False
 
     def _clear_record(self):
         self._temp_record = {
@@ -260,16 +288,16 @@ class LogBuffer(BaseBuffer):
                  maxlen=_default_max_len,
                  # 保存到本地数据集的参数
                  data_root='./dataset/',
-                 file_prefix='log',
-                 file_format=spider.DATASET_FORMAT_JSON,
+                 subdir_prefix='log_segment',
+                 file_format=spider.DATA_FORMAT_JSON,
                  # 下面是自动保存离线数据集时候的参数
                  autosave=True,  # 只有autosave为True时，以下参数才有意义
                  autosave_max_intervals=1000,
-                 autosave_episode_done=True,  # done信号了要不要保存一次数据到本地, 如果不保存就是固定intervals
-                 max_saves=_default_max_saves,
+                 new_seg_when_done=True,  # done信号了要不要保存一次数据到本地, 如果不保存就是固定intervals
+                 max_records=_default_max_records,
                  ):
-        super(LogBuffer, self).__init__(maxlen, data_root,file_prefix,file_format,autosave,
-                                        autosave_max_intervals,autosave_episode_done,max_saves)
+        super(LogBuffer, self).__init__(maxlen, data_root, subdir_prefix, file_format, autosave,
+                                        autosave_max_intervals, new_seg_when_done, max_records)
         # self: Deque[float, elm.Observation, elm.Plan, float, bool]
 
     # def record_forward(self, timestamp, observation:elm.Observation, plan:elm.Plan):
@@ -298,29 +326,35 @@ class LogBuffer(BaseBuffer):
         # self._extend_target_slice()
         self.append((timestamp, observation, plan, reward, done, *other_args))
 
-        if self._autosave_check(done):
+        if self._autosave_check():
+            #  后面这个逻辑修改了一下，现在是每次有数据进来都保存，episode结束的时候造新的子文件夹,
+            #  以前的逻辑是一个episode结束了才保存
             self.save()
 
+        if self._segment_end(done):
+            print("A segment containing {} log records has been saved to {}".format(self.record_idx, self.sub_dir))
+            self._update_sub_dir(self.seg_idx + 1)
 
-    def save(self, filepath=None, slice_start=None, slice_end=None):
-        '''
-        如果不加参数，则自动保存当前target_slice内的数据。数据名默认往后递推
-        如果有参数，则保存指定范围内的数据。数据名参照给定的
-        '''
-        filepath = self._get_filepath(self._count_saves) if filepath is None else filepath
-        slice_start, slice_end = self._get_valid_slice(slice_start, slice_end)
-        # file_format = self.file_format if file_format is None else file_format
 
-        if self.file_format == spider.DATASET_FORMAT_JSON:
-            self.save_json(filepath, slice_start, slice_end)
-        elif self.file_format == spider.DATASET_FORMAT_RAW:
-            self.save_raw(filepath, slice_start, slice_end)
+
+    def save(self, filepath=None):
+        '''
+        保存buffer中最后一个的数据
+        如果不加参数，数据名默认取record idx
+        如果有参数，则数据名参照给定的
+        '''
+        filepath = self._get_filepath(self.record_idx) if filepath is None else filepath
+
+        if self.file_format == spider.DATA_FORMAT_JSON:
+            save_json_log(filepath, self[-1])
+        elif self.file_format == spider.DATA_FORMAT_RAW:
+            save_raw(filepath, self[-1])
         else:
             raise ValueError("unsupported dataset format")
 
-        print("Successfully saved {} log records to {}".format(slice_end-slice_start, filepath))
-        self._count_saves += 1
-        self._save_target_slice = [slice_end, slice_end]
+        # print("Successfully saved {} log records to {}".format(slice_end-slice_start, filepath))
+        self.count_records += 1
+        self.record_idx += 1
 
 
     def replay(self):
@@ -346,45 +380,6 @@ class LogBuffer(BaseBuffer):
         pass
 
 
-    def save_json(self, filepath, slice_start, slice_end):
-        # slice_start, slice_end = self._get_valid_slice(slice_start, slice_end)
-
-        data = {}
-        for i in range(slice_start, slice_end):
-            assert len(self[i]) == 5, \
-                "To save standard json file, Log data must have records that only contains 5 elements, " \
-                "which is timestamp, observation, plan, reward, done.\n" \
-                "If you want to save more information, use save_raw instead!"
-
-            timestamp, (ego_state, perception, local_map), plan, reward, done = self[i]
-            assert isinstance(perception, spider.elements.TrackingBoxList), \
-                "perception must be TrackingBoxList for now"  # 暂时没有设计occupancy的支持
-
-            if timestamp is None:
-                timestamp = i
-
-            data[timestamp] = {
-                "ego_state": ego_state.to_dict() if ego_state is not None else None,
-                "perception": [tb.to_dict() for tb in perception] if perception is not None else None,
-                "local_map": local_map.to_dict() if local_map is not None else None,
-                "plan": plan.to_dict() if plan is not None else None,
-                "reward": reward,
-                "done": done
-            }
-
-        with open(filepath, 'w', encoding='utf-8') as file:
-            json.dump(data, file, ensure_ascii=False, indent=4)
-
-
-    def save_raw(self, filepath, slice_start, slice_end):
-        if slice_start==0 and slice_end==len(self):
-            target = list(self)
-        else:
-            slice_start, slice_end = self._get_valid_slice(slice_start, slice_end)
-            target = self.get_list_by_slice(slice_start, slice_end)
-
-        with open(filepath, "wb") as file:
-            pickle.dump(target, file)
 
 
 
@@ -401,16 +396,16 @@ class ExperienceBuffer(BaseBuffer):
                  maxlen=_default_max_len,
                  # 保存到本地数据集的参数
                  data_root='./dataset/',
-                 file_prefix='exp',
-                 file_format=spider.DATASET_FORMAT_TENSOR,
+                 subdir_prefix='exp_segment',
+                 file_format=spider.DATA_FORMAT_TENSOR,
                  # 下面是自动保存离线数据集时候的参数
                  autosave=True,  # 只有autosave为True时，以下参数才有意义
                  autosave_max_intervals=1000,
-                 autosave_episode_done=True,  # done信号了要不要保存一次数据到本地, 如果不保存就是固定intervals
-                 max_saves=_default_max_saves,
+                 new_seg_when_done=True,  # done信号了要不要保存一次数据到本地, 如果不保存就是固定intervals
+                 max_records=_default_max_records,
                  ):
-        super(ExperienceBuffer, self).__init__(maxlen, data_root,file_prefix,file_format,autosave,
-                                               autosave_max_intervals,autosave_episode_done,max_saves)
+        super(ExperienceBuffer, self).__init__(maxlen, data_root, subdir_prefix, file_format, autosave,
+                                               autosave_max_intervals, new_seg_when_done, max_records)
 
     def store(self, timestamp, state:torch.Tensor, action:torch.Tensor, reward:float=None, done:bool=None):
         # next_state的处理，目前是每次只记录state,action,reward,done以及None
@@ -420,7 +415,7 @@ class ExperienceBuffer(BaseBuffer):
 
         #将输入都转到cpu，同时detach
         # 要不要clone？怕引用赋值有问题
-        timestamp, state, action, reward, done = self._to_cpu(timestamp, state, action, reward, done)
+        timestamp, state, action, reward, done = to_cpu(timestamp, state, action, reward, done)
 
         if len(self) > 0: # 若存在上一条记录
             last_record = self[-1]
@@ -431,28 +426,29 @@ class ExperienceBuffer(BaseBuffer):
         next_state = None
         self.append([timestamp, state, action, reward, done, next_state])
 
-        if self._autosave_check(done):
+        if self._autosave_check():
             self.save()
 
-    def save(self, filepath=None, slice_start=None, slice_end=None):
-        '''
-        如果不加参数，则自动保存当前target_slice内的数据。数据名默认往后递推
-        如果有参数，则保存指定范围内的数据。数据名参照给定的
-        '''
-        filepath = self._get_filepath(self._count_saves) if filepath is None else filepath
-        slice_start, slice_end = self._get_valid_slice(slice_start, slice_end)
-        # file_format = self.file_format if file_format is None else file_format
+        if self._segment_end(done):
+            print("A segment containing {} exp records has been saved to {}".format(self.record_idx, self.sub_dir))
+            self._update_sub_dir(self.seg_idx + 1)
 
-        if self.file_format == spider.DATASET_FORMAT_TENSOR:
-            self.save_tensor(filepath, slice_start, slice_end)
-        elif self.file_format == spider.DATASET_FORMAT_RAW:
-            self.save_raw(filepath, slice_start, slice_end)
+    def save(self, filepath=None):
+        '''
+        保存buffer中最后一个的数据
+        如果不加参数，数据名默认取record idx
+        如果有参数，则数据名参照给定的
+        '''
+
+        if self.file_format == spider.DATA_FORMAT_TENSOR:
+            save_tensor(filepath, self[-1])
+        elif self.file_format == spider.DATA_FORMAT_RAW:
+            save_raw(filepath, self[-1])
         else:
             raise ValueError("unsupported dataset format")
 
-        print("Successfully saved {} EXP records to {}".format(slice_end - slice_start, filepath))
-        self._count_saves += 1
-        self._save_target_slice = [slice_end, slice_end]
+        self.count_records += 1
+        self.record_idx += 1
 
 
     def apply_to(self, policy:nn.Module, spider_reward_model=None): # 用decorator监听模块
@@ -472,48 +468,10 @@ class ExperienceBuffer(BaseBuffer):
         print("ExperienceBuffer: Please notice that when logging experience, all data should NOT be batched.")
 
 
-
-    def save_tensor(self, filepath, slice_start, slice_end):
-        # qzl:笑死，看了一下torch文档，torch.save就是用的pickle，二者没区别。。。
-        if slice_start == 0 and slice_end == len(self):
-            target = list(self)
-        else:
-            slice_start, slice_end = self._get_valid_slice(slice_start, slice_end)
-            target = self.get_list_by_slice(slice_start, slice_end)
-
-        target = [self._to_tensor(*record) for record in target]
-        torch.save(target, filepath)
-
-
-    def save_raw(self, filepath, slice_start, slice_end):
-        if slice_start == 0 and slice_end == len(self):
-            target = list(self)
-        else:
-            slice_start, slice_end = self._get_valid_slice(slice_start, slice_end)
-            target = self.get_list_by_slice(slice_start, slice_end)
-
-        with open(filepath, "wb") as file:
-            pickle.dump(target, file)
-
     def replay(self):
         pass
 
     def get_dataloader(self):
         pass
 
-    def _to_cpu(self,*args):
-        cpu_args = [x.detach().cpu() if isinstance(x, torch.Tensor) else x for x in args]
 
-        if len(args) == 1:
-            return cpu_args[0]
-        else:
-            return cpu_args
-
-    def _to_tensor(self, *args):
-        numerical_args = [0.0 if x is None else x for x in args]
-        tensor_args = [x if isinstance(x, torch.Tensor) else torch.tensor(x) for x in numerical_args]
-
-        if len(args) == 1:
-            return tensor_args[0]
-        else:
-            return tensor_args

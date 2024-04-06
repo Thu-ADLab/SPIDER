@@ -29,10 +29,10 @@ class MlpPolicy(nn.Module):
 
 def test1():
     exp_buffer = ExperienceBuffer(
-        file_prefix='exp',
+        subdir_prefix='exp',
         data_root="./dataset_exp/",
         autosave_max_intervals=50,
-        file_format=spider.DATASET_FORMAT_TENSOR
+        file_format=spider.DATA_FORMAT_TENSOR
         # file_format=spider.DATASET_FORMAT_RAW
     )
 

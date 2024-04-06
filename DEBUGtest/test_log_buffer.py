@@ -18,15 +18,14 @@ def test1():
     })
 
     log_buffer = LogBuffer(
-        file_prefix='log',
-        autosave_max_intervals=50,
-        file_format=spider.DATASET_FORMAT_JSON
-        # file_format=spider.DATASET_FORMAT_RAW
+        autosave_max_intervals=100,
+        # file_format=spider.DATA_FORMAT_JSON
+        file_format=spider.DATA_FORMAT_RAW
     )
 
     log_buffer.apply_to(planner)
 
-    for episode in range(3):
+    for episode in range(10):
         benchmark.test(planner)
 
     log_buffer.release()
@@ -52,9 +51,8 @@ def test2():
     })
 
     log_buffer = LogBuffer(
-        file_prefix='log',
         autosave_max_intervals=50,
-        file_format=spider.DATASET_FORMAT_JSON
+        file_format=spider.DATA_FORMAT_JSON
     )
 
     planner.set_log_buffer(log_buffer)

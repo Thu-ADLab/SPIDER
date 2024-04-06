@@ -27,6 +27,7 @@ def logbuffer_plan(plan_func):
     else:
         # 将实例化前的planner的plan函数，封装起来。
         # 用于在planner代码构建的时候，用@logbuffer_plan来装饰plan函数
+        # todo: 这里注意，在给planner这个装饰器的的时候，要把buffer.STORE_FORWARD_ONLY设为TRUE
 
         def wrapper(*args, **kwargs):
             plan = plan_func(*args, **kwargs)
