@@ -15,14 +15,15 @@ planner_zoo/*.pt
 planner_zoo/*.mp4
 planner_zoo/*.avi
 
-RL/backup/
+rl/backup/
 
 elements/_pyxbld/
 visualize/matplotlib_cheatsheet/
 DEBUGtest/videos/
 DEBUGtest/*.avi
 DEBUGtest/*.mp4
-DEBUGtest/dataset
+DEBUGtest/*.png
+DEBUGtest/dataset*
 
 interface/carla/example
 interface/carla/carla_veh_light

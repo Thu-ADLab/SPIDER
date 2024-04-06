@@ -6,6 +6,7 @@ from spider.elements.vector import Vector3D
 from spider.elements.trajectory import Trajectory, FrenetTrajectory, Path
 
 from typing import Tuple, Union
+
 Observation = Tuple[
     VehicleState,
     Union[TrackingBoxList,OccupancyGrid2D],

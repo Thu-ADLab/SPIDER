@@ -1,3 +1,4 @@
+import copy
 from typing import List, Sequence, Union
 import enum
 import numpy as np
@@ -175,6 +176,9 @@ class LocalMap:
             "network": None, # 目前还没有规范化network的形式
             "traffic_signs": None # 目前还没有规范化traffic_signs的形式
         }
+
+    def copy(self):
+        return copy.deepcopy(self)
 
 
 

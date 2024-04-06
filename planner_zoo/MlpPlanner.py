@@ -6,6 +6,8 @@ import torch
 
 
 import spider.elements as elm
+from spider.rl.state.StateConverter import KineStateEncoder
+from spider.rl.action.ActionConverter import TrajActionDecoder, TrajActionEncoder
 from spider.planner_zoo.BaseNeuralPlanner import BaseNeuralPlanner
 
 
@@ -19,98 +21,57 @@ class MlpActor(nn.Module):
     def forward(self, x):
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
-        return torch.tanh(self.fc3(x))
+        x = torch.sigmoid(self.fc3(x))
+        return x
 
 
 class MlpPlanner(BaseNeuralPlanner):
-    def __init__(self, config, actor:nn.Module=None):
+    def __init__(self, config=None):
         super(MlpPlanner, self).__init__(config)
 
-        self.obs_feat_num = 7
-        self.state_dim = self.config["obs_veh_num"] * self.obs_feat_num
-        self.action_dim = 2 * self.steps
+        self.state_encoder = KineStateEncoder(num_object=self.config["num_object"],
+                                              x_range=self.config["longitudinal_range"],
+                                              y_range=self.config["lateral_range"])
 
-        self.actor = None
-        if self.actor is None:
-            self.actor = MlpActor(self.state_dim, self.action_dim).to(self.device)
-        else:
-            self.actor: nn.Module = actor.to(self.device)
+        self.action_decoder = TrajActionDecoder(self.config["steps"], self.config["dt"],
+                                                lon_range=self.config["longitudinal_range"], lat_range=self.config["lateral_range"])
 
-        self._roi_radius_square = self.config["roi_radius"] ** 2
+        self.action_encoder = TrajActionEncoder(lon_range=self.config["longitudinal_range"], lat_range=self.config["lateral_range"])
+
+        self.policy = MlpActor(self.state_encoder.state_dim, self.action_decoder.action_dim).to(self.device)
 
 
     @classmethod
     def default_config(cls) -> dict:
         cfg = super().default_config()
         cfg.update({
-            "obs_veh_num": 5,
-            "roi_radius": 100,
-            "padding_value": 0.0,
+            "steps": 20,
+            "dt": 0.2,
+            "num_object": 6,
+            "longitudinal_range": (-30, 60),
+            "lateral_range": (-30,30)
         })
         return cfg
 
 
-    # 后面关于状态和动作变换的内容都塞到状态和动作本身的文件里面去。
-    def state_transform(self, ego_veh_state:elm.VehicleState, obstacles:elm.TrackingBoxList, routed_local_map:elm.RoutedLocalMap) \
-            -> torch.Tensor:
-        '''
-        x, y, length, width, yaw, vx, vy
-        '''
-        # 自车和他车数据，agent
-        ego_x, ego_y = ego_veh_state.x(), ego_veh_state.y()
-        ego_yaw = ego_veh_state.yaw()
-        ego_vx = ego_veh_state.v() * math.cos(ego_yaw)
-        ego_vy = ego_veh_state.v() * math.sin(ego_yaw)
-        ego_state = [*ego_veh_state.obb, ego_vx, ego_vy]
-
-        obstacle_state = []
-        obstacles = obstacles.sort_by_dist(ego_x, ego_y)
-        for tb in obstacles:
-            tb: elm.TrackingBox
-            if tb.x**2 + tb.y ** 2 < self._roi_radius_square:
-                obstacle_state.append([*tb.obb, tb.vx, tb.vy])
-
-        agents_state = ego_state + obstacle_state
-        agents_state = self._fixed_veh_num(agents_state)
-
-        agents_state = torch.tensor(agents_state, dtype=torch.float)
+    def plan(self, ego_veh_state:elm.VehicleState, obstacles:elm.TrackingBoxList, routed_local_map:elm.RoutedLocalMap)\
+            -> Union[elm.Trajectory, elm.FrenetTrajectory]:
+        state = self.state_encoder(ego_veh_state, obstacles, routed_local_map)
+        action = self.act(state.to(self.device))
+        traj = self.action_decoder(action.detach().cpu(), ego_veh_state)
+        return traj
 
 
-        # todo: concat当前地图信息
-        state = agents_state
+if __name__ == '__main__':
+    from spider.interface import DummyBenchmark
 
-        return state.view(-1, self.state_dim).to(self.device)
+    planner = MlpPlanner()
 
-    def action_transform(self, action: torch.Tensor) -> Union[elm.Trajectory, elm.FrenetTrajectory]:
-        pass
+    # obs = DummyBenchmark.get_environment_presets()
+    # traj = planner.plan(*obs)
 
-
-    def _fixed_veh_num(self, agents_state: Union[torch.Tensor, list]):
-        '''
-        agents_state should not be batched.  dim [veh_num, feat_num]
-        '''
-        # origin_size = agents_state.shape
-        # agents_state = agents_state.view(-1, self.obs_feat_num, self.obs_feat_num)
-
-        delta_veh_num = self.config["obs_veh_num"] - len(agents_state)
-        if delta_veh_num > 0: # self.config["obs_veh_num"] > len(agents_state)
-            # padding
-            if isinstance(agents_state, torch.Tensor):
-                padding_state = torch.full((delta_veh_num, self.obs_feat_num),
-                           self.config["padding_value"], dtype=torch.float).to(agents_state.device)
-                agents_state = torch.cat([agents_state, padding_state])
-            elif isinstance(agents_state, list):
-                padding_state = [self.config["padding_value"]] * self.obs_feat_num
-                padding_state = [padding_state] * delta_veh_num
-                agents_state.extend(padding_state)
-        elif delta_veh_num < 0:
-            # truncate
-            agents_state = agents_state[:self.config["obs_veh_num"]]
-
-        return agents_state
+    bm = DummyBenchmark()
+    bm.test(planner)
 
 
-
-
-#
-
+    pass

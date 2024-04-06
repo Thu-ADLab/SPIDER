@@ -84,7 +84,7 @@ class BasePlanner:
         self.local_map = local_map
 
     def __getattr__(self, key):
-        if hasattr(self, "config"):# and key in self.config:
+        if hasattr(self, "config") and key in self.config:
             return self.config[key]
         else:
             raise AttributeError("No attribute {}".format(key))
