@@ -9,7 +9,7 @@ from spider.planner_zoo.BasePlanner import BasePlanner
 from spider.elements.map import RoutedLocalMap
 from spider.elements.trajectory import Trajectory
 from spider.elements.vehicle import VehicleState
-from spider.elements.Box import TrackingBoxList, TrackingBox
+from spider.elements.box import TrackingBoxList, TrackingBox
 
 from spider.sampler import QuarticPolyminalSampler, BezierCurveSampler, PVDCombiner
 from spider.evaluator import CartCostEvaluator

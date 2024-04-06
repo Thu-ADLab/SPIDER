@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.colors import to_rgba
 import numpy as np
-from spider.elements.Box import obb2vertices
+from spider.elements.box import obb2vertices
 
 
 def draw_polygon(vertices, *args, fill=False, **kwargs):

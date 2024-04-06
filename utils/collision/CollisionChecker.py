@@ -3,7 +3,7 @@ from spider.utils.collision.SAT import SAT_check
 from spider.utils.collision.disks import disk_check_for_box
 from spider.utils.collision.AABB import AABB_check
 from spider.elements.trajectory import Trajectory
-from spider.elements.Box import TrackingBoxList, obb2vertices, vertices2obb, dilate
+from spider.elements.box import TrackingBoxList, obb2vertices, vertices2obb, dilate
 import spider
 # from spider.param import *
 

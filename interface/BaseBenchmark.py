@@ -68,7 +68,7 @@ class DummyBenchmark(BaseBenchmark):
         ############ environment presets ###################
         import numpy as np
         from spider.elements.map import RoutedLocalMap, Lane
-        from spider.elements.Box import TrackingBoxList, TrackingBox
+        from spider.elements.box import TrackingBoxList, TrackingBox
         from spider.elements.vehicle import VehicleState, Transform, Location, Rotation, Vector3D
 
         ## localization

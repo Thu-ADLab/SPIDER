@@ -1,5 +1,5 @@
 import numpy as np
-from spider.elements.Box import aabb2vertices, vertices2aabb
+from spider.elements.box import aabb2vertices, vertices2aabb
 
 def AABB_check(vertices1:np.ndarray ,vertices2:np.ndarray):
     xmin1, ymin1, xmax1, ymax1 = vertices2aabb(vertices1)

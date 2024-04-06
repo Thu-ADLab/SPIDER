@@ -4,7 +4,7 @@ from spider.elements.trajectory import Trajectory
 from spider.utils.collision.CollisionChecker import BoxCollisionChecker
 # from utils.collision.SAT import SAT_check
 import numpy as np
-from spider.elements.Box import obb2vertices,aabb2vertices,TrackingBox,TrackingBoxList
+from spider.elements.box import obb2vertices,aabb2vertices,TrackingBox,TrackingBoxList
 import spider
 
 

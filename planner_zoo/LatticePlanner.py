@@ -10,7 +10,7 @@ from spider.planner_zoo.BasePlanner import BasePlanner
 from spider.elements.map import RoutedLocalMap
 from spider.elements.trajectory import FrenetTrajectory
 from spider.elements.vehicle import VehicleState
-from spider.elements.Box import TrackingBoxList, TrackingBox
+from spider.elements.box import TrackingBoxList, TrackingBox
 
 from spider.sampler.PolynomialSampler import QuinticPolyminalSampler, QuarticPolyminalSampler
 from spider.sampler.Combiner import LatLonCombiner
@@ -196,7 +196,7 @@ class LatticePlanner(BasePlanner):
 if __name__ == '__main__':
     from spider.elements.map import Lane
     from spider.elements.vehicle import *
-    from spider.elements.Box import obb2vertices
+    from spider.elements.box import obb2vertices
     import matplotlib.pyplot as plt
     import spider
     try:

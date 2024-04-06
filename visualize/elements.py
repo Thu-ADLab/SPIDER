@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import spider.elements as elm
-from spider.elements.Box import aabb2vertices
+from spider.elements.box import aabb2vertices
 from spider.visualize.surface import draw_obb, draw_polygon
 from spider.visualize.line import draw_polyline
 from spider.visualize.common import ego_centric_view

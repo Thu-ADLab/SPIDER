@@ -7,7 +7,7 @@ from spider.planner_zoo.BasePlanner import BasePlanner
 from spider.elements.map import RoutedLocalMap
 from spider.elements.trajectory import FrenetTrajectory
 from spider.elements.vehicle import VehicleState
-from spider.elements.Box import TrackingBoxList, TrackingBox
+from spider.elements.box import TrackingBoxList, TrackingBox
 
 from spider.utils.ImaginaryEngine import ImaginaryEngine
 from spider.planner_zoo.LatticePlanner import LatticePlanner

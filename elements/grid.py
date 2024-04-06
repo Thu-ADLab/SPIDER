@@ -6,7 +6,7 @@ try:
 except (ModuleNotFoundError, ImportError) as e:
     cv2 = spider._virtual_import("cv2", e)
 
-from spider.elements.Box import TrackingBoxList
+from spider.elements.box import TrackingBoxList
 import os
 
 '''

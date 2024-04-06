@@ -8,7 +8,7 @@ import warnings
 
 import carla
 
-import spider.elements.Box
+import spider.elements.box
 from spider.interface.carla.common import *
 from spider.interface.carla.visualize import Viewer
 from spider.elements import RoutedLocalMap, VehicleState, TrackingBoxList, TrackingBox, Lane, Trajectory

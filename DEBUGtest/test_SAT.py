@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from spider.elements import FrenetTrajectory, TrackingBoxList, TrackingBox
-from spider.elements.Box import obb2vertices
+from spider.elements.box import obb2vertices
 from spider.utils.collision import BoxCollisionChecker
 from spider.elements.curves import QuinticPolynomial
 

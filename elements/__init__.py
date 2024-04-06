@@ -1,4 +1,4 @@
-from spider.elements.Box import TrackingBoxList, TrackingBox, BoundingBox
+from spider.elements.box import TrackingBoxList, TrackingBox, BoundingBox
 from spider.elements.map import ScenarioType, TrafficLight, Lane, LocalMap, RoutedLocalMap
 from spider.elements.grid import OccupancyGrid2D
 from spider.elements.vehicle import VehicleState, Location, Rotation, Transform
@@ -14,5 +14,10 @@ Observation = Tuple[
 ]
 
 Plan = Union[Trajectory, FrenetTrajectory] # will add control in the future version
+
+def __getattr__(name):
+    if name == "Box":
+        raise ValueError("spider.elements.Box has been renamed as spider.elements.box (small case).")
+
 
 

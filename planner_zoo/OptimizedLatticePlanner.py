@@ -90,7 +90,7 @@ class OptimizedLatticePlanner(LatticePlanner):
 
 if __name__ == '__main__':
     from spider.interface.BaseBenchmark import DummyBenchmark
-    from spider.elements.Box import TrackingBoxList, TrackingBox
+    from spider.elements.box import TrackingBoxList, TrackingBox
     bm = DummyBenchmark()
     # bm._init_obstacles = TrackingBoxList([
     #     TrackingBox(obb=(50, 0, 5, 2, np.arctan2(0.2, 5))),
