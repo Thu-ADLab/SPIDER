@@ -62,13 +62,17 @@ class BasePolicy(nn.Module):
         self.enable_tensorboard = enable_tensorboard
         self._tensorboard_root = tensorboard_root
 
-        if enable_tensorboard:
-            self._tensorboard_dir = os.path.join(self._tensorboard_root, _get_timestamp())
-            self.writer = tensorboardX.SummaryWriter(self._tensorboard_dir)
-        else:
-            self._tensorboard_dir = None
-            self.writer = None
+        self._tensorboard_dir = os.path.join(self._tensorboard_root, _get_timestamp())
+        self._writer = None #tensorboardX.SummaryWriter(self._tensorboard_dir)
+        # else:
+        #     self._tensorboard_dir = None
+        #     self.writer = None
 
+    @property
+    def writer(self):
+        if self._writer is None:
+            self._writer = tensorboardX.SummaryWriter(self._tensorboard_dir)
+        return self._writer
 
     @property
     def device(self):
@@ -111,17 +115,18 @@ class BasePolicy(nn.Module):
 
 
     def start_tensorboard(self):
-        self.writer.flush() # 保证writer的内容全部写出，再打开tensorboard。
+        if self._writer is not None:
+            self._writer.flush() # 保证writer的内容全部写出，再打开tensorboard。
 
         import threading
         tensorboard_thread = threading.Thread(target=_start_tensorboard, args=(self._tensorboard_root,))
         tensorboard_thread.start()
 
     def reset_tensorboard_writer(self):
-        if self.enable_tensorboard:
-            self.writer.close()
-            self._tensorboard_dir = os.path.join(self._tensorboard_root, _get_timestamp())
-            self.writer = tensorboardX.SummaryWriter(self._tensorboard_dir)
+        if self._writer is not None:
+            self._writer.close()
+        self._tensorboard_dir = os.path.join(self._tensorboard_root, _get_timestamp())
+        self._writer = None
 
     # @abstractmethod
     # def save_model(self, *args, **kwargs):

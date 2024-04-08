@@ -3,12 +3,11 @@ import warnings
 import numpy as np
 import copy
 
-import spider
 from spider.planner_zoo.LatticePlanner import LatticePlanner
 from spider.optimize.TrajectoryOptimizer import FrenetTrajectoryOptimizer
 
 from spider.elements import RoutedLocalMap, TrackingBoxList, VehicleState
-from spider.vehicle_model.bicycle import Bicycle
+from spider.control.vehicle_model import Bicycle
 
 from spider.utils.collision import BoxCollisionChecker
 from spider.constraints import CartConstriantChecker
@@ -90,7 +89,7 @@ class OptimizedLatticePlanner(LatticePlanner):
 
 if __name__ == '__main__':
     from spider.interface.BaseBenchmark import DummyBenchmark
-    from spider.elements.box import TrackingBoxList, TrackingBox
+
     bm = DummyBenchmark()
     # bm._init_obstacles = TrackingBoxList([
     #     TrackingBox(obb=(50, 0, 5, 2, np.arctan2(0.2, 5))),

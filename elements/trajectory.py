@@ -1,5 +1,5 @@
 import numpy as np
-from spider.vehicle_model.bicycle import Bicycle
+from spider.control.vehicle_model import Bicycle
 
 
 # 考虑一下要不要改成 traj = [pose]

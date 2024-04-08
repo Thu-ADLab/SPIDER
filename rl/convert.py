@@ -76,8 +76,9 @@ class ToKineState(nn.Module):
         ego_info = [
             1.0, *ego_veh_state.obb, ego_veh_state.velocity.x, ego_veh_state.velocity.y
         ]
-        self.tf.set_ego_pose(ego_veh_state.x(), ego_veh_state.y(), ego_veh_state.yaw())
-        self.tf.set_ego_velocity(ego_veh_state.velocity.x, ego_veh_state.velocity.y)
+        if self.relative:
+            self.tf.set_ego_pose(ego_veh_state.x(), ego_veh_state.y(), ego_veh_state.yaw())
+            self.tf.set_ego_velocity(ego_veh_state.velocity.x, ego_veh_state.velocity.y)
 
         assert isinstance(perception, elm.TrackingBoxList), "Only TrackingBoxList is supported for object state"
         all_obj_info = [ego_info]

@@ -9,6 +9,12 @@ import carla
 from spider.interface.carla.common import *
 from spider.interface.carla.presets import viewer_sensor_presets
 
+try:
+    import cv2
+except (ModuleNotFoundError, ImportError) as e:
+    import spider
+    cv2 = spider._virtual_import("cv2", e)
+
 
 
 def draw_waypoints(world, waypoints, z=0.5):
@@ -56,10 +62,14 @@ class Viewer:
 
         self.surface = None
         self.recording = recording
+        self.video_writer = None
         self.image_size = image_size
         self.lidar_range = lidar_range
 
         self.image_array = None
+
+        # if self.recording:
+        #     self._build_video_writer()
 
 
         if viewed_object is None:
@@ -84,7 +94,10 @@ class Viewer:
 
         if self.sensor is not None:
             print("Found existing sensor, destroy it.")
-            self.destroy()
+            self.destroy()  # 这里把video writer也释放了
+
+        if self.recording:
+            self._build_video_writer()
 
         self.sensor_type = sensor_type
         self.view = view
@@ -122,6 +135,8 @@ class Viewer:
     def toggle_recording(self):
         """Toggle recording on or off"""
         self.recording = not self.recording
+        if self.recording and (self.video_writer is not None):
+            self._build_video_writer()
         print('Recording %s' % ('On' if self.recording else 'Off'))
 
     def change_view(self, view):
@@ -143,16 +158,19 @@ class Viewer:
             self.spawn_sensor(self.viewed_object, sensor_type, view)
             print("Viewer sensor changed to: ", self.sensor_type_info[2])
 
-    def render(self, display=None):
+    def render(self, display): #display=None):
         """Render method"""
-        if display is None:
-            display = pygame.display.set_mode(self.image_size, pygame.HWSURFACE | pygame.DOUBLEBUF)
+        # if display is None:
+        #     display = pygame.display.set_mode(self.image_size, pygame.HWSURFACE | pygame.DOUBLEBUF)
         if self.surface is not None:
             display.blit(self.surface, (0, 0))
         return display
 
 
     def destroy(self):
+        if self.video_writer is not None:
+            self.video_writer.release()
+
         if self.sensor is not None:
             # print("WARNING: sensor found, it should be destroyed")
             self.sensor.destroy() # 有时候会莫名其妙carla服务器崩溃
@@ -210,9 +228,29 @@ class Viewer:
             array = array[:, :, ::-1]
             self.image_array = array  # qzl: 保存一波
             self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
-        if self.recording:
-            image.save_to_disk('_out/%08d' % image.frame) # todo: 这只是保存图像，改成录像功能
 
+        if self.recording:
+            try:
+                self.video_write(self.image_array, rgb2bgr=True)
+            except Exception as e:
+                print(e)
+            # image.save_to_disk('_out/%08d' % image.frame) # 这只是保存图像，改成录像功能
+
+
+    def video_write(self, image_array, rgb2bgr=False):
+        if self.video_writer is None:
+            self._build_video_writer()
+        if rgb2bgr:
+            image_array = cv2.cvtColor(image_array, cv2.COLOR_RGB2BGR)
+        self.video_writer.write(image_array)
+
+    def _build_video_writer(self):
+        # todo: 下面的内容换成可以由video_kwargs设置，设默认值可以先设一个字典，然后update一下
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        video_path = "./carla_viewer_recording.avi"
+        fps = 20
+        # self.video_settings = (video_path, fourcc, fps)
+        self.video_writer = cv2.VideoWriter(video_path, fourcc, fps, self.image_size)
 
 
 

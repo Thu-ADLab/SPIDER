@@ -78,7 +78,7 @@ class SnapShot:
             # todo: 下面的内容换成可以由video_kwargs设置，设默认值可以先设一个字典，然后update一下
             # video_path =
             fourcc = cv2.VideoWriter_fourcc(*'XVID')
-            fps = 10
+            fps = 10 if "fps" not in video_kwargs else video_kwargs["fps"]
             self.video_settings = (video_path, fourcc, fps)
 
             # self.video_writer = cv2.VideoWriter(self.video_path, fourcc, fps, (640, 480))
@@ -152,6 +152,13 @@ class SnapShot:
                 no_tick(ax)
         return
 
+    def release_writer(self):
+        if self.video_writer is not None:
+            self.video_writer.release()
+
+    def close(self):
+        plt.close('all') # 不应该是all
+        self.release_writer()
 
     def save(self):
         '''

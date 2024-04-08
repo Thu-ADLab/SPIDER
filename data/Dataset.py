@@ -119,6 +119,11 @@ class OfflineLogDataset(OfflineExpDataset):
         collate_fn = pin_memory = False,drop_last = False,timeout = 0,worker_init_fn = None,'''
         return torch.utils.data.DataLoader(self, *args, **kwargs)
 
+    def get_record(self, index):
+        filepath = self.index2file[index]
+        log_record = self._load_data(filepath)
+        return log_record
+
 
     def _load_data(self, pathfile):
         if self.file_format == spider.DATA_FORMAT_RAW:

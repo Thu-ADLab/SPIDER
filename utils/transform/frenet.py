@@ -2,13 +2,12 @@
 可以思考一下如何加速
 """
 import numpy as np
-import math
 from spider.elements import TrackingBoxList
 from spider.elements.curves import ParametricCubicSpline
 from spider.utils.geometry import find_nearest_point, point_to_segment_distance, resample_polyline
 from spider.elements.trajectory import FrenetTrajectory
 from spider.elements.vehicle import KinematicState, FrenetKinematicState
-from spider.vehicle_model.bicycle import curvature2steer
+from spider.control.vehicle_model import curvature2steer
 
 # def cartesian_to_frenet(rs, rx, ry, rtheta, rkappa, rdkappa, x, y, v, a, theta, kappa):
 #     """

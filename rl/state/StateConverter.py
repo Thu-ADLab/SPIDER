@@ -117,6 +117,12 @@ class KineStateEncoder(nn.Module):
                 cvt.FixLength(0, num_object),
                 cvt.Flatten()
             )
+        else:
+            self.encoder = cvt.Compose(
+                cvt.ToKineState(num_object,num_waypoint, relative=relative),
+                cvt.FixLength(0, num_object),
+                cvt.Flatten()
+            )
 
     def forward(self, ego_veh_state: elm.VehicleState,
                 perception: Union[elm.TrackingBoxList, elm.OccupancyGrid2D],

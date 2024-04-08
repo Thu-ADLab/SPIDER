@@ -65,11 +65,15 @@ class DummyBenchmark(BaseBenchmark):
         self.obstacles = None
         self.local_map = None
 
+        self._debug = self.config["debug_mode"]
+        self._racetrack = self.config["racetrack"]
+        assert self._racetrack in ["curve", "straight"], "racetrack must be one of ['curve', 'straight']"
+
         ############ environment presets ###################
         import numpy as np
         from spider.elements.map import RoutedLocalMap, Lane
         from spider.elements.box import TrackingBoxList, TrackingBox
-        from spider.elements.vehicle import VehicleState, Transform, Location, Rotation, Vector3D
+        from spider.elements.vehicle import VehicleState
 
         ## localization
         self._init_ego_state = VehicleState.from_kine_states(5.,1.,0.,vx=0.5,vy=0.,length=self.config["ego_veh_length"],
@@ -79,8 +83,11 @@ class DummyBenchmark(BaseBenchmark):
         self._init_local_map = RoutedLocalMap()
         for idx, yy in enumerate([-3.5, 0, 3.5]):
             xs = np.arange(0, 300.1, 1.0)
-            # cline = np.column_stack((xs, np.ones_like(xs) * yy)) # 直线车道
-            cline = np.column_stack((xs, 3 * np.sin(np.pi*xs/100) + yy)) # sin形状车道
+            if self._racetrack == "curve":
+                cline = np.column_stack((xs, 3 * np.sin(np.pi * xs / 100) + yy))  # sin形状车道
+            else:
+                cline = np.column_stack((xs, np.ones_like(xs) * yy)) # 直线车道
+
             lane = Lane(idx, cline, width=3.5, speed_limit=60 / 3.6)
             self._init_local_map.lanes.append(lane)
 
@@ -102,7 +109,10 @@ class DummyBenchmark(BaseBenchmark):
             "random_seed": 666,
             "ego_veh_length": 5.0,
             "ego_veh_width": 2.0,
-            # "offscreen_rendering": False,
+
+            "debug_mode" : False,
+            "racetrack": "curve", # "curve" or "straight
+
             "rendering": True,
             "snapshot": True,
             "save_video": False,
@@ -229,8 +239,8 @@ class DummyBenchmark(BaseBenchmark):
 
 
     @classmethod
-    def get_environment_presets(cls):
-        benchmark = cls()
+    def get_environment_presets(cls, config:dict=None):
+        benchmark = cls(config)
         benchmark.initial_environment()
         return benchmark.ego_veh_state, benchmark.obstacles, benchmark.local_map
 

@@ -140,6 +140,31 @@ def point_to_segment_distance(point: np.ndarray, segment_start:np.ndarray, segme
 #
 #     pass
 
+# def smooth_path(path, window_size=5):
+#     """
+#     平滑路径函数
+#
+#     参数:
+#         path: numpy.ndarray, shape为 (N, 2)，包含路径中心点的坐标
+#         window_size: int, 窗口大小，用于计算平均值，默认为5
+#
+#     返回:
+#         smoothed_path: numpy.ndarray, 平滑后的路径，与输入路径形状相同
+#     """
+#     smoothed_path = np.copy(path)  # 创建一个新数组，以保留原始路径数据
+#
+#     # 遍历路径中的每个点
+#     for i in range(len(path)):
+#         # 确定窗口范围
+#         start = max(0, i - window_size // 2)
+#         end = min(len(path), i + window_size // 2 + 1)
+#
+#         # 计算窗口内点的平均值
+#         window_slice = path[start:end, :]
+#         smoothed_path[i] = np.mean(window_slice, axis=0)
+#
+#     return smoothed_path
+
 
 if __name__ == '__main__':
     xs = np.linspace(0,200,200)

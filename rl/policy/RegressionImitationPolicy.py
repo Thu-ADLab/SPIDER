@@ -2,6 +2,7 @@ import torch
 import torch.optim as optim
 
 import tqdm
+import matplotlib.pyplot as plt
 
 import spider
 from spider.rl.policy.BasePolicy import BasePolicy, DataLoader
@@ -14,10 +15,10 @@ class RegressionImitationPolicy(BasePolicy):
         super().__init__(enable_tensorboard, tensorboard_root)
         self.actor = actor
 
-        self.criterion = torch.nn.MSELoss() if criterion is None else criterion
+        self.criterion = torch.nn.L1Loss() if criterion is None else criterion
         self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
 
-
+        self._plot_train_curve = True
 
     def forward(self, state:torch.Tensor) -> torch.Tensor:
         return self.actor(state.to(self.device))
@@ -71,11 +72,34 @@ class RegressionImitationPolicy(BasePolicy):
                 avg_val_loss /= count
                 if self.enable_tensorboard:
                     self.writer.add_scalar('loss/val', avg_val_loss, epoch)
-            # else:
-            #     avg_val_loss = 0.0
+            else:
+                avg_val_loss = None
+
+            if self._plot_train_curve:
+                self._update_train_curve(avg_train_loss, avg_val_loss)
 
         # if self.enable_tensorboard:
         #     self.start_tensorboard()
+        plt.savefig('./train_curve.png')
+        plt.close()
+
+
+    def _update_train_curve(self, train_loss, val_loss=None):
+        if not hasattr(self, "_loss_record"):
+            self._loss_record = {"train":[], "val":[]}
+        plt.cla()
+        ax = plt.gca()
+
+        self._loss_record["train"].append(train_loss)
+        ax.plot(self._loss_record["train"],label="train")
+
+        if val_loss is not None:
+            self._loss_record["val"].append(val_loss)
+        if len(self._loss_record["val"]) > 0:
+            ax.plot(self._loss_record["val"], label="val")
+
+        plt.legend()
+        plt.pause(0.01)
 
 
 

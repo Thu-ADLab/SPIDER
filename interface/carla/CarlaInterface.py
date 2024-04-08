@@ -13,6 +13,8 @@ from spider.interface.carla.common import *
 from spider.interface.carla.visualize import Viewer
 from spider.elements import RoutedLocalMap, VehicleState, TrackingBoxList, TrackingBox, Lane, Trajectory
 from spider.utils.geometry import resample_polyline
+
+from spider.control.SimpleController import SimpleController
 # from spider.interface.carla._route_utils import GlobalRoutePlanner
 
 
@@ -31,7 +33,8 @@ class CarlaInterface:
                  client_host='127.0.0.1',
                  client_port=2000,
                  traffic_manager_port=8000,
-                 rendering=True) -> None:
+                 rendering=True,
+                 recording=False) -> None:
 
         self.client_host = client_host
         self.client_port = client_port
@@ -41,17 +44,18 @@ class CarlaInterface:
         self.world = self.client.get_world()
         self.traffic_manager = self.client.get_trafficmanager(traffic_manager_port)
 
-        try:
-            self.map = self.world.get_map()
-        except RuntimeError as error:
-            print('RuntimeError: {}'.format(error))
-            print('  The server could not send the OpenDRIVE (.xodr) file:')
-            print('  Make sure it exists, has the same name of your town, and is correct.')
-            sys.exit(1)
+        # try:
+        #     self.map = self.world.get_map()
+        # except RuntimeError as error:
+        #     print('RuntimeError: {}'.format(error))
+        #     print('  The server could not send the OpenDRIVE (.xodr) file:')
+        #     print('  Make sure it exists, has the same name of your town, and is correct.')
+        #     sys.exit(1)
 
         self.hero = None
 
-        self._sync = True  # 同步模式
+        self._sync = False  # 同步模式
+        # todo: 如果开同步模式，现在好像有问题，猜测应该是Pygame时钟和world时钟不统一导致的
         self._synchronous_master = True # 不懂什么意思
 
         self._rendering = rendering
@@ -74,17 +78,25 @@ class CarlaInterface:
         self.destination: carla.Location = None
         self.route: Sequence[Tuple[carla.Waypoint, RoadOption]] = None
         self._route_arr = None
-        self._router = GlobalRoutePlanner(self.world.get_map(), sampling_resolution=self._map_resolution)
+        self._router = GlobalRoutePlanner(self.map, sampling_resolution=self._map_resolution)
 
         # control settings
         self._control_dt = 0.2 # 控制时间间隔
-        self._controller:VehiclePIDController = None # VehiclePIDController(self._vehicle)
+        # self._controller:VehiclePIDController = None
+        self._controller = SimpleController()
+
+        # recording
+        self.recording = self._rendering and recording
 
 
         self._default_vehicle_bp_filter = "vehicle.*"
         self._default_walker_bp_filter = "walker.pedestrian.*"
 
     ############## useful functions ###############
+
+    @property
+    def map(self):
+        return self.world.get_map()
 
     @property
     def actors(self):
@@ -211,6 +223,14 @@ class CarlaInterface:
             warnings.warn("Could not load map.\nPlease ensure that the map name is one of {}".format(self.available_maps))
         self.destroy()
 
+        # tick一下更新地图
+        if self._sync:
+            self.world.tick()
+        else:
+            self.world.wait_for_tick()
+
+        self._router = GlobalRoutePlanner(self.map, sampling_resolution=self._map_resolution)
+
     @property
     def debug(self):
         return self.world.debug
@@ -279,7 +299,7 @@ class CarlaInterface:
             self.viewer.destroy()
         self.viewer = Viewer(viewed_object, sensor_type, view, recording, image_size, lidar_range)
 
-    def spawn_hero(self, ego_x=None, ego_y=None, ego_yaw=None, blueprint_filter="vehicle*",
+    def spawn_hero(self, ego_x=None, ego_y=None, ego_yaw=None, blueprint_filter="vehicle.audi.tt",
                    destination:carla.Location=None, autopilot=False, autolight=True, only_four_wheel=True):
 
         if ego_x is None or ego_y is None or ego_yaw is None:
@@ -311,41 +331,13 @@ class CarlaInterface:
             blueprint.set_attribute('color', color)
         blueprint.set_attribute('role_name', self._hero_name)
 
+        print(blueprint)
         hero = self.world.try_spawn_actor(blueprint, spawn_point)  # 有可能存在无法spawn的可能
         if hero is None:
             raise RuntimeError(
                 "Player is not spawn. It might be due to incorrect position input or existing space occupancy.")
 
         self.set_hero(hero, destination, autopilot, autolight)
-
-        # modify_vehicle_physics(self.hero)
-        # self.hero.set_autopilot(autopilot)
-        # if autolight:
-        #     set_autolight(self.hero, self.traffic_manager)
-        #
-        #
-        # # routing
-        # self.origin = spawn_point.location
-        # if not autopilot:
-        #     route_length = 0
-        #     while route_length < 100 / self._map_resolution:
-        #         self.destination = self.get_random_point().location if destination is None else destination
-        #         self.route = self._router.trace_route(self.origin, self.destination) # waypoint, road_option
-        #         route_length = len(self.route)
-        #     self._route_arr = waypointseq2array([wp_info[0] for wp_info in self.route])
-        #     self._route_arr = resample_polyline(self._route_arr, self._map_resolution)
-        #     # self.route = self.map.compute_route(self.origin.location, self.destination.location)
-        #
-        # # control
-        # self._controller = VehiclePIDController(self.hero, self._control_dt)
-        #
-        # # set the main_viewer
-        # self.spawn_viewer(self.hero)
-        # # self.spawn_viewer(self.hero, sensor_type="camera_rgb", view="bird_eye")
-        # # self.spawn_viewer(self.hero, sensor_type="camera_rgb", view="right_side")
-        # # self.spawn_viewer(self.hero, sensor_type="lidar",view="bird_eye", image_size=(640,360))
-        # # self.spawn_viewer(self.hero, sensor_type="camera_log_gray_depth", view="first_person",
-        # #                   image_size=(640, 360), recording=True)
 
         if self._sync:
             self.world.tick()
@@ -378,10 +370,10 @@ class CarlaInterface:
             print("autopilot actor does not have a destination")
 
         # control
-        self._controller = VehiclePIDController(self.hero, self._control_dt)
+        # self._controller = VehiclePIDController(self.hero, self._control_dt)
 
         # set the main_viewer
-        self.spawn_viewer(self.hero)
+        self.spawn_viewer(self.hero, recording=self.recording)
 
     def spawn_npc_vehicles(self, vehicle_num, vehicle_filter="vehicle*", spawn_points=None,
                            autopilot=True, autolight=True, only_four_wheel=False):
@@ -582,7 +574,7 @@ class CarlaInterface:
 
 
 
-    def render(self, display=None):
+    def render(self, display):
         if self._rendering:
             # main viewer rendering....
             if self.viewer is None:
@@ -658,34 +650,50 @@ class CarlaInterface:
 
         return ego_veh_state, tb_list, routed_local_map
 
-    def convert_to_action(self, trajectory:Trajectory):
+    def convert_to_action(self, trajectory:Trajectory, ego_veh_state:VehicleState=None):
         assert self.hero is not None, "Hero not spawned!"
 
         if trajectory is None:
             print("\033[31m Provide no trajectory to track! Try to hold still... \033[0m")
-            return self._controller.get_fallback_control()
+            # control = self._controller.get_fallback_control()
+            acc, steer = self._controller.get_fallback_control()
+        else:
+            acc, steer = self._controller.get_control(trajectory, ego_veh_state)
 
-
-        # 这里搞成插值最好，目前是找最近索引，相当于是最近邻插值
-        # target_index = int(round(trajectory.dt / self._control_dt))
-
-        hero_trans = self.hero.get_transform()
-        idx = 1
-        yaw_deg = trajectory.heading[idx] * 180 / math.pi
-        target_point_transform = carla.Transform(
-            carla.Location(x=trajectory.x[idx], y=trajectory.y[idx], z=hero_trans.location.z),
-            carla.Rotation(roll=hero_trans.rotation.roll, yaw=yaw_deg, pitch=hero_trans.rotation.pitch)
-        )
-        target_speed = trajectory.v[1] * 3.6 # qzl: in km/h
-
-        control = self._controller.run_step(target_speed, target_point_transform)
-        control.manual_gear_shift = False
+        control = self.wrap_carla_control(acc, steer)
         return control
 
-    def conduct_trajectory(self, trajectory:Trajectory):
-        control = self.convert_to_action(trajectory)
+        # hero_trans = self.hero.get_transform()
+        # idx = 1
+        # yaw_deg = trajectory.heading[idx] * 180 / math.pi
+        # target_point_transform = carla.Transform(
+        #     carla.Location(x=trajectory.x[idx], y=trajectory.y[idx], z=hero_trans.location.z),
+        #     carla.Rotation(roll=hero_trans.rotation.roll, yaw=yaw_deg, pitch=hero_trans.rotation.pitch)
+        # )
+        # target_speed = trajectory.v[1] * 3.6 # qzl: in km/h
+        #
+        # control = self._controller.run_step(target_speed, target_point_transform)
+        # control.manual_gear_shift = False
+        # return control
+
+    def conduct_trajectory(self, trajectory:Trajectory, ego_veh_state:VehicleState=None):
+        control = self.convert_to_action(trajectory, ego_veh_state)
         self.hero.apply_control(control)
         # print(control)
+
+    def wrap_carla_control(self, acceleration, steering) -> carla.VehicleControl:
+        control = carla.VehicleControl()
+        if acceleration >= 0.0:
+            control.throttle = acceleration
+            control.brake = 0.0
+        else:
+            control.throttle = 0.0
+            control.brake = acceleration
+
+        control.steer = steering
+        control.hand_brake = False
+        control.manual_gear_shift = False
+        return control
 
     def has_arrived(self, dist_thresh=5) -> bool:
         # 这里只是粗略位置判断

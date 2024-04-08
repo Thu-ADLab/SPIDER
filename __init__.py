@@ -5,7 +5,7 @@ from spider.teaser import teaser
 
 
 submodules = [
-    'elements', 'utils', 'sampler', 'evaluator', 'interface', 'vehicle_model', 'planner_zoo', 'RL',
+    'elements', 'utils', 'sampler', 'evaluator', 'interface', 'control', 'planner_zoo', 'RL',
     'data',
     #'teaser', 'param'
 ]
@@ -20,6 +20,8 @@ def __dir__():
 def __getattr__(name):
     if name in submodules:
         return _importlib.import_module(f'spider.{name}')
+    elif name =="vehicle_model":
+        return AttributeError("sub module 'spider.vehicle_model' has been moved to 'spider.control.vehicle_model'")
     else:
         try:
             return globals()[name]

@@ -25,7 +25,8 @@ _traj_kwargs = {"color":'C2', "linestyle":'-', "marker":'.', "linewidth":1.5}
 def lazy_draw(ego_state, trackingbox_list, local_map, trajectory):
     draw_ego_vehicle(ego_state)
     draw_trackingbox_list(trackingbox_list)
-    draw_local_map(local_map)
+    if local_map is not None:
+        draw_local_map(local_map)
     draw_trajectory(trajectory)
     ego_centric_view(ego_state.x(), ego_state.y())
 

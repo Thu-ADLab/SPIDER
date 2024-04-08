@@ -55,7 +55,7 @@ class VehiclePIDController():
         self._dt = dt
 
         # _dt = 1.0/20.0
-        _args_lateral_dict = {'K_P': 9.00, 'K_I': 0.1, 'K_D': 0.2, 'dt': self._dt}
+        _args_lateral_dict = {'K_P': 5.00, 'K_I': 0.6, 'K_D': 0.2, 'dt': self._dt}
         _args_longitudinal_dict = {'K_P': 2.0, 'K_I': 0.05, 'K_D': 0, 'dt': self._dt}
         # _args_lateral_dict = {'K_P': 1.95, 'K_I': 0.05, 'K_D': 0.2, 'dt': self._dt}# 初始参数
         # _args_longitudinal_dict = {'K_P': 1.0, 'K_I': 0.05, 'K_D': 0, 'dt': self._dt} # 初始参数

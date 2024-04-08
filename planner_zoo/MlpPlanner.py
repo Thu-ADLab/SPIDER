@@ -30,9 +30,12 @@ class MlpPlanner(BaseNeuralPlanner):
     def __init__(self, config=None):
         super().__init__(config)
 
-        self.state_encoder = KineStateEncoder(num_object=self.config["num_object"],
-                                              x_range=self.config["longitudinal_range"],
-                                              y_range=self.config["lateral_range"])
+        self.state_encoder = KineStateEncoder(
+            normalize=self.config["normalize"],
+            relative=self.config["relative"],
+            num_object=self.config["num_object"],
+            x_range=self.config["longitudinal_range"],
+            y_range=self.config["lateral_range"])
 
         self.action_decoder = TrajActionDecoder(self.config["steps"], self.config["dt"],
                                                 lon_range=self.config["longitudinal_range"], lat_range=self.config["lateral_range"])
@@ -55,11 +58,14 @@ class MlpPlanner(BaseNeuralPlanner):
         cfg.update({
             "steps": 20,
             "dt": 0.2,
-            "num_object": 6,
-            "longitudinal_range": (-30, 60),
-            "lateral_range": (-30,30),
 
-            "learning_rate": 0.0001,
+            "num_object": 6,
+            "normalize": False,
+            "relative": False,
+            "longitudinal_range": (-30, 60),
+            "lateral_range": (-10,10),
+
+            "learning_rate": 0.00001,
             "enable_tensorboard": False,
             "tensorboard_root": './tensorboard/'
             # "epochs": 100,
