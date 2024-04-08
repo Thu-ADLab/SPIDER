@@ -30,6 +30,7 @@ interface/carla/example
 interface/carla/carla_veh_light
 interface/carla/PythonAPI
 
+*.zip
 *.bak
 upload.txt
 todo.txt
