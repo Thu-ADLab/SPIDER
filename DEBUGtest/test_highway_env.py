@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 
 def test_benchmark_api():
-    steps, dt = 10, 0.2
+    steps, dt = 20, 0.2
 
     benchmark = HighwayEnvBenchmark(dt=dt, config={"max_steps":200})
 
@@ -14,10 +14,11 @@ def test_benchmark_api():
         "steps": steps,
         'dt' : dt,
         "max_speed": 120/3.6,
-        "end_s_candidates": (10,20,40,60),
+        "end_s_candidates": (20, 30, 40, 80),
         "end_l_candidates": (-4,0,4), # s,d采样生成横向轨迹 (-3.5, 0, 3.5), #
         "end_v_candidates": tuple(i*120/3.6/4 for i in range(5)), # 改这一项的时候，要连着限速一起改了
         "end_T_candidates": (1,2,4,8), # s_dot, T采样生成纵向轨迹
+        "print_info": False
     })
 
 

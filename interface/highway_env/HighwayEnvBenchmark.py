@@ -98,7 +98,7 @@ class HighwayEnvBenchmark(BaseBenchmark):
                 output = spider_planner.plan(ego_veh_state, perception, local_map)
                 if output is None:
                     break # 没有可行解了，其实应该把reward给个低值。
-                action = self.interface.convert_to_action(output)
+                action = self.interface.convert_to_action(output, ego_veh_state)
                 obs, reward, done, truncated, info = self.env.step(action)
 
 
@@ -336,7 +336,7 @@ class HighwayEnvBenchmarkGUI:
             # config_dict["env_config"]["policy_frequency"] = int(config_dict["env_config"]["policy_frequency"])
 
 
-            steps, dt = 30, 0.1
+            steps, dt = 20, 0.2
             # 创建HighwayEnvBenchmark对象
             benchmark = HighwayEnvBenchmark(dt, config_dict)
 
@@ -345,11 +345,12 @@ class HighwayEnvBenchmarkGUI:
                 "steps": steps,
                 'dt': dt,
                 "max_speed": 120 / 3.6,
-                "end_s_candidates": (10, 20, 40, 80),
+                "end_s_candidates": (10, 25, 60),
                 "end_l_candidates": (-4, 0, 4),  # s,d采样生成横向轨迹 (-3.5, 0, 3.5), #
                 "end_v_candidates": tuple(i * 100 / 3.6 / 4 for i in range(5)),  # 改这一项的时候，要连着限速一起改了
-                "end_T_candidates": (1, 2, 4, 8, 10),  # s_dot, T采样生成纵向轨迹
-                # "constraint_flags":{}
+                "end_T_candidates": (1, 2, 8, 10),  # s_dot, T采样生成纵向轨迹
+                "print_info": False,
+                "constraint_flags":{}
             })
 
             # 执行test函数

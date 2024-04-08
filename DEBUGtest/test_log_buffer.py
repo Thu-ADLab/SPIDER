@@ -19,8 +19,9 @@ def test1():
 
     log_buffer = LogBuffer(
         autosave_max_intervals=100,
-        # file_format=spider.DATA_FORMAT_JSON
-        file_format=spider.DATA_FORMAT_RAW
+        file_format=spider.DATA_FORMAT_RAW,
+        # file_format=spider.DATA_FORMAT_JSON,
+        # data_root='./dataset_json/'
     )
 
     log_buffer.apply_to(planner)

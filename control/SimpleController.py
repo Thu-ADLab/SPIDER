@@ -4,9 +4,13 @@ import math
 from collections import deque
 import numpy as np
 
-import spider.elements as elm
+from typing import TypeVar
+
+# import spider.elements as elm
 from spider.utils.geometry import resample_polyline
 
+Trajectory = TypeVar("Trajectory") # 避免循环引用
+VehicleState = TypeVar("VehicleState")
 
 class SimpleController(object):
 
@@ -18,7 +22,7 @@ class SimpleController(object):
         self._max_throt = 0.75
         self._max_steer = 0.8
 
-    def get_control(self, trajectory:elm.Trajectory, ego_veh_state:elm.VehicleState=None):
+    def get_control(self, trajectory:Trajectory, ego_veh_state:VehicleState=None):
         # target
         target_speed = trajectory.v[-1]
         traj_arr = trajectory.trajectory_array
