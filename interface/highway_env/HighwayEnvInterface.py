@@ -166,7 +166,7 @@ class HighwayEnvInterface:
     #     necessary_keys = ["presence", "x", "y", "vx", "vy","heading","cos_h", "sin_h"]
     #     for key in necessary_keys:
     #         if key in features:
-    #             idx = features.index(key)
+    #             idx = features.record_index(key)
     #             self.kine_feature_index_mapping[key] = idx
     #     assert "x" in self.kine_feature_index_mapping and "y" in self.kine_feature_index_mapping
 

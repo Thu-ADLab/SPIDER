@@ -15,15 +15,16 @@ from spider.planner_zoo.BaseNeuralPlanner import BaseNeuralPlanner
 class MlpActor(nn.Module):
     def __init__(self, input_dim, output_dim, hidden_size=64):
         super(MlpActor, self).__init__()
-        self.fc1 = nn.Linear(input_dim, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.fc3 = nn.Linear(hidden_size, output_dim)
+        self.mlp = nn.Sequential(  # 5-layer MLP
+            nn.Linear(input_dim, hidden_size), nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size), nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size), nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size), nn.ReLU(),
+            nn.Linear(hidden_size, output_dim), nn.Sigmoid()
+        )
 
     def forward(self, x):
-        x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
-        x = torch.sigmoid(self.fc3(x))
-        return x
+        return self.mlp(x)
 
 
 class MlpPlanner(BaseNeuralPlanner):
@@ -44,7 +45,7 @@ class MlpPlanner(BaseNeuralPlanner):
 
         self.policy = RegressionImitationPolicy(
             MlpActor(self.state_encoder.state_dim, self.action_decoder.action_dim).to(self.device),
-            criterion = nn.MSELoss(),
+            # criterion = nn.MSELoss(),
             lr = self.config["learning_rate"],
             enable_tensorboard=self.config["enable_tensorboard"],
             tensorboard_root=self.config["tensorboard_root"]
@@ -62,10 +63,10 @@ class MlpPlanner(BaseNeuralPlanner):
             "num_object": 6,
             "normalize": False,
             "relative": False,
-            "longitudinal_range": (-30, 60),
-            "lateral_range": (-10,10),
+            "longitudinal_range": (-50, 100),
+            "lateral_range": (-20,20),
 
-            "learning_rate": 0.00001,
+            "learning_rate": 0.0001,
             "enable_tensorboard": False,
             "tensorboard_root": './tensorboard/'
             # "epochs": 100,

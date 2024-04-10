@@ -112,7 +112,7 @@ class PiecewiseLatticePlanner(BasePlanner):
 
     def build_frenet_lane(self, target_lane_idx):
         if target_lane_idx < 0 or target_lane_idx >= len(self.local_map.lanes):
-            raise ValueError("Invalid target lane index")
+            raise ValueError("Invalid target lane record_index")
         target_lane = self.local_map.lanes[target_lane_idx]
         self.coordinate_transformer.set_reference_line(target_lane.centerline, target_lane.centerline_csp)
 

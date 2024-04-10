@@ -96,7 +96,10 @@ class SnapShot:
     def album_size(self):
         return len(self.album)
 
-    def snap(self, ax:plt.Axes):
+    def snap(self, ax:plt.Axes=None):
+        if ax is None:
+            ax = plt.gca()
+
         if self._snap_trigger() or self.record_video:
             img = np.frombuffer(ax.figure.canvas.buffer_rgba(), dtype=np.uint8)
             try: # todo:这边搞不清楚怎么回事，有时候上面work有时候下面work，暂时先这样子写吧

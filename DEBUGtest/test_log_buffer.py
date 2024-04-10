@@ -8,7 +8,8 @@ from spider.data.decorators import logbuffer_plan
 def test1():
     # 用log_buffer.apply_to(planner)启用
     benchmark = DummyBenchmark({
-        "snapshot": False
+        "snapshot": False,
+        # "racetrack": "straight",
     })
 
     planner = LatticePlanner({
@@ -21,7 +22,7 @@ def test1():
         autosave_max_intervals=100,
         file_format=spider.DATA_FORMAT_RAW,
         # file_format=spider.DATA_FORMAT_JSON,
-        # data_root='./dataset_json/'
+        # data_root='./dataset_straight/'
     )
 
     log_buffer.apply_to(planner)

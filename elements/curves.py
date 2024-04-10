@@ -775,7 +775,7 @@ class myCubicSpline(InterpolationCurve):
 
     def _search_index(self, x):
         """
-        search data segment index
+        search data segment record_index
         """
         if self._isscalar(x):
             pt_idx = bisect.bisect(self.x, x) - 1  # 二分查找插入点的索引
@@ -935,7 +935,7 @@ class Spline:#Cubic CubicSpline class(abandoned)
 #
 #     def _search_index(self, x):
 #         """
-#         search data segment index
+#         search data segment record_index
 #         """
 #         return bisect.bisect(self.x, x) - 1
 #

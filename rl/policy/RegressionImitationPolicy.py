@@ -8,7 +8,6 @@ import spider
 from spider.rl.policy.BasePolicy import BasePolicy, DataLoader
 
 
-
 class RegressionImitationPolicy(BasePolicy):
     def __init__(self, actor:torch.nn.Module, criterion:torch.nn.Module=None, lr=1e-4,
                  enable_tensorboard=False, tensorboard_root='./tensorboard/'):

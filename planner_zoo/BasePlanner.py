@@ -48,11 +48,11 @@ class BasePlanner:
 
     @property
     def width(self):
-        return self.config.get("ego_veh_width", 0.0)
+        return self.config.get("ego_veh_width", 5.0)
 
     @property
     def length(self):
-        return self.config.get("ego_veh_length", 0.0)
+        return self.config.get("ego_veh_length", 2.0)
 
     @property
     def log_buffer(self):

@@ -325,7 +325,7 @@ class GlobalRoutePlanner(object):
     def _successive_last_intersection_edge(self, index, route):
         """
         This method returns the last successive intersection edge
-        from a starting index on the route.
+        from a starting record_index on the route.
         This helps moving past tiny intersection edges to calculate
         proper turn decisions.
         """
@@ -347,7 +347,7 @@ class GlobalRoutePlanner(object):
     def _turn_decision(self, index, route, threshold=math.radians(35)):
         """
         This method returns the turn decision (RoadOption) for pair of edges
-        around current index of route list
+        around current record_index of route list
         """
 
         decision = None

@@ -33,7 +33,7 @@ class BaseBuffer(deque):
                  autosave=True,  # 只有autosave为True时，以下参数才有意义
                  autosave_max_intervals=1000,
                  new_seg_when_done=True,  # done信号了要不要保存一次数据到本地, 如果不保存就是固定intervals
-                 max_records=_default_max_records,
+                 max_save_records=_default_max_records,
                  ):
 
         super(BaseBuffer, self).__init__(maxlen=maxlen)
@@ -48,10 +48,10 @@ class BaseBuffer(deque):
         self._sub_dir_prefix = subdir_prefix
         self.file_format = file_format
 
-        self.seg_idx = 0 # 当前的segment index
+        self.seg_idx = 0 # 当前的segment record_index
         self.record_idx = 0 # 在当前的segment中，保存到了第几条record
         self.count_records = 0 # 总共保存了多少条record
-        self.max_records = int(max_records)
+        self.max_records = int(max_save_records)
 
         self._subdir_index_length = len(str(self.max_records - 1))  # 判断几位数的方式好像不太好
         self._filename_index_length = len(str(self._autosave_max_intervals - 1))
@@ -294,10 +294,10 @@ class LogBuffer(BaseBuffer):
                  autosave=True,  # 只有autosave为True时，以下参数才有意义
                  autosave_max_intervals=1000,
                  new_seg_when_done=True,  # done信号了要不要保存一次数据到本地, 如果不保存就是固定intervals
-                 max_records=_default_max_records,
+                 max_save_records=_default_max_records,
                  ):
         super(LogBuffer, self).__init__(maxlen, data_root, subdir_prefix, file_format, autosave,
-                                        autosave_max_intervals, new_seg_when_done, max_records)
+                                        autosave_max_intervals, new_seg_when_done, max_save_records)
         # self: Deque[float, elm.Observation, elm.Plan, float, bool]
 
     # def record_forward(self, timestamp, observation:elm.Observation, plan:elm.Plan):
@@ -402,10 +402,10 @@ class ExperienceBuffer(BaseBuffer):
                  autosave=True,  # 只有autosave为True时，以下参数才有意义
                  autosave_max_intervals=1000,
                  new_seg_when_done=True,  # done信号了要不要保存一次数据到本地, 如果不保存就是固定intervals
-                 max_records=_default_max_records,
+                 max_save_records=_default_max_records,
                  ):
         super(ExperienceBuffer, self).__init__(maxlen, data_root, subdir_prefix, file_format, autosave,
-                                               autosave_max_intervals, new_seg_when_done, max_records)
+                                               autosave_max_intervals, new_seg_when_done, max_save_records)
 
     def store(self, timestamp, state:torch.Tensor, action:torch.Tensor, reward:float=None, done:bool=None):
         # next_state的处理，目前是每次只记录state,action,reward,done以及None
