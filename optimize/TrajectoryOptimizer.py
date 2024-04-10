@@ -112,7 +112,7 @@ def getConsMat(s0,s_d0,s_dd0,l0,l_d0,l_dd0, target_l_bound,
 
     # 碰撞约束
     # traj = Trajectory(steps=N,dt=dt)
-    # traj.t = [dt*i for i in range(N)]
+    # traj.t = [dt*index for index in range(N)]
     # ss,ls = p.Ms@initial_guess, p.Ml@initial_guess
     # traj.x = ss
     # traj.y = ls

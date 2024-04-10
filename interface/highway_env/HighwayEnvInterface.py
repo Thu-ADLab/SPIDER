@@ -217,7 +217,7 @@ class HighwayEnvInterface:
         tbox_list = TrackingBoxList()
         for i, veh_info_vector in enumerate(observation):
             if i == 0:
-                # i=0 是自车，不需要加入BoundingBox
+                # index=0 是自车，不需要加入BoundingBox
                 continue
 
             veh_info = self._get_veh_info_dict(veh_info_vector, necessary_feat)

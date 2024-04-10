@@ -12,8 +12,7 @@ from spider.elements.trajectory import FrenetTrajectory
 from spider.elements.vehicle import VehicleState
 from spider.elements.box import TrackingBoxList, TrackingBox
 
-from spider.sampler.PolynomialSampler import QuinticPolyminalSampler, QuarticPolyminalSampler
-from spider.sampler.Combiner import LatLonCombiner
+from spider.sampler.LatticeSampler import LatticeSampler
 from spider.evaluator import FrenetCostEvaluator
 
 from spider.utils.transform.frenet import FrenetCoordinateTransformer
@@ -35,12 +34,12 @@ class LatticePlanner(BasePlanner):
 
         self.local_map = RoutedLocalMap()
         self.coordinate_transformer = FrenetCoordinateTransformer() # 要维护几个坐标系呢？
-        # self.predictor = None
-        self.longitudinal_sampler = QuarticPolyminalSampler(self.config["end_T_candidates"],
-                                                            self.config["end_v_candidates"])
-        self.lateral_sampler = QuinticPolyminalSampler(self.config["end_s_candidates"],
-                                                       self.config["end_l_candidates"])
-        self.trajectory_combiner = LatLonCombiner(self.config["steps"], self.config["dt"]) # 默认路径-速度解耦的重新耦合
+
+        self.trajectory_sampler = LatticeSampler(
+            self.steps, self.dt,
+            self.config["end_T_candidates"], self.config["end_v_candidates"],
+            self.config["end_s_candidates"], self.config["end_l_candidates"]
+        )
         self.trajectory_evaluator = FrenetCostEvaluator()
 
         # self.collision_checker = BoxCollisionChecker(self.config["ego_veh_length"], self.config["ego_veh_width"])
@@ -157,9 +156,13 @@ class LatticePlanner(BasePlanner):
         predicted_obstacles = obstacles.predict(self.config["dt"] * np.arange(self.config["steps"]))
 
         # 轨迹采样
-        long_samples = self.longitudinal_sampler.sample((fstate_start.s, fstate_start.s_dot, fstate_start.s_2dot))
-        lat_samples = self.lateral_sampler.sample((fstate_start.l, fstate_start.l_prime, fstate_start.l_2prime))
-        candidate_trajectories = self.trajectory_combiner.combine(lat_samples, long_samples) # todo:这一步特别耗时!!
+        # long_samples = self.longitudinal_sampler.sample((fstate_start.s, fstate_start.s_dot, fstate_start.s_2dot))
+        # lat_samples = self.lateral_sampler.sample((fstate_start.l, fstate_start.l_prime, fstate_start.l_2prime))
+        # candidate_trajectories = self.trajectory_combiner.combine(lat_samples, long_samples)
+        candidate_trajectories = self.trajectory_sampler.sample(
+            (fstate_start.s, fstate_start.s_dot, fstate_start.s_2dot),
+            (fstate_start.l, fstate_start.l_prime, fstate_start.l_2prime)
+        )
 
 
         # 轨迹坐标转换，把每个轨迹点转到笛卡尔坐标

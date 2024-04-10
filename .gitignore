@@ -32,6 +32,7 @@ interface/carla/PythonAPI
 
 *.zip
 *.bak
+*.bak*
 upload.txt
 todo.txt
 

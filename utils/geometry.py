@@ -130,7 +130,7 @@ def point_to_segment_distance(point: np.ndarray, segment_start:np.ndarray, segme
 #     polyline: N行2列， x列 & y列， 表示折线段上所有的顶点
 #     """
 #     if accurate_method:
-#         dists = [point_to_segment_distance(point, polyline[i], polyline[i+1])[1] for i in range(len(polyline)-1)]
+#         dists = [point_to_segment_distance(point, polyline[index], polyline[index+1])[1] for index in range(len(polyline)-1)]
 #         minidx = np.argmin(np.abs(dists))
 #         mindist = dists[minidx]
 #         return mindist
@@ -154,14 +154,14 @@ def point_to_segment_distance(point: np.ndarray, segment_start:np.ndarray, segme
 #     smoothed_path = np.copy(path)  # 创建一个新数组，以保留原始路径数据
 #
 #     # 遍历路径中的每个点
-#     for i in range(len(path)):
+#     for index in range(len(path)):
 #         # 确定窗口范围
-#         start = max(0, i - window_size // 2)
-#         end = min(len(path), i + window_size // 2 + 1)
+#         start = max(0, index - window_size // 2)
+#         end = min(len(path), index + window_size // 2 + 1)
 #
 #         # 计算窗口内点的平均值
 #         window_slice = path[start:end, :]
-#         smoothed_path[i] = np.mean(window_slice, axis=0)
+#         smoothed_path[index] = np.mean(window_slice, axis=0)
 #
 #     return smoothed_path
 

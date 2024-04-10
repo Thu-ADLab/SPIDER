@@ -228,6 +228,8 @@ class DummyBenchmark(BaseBenchmark):
                     tb.set_obb([tb.x + tb.vx * traj.dt, tb.y + tb.vy * traj.dt, tb.length, tb.width, tb.box_heading])
 
         except Exception as e:
+            if self._debug:
+                raise e
             print(e)
 
         finally:

@@ -35,18 +35,18 @@ import spider.rl.convert as cvt
 #     assert isinstance(perception, elm.TrackingBoxList), "Only TrackingBoxList is supported for object state"
 #     all_obj_info = [ego_info]
 #     num_valid_veh = min([len(perception), num_object - 1])
-#     for i in range(num_valid_veh):
-#         tbox = perception[i]
+#     for index in range(num_valid_veh):
+#         tbox = perception[index]
 #         all_obj_info.append([1.0, *tbox.obb, tbox.vx, tbox.vy])
 #
 #
 #     states = torch.tensor(all_obj_info, torch.float)
 #     if not absolute: # 相对的运动学信息；
 #         rel_tf = RelativeCoordinateTransformer(ego_info[1], ego_info[2], ego_info[5], ego_info[6], ego_info[7])
-#         for i in range(1, num_valid_veh):
-#             x,y,yaw,vx,vy= states[i][[1,2,5,6,7]]
+#         for index in range(1, num_valid_veh):
+#             x,y,yaw,vx,vy= states[index][[1,2,5,6,7]]
 #             x,y,yaw,vx,vy = rel_tf.abs2rel(x,y,yaw,vx,vy)
-#             states[i][[1, 2, 5, 6, 7]] = torch.tensor([x,y,yaw,vx,vy])
+#             states[index][[1, 2, 5, 6, 7]] = torch.tensor([x,y,yaw,vx,vy])
 #     if normalize:
 #         states[:, 1] = normalize_to_range(states[:, 1], x_range[0], x_range[1])
 #         states[:, 2] = normalize_to_range(states[:, 2], y_range[0], y_range[1])

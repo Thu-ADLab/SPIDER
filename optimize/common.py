@@ -151,9 +151,9 @@ class FrenetTrajOptimParam:
 # Minus[-1] = 1
 #
 # Diff = np.zeros((N-1,N))
-# for i in range(N-1):
-#     Diff[i,i] = -1
-#     Diff[i, i+1] = 1
+# for index in range(N-1):
+#     Diff[index,index] = -1
+#     Diff[index, index+1] = 1
 # Diff /= dt
 #
 # Appe = np.zeros((N,N-1))
