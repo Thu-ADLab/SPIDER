@@ -7,7 +7,7 @@ import torch
 import spider.elements as elm
 from spider.rl.state.StateConverter import KineStateEncoder
 from spider.rl.action.ActionConverter import TrajActionDecoder, TrajActionEncoder
-from spider.rl.policy.RegressionImitationPolicy import RegressionImitationPolicy
+from spider.rl.policy.RegressionILPolicy import RegressionILPolicy
 from spider.planner_zoo.BaseNeuralPlanner import BaseNeuralPlanner
 
 class GRUActor(nn.Module):
@@ -147,7 +147,7 @@ class GRUPlanner(BaseNeuralPlanner):
 
         actor = GRUActor(self.state_encoder.state_dim, self.action_decoder.action_dim,
                          lon_range=self.config["longitudinal_range"], lat_range=self.config["lateral_range"])
-        self.policy = RegressionImitationPolicy(
+        self.policy = RegressionILPolicy(
             actor.to(self.device),
             # criterion = nn.MSELoss(),
             lr = self.config["learning_rate"],

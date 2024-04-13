@@ -122,7 +122,10 @@ class LocalMap:
     def get_centerline_info(self, lane_index):
         return self.lanes[lane_index].centerline, self.lanes[lane_index].centerline_csp
 
-    def match_lane(self, ego_veh_state: VehicleState):
+    def match_lane(self, ego_veh_state: VehicleState, return_dist=False):
+        '''
+        这里返回的变量数量不统一，最好要改过来
+        '''
         if len(self.lanes) == 0:
             raise ValueError("No lanes!")
 
@@ -136,7 +139,11 @@ class LocalMap:
             dist = math.fabs(fstate.l)
             if dist < min_dist:
                 min_idx, min_dist = idx, dist
-        return min_idx
+
+        if return_dist:
+            return min_idx, min_dist
+        else:
+            return min_idx
 
     @classmethod
     def from_centerlines(cls, centerline_array_list: List[np.ndarray],

@@ -2,7 +2,8 @@ from abc import abstractmethod, ABC
 from spider.utils.collision.SAT import SAT_check
 from spider.utils.collision.disks import disk_check_for_box
 from spider.utils.collision.AABB import AABB_check
-from spider.elements.trajectory import Trajectory
+
+from spider.elements import Trajectory, VehicleState
 from spider.elements.box import TrackingBoxList, obb2vertices, vertices2obb, dilate
 import spider
 # from spider.param import *
@@ -57,21 +58,6 @@ class BoxCollisionChecker(BaseCollisionChecker):
         if self.method == spider.COLLISION_CHECKER_DISK:  # todo:以后去掉
             self.bboxes_obb = [vertices2obb(vs) for vs in bboxes_vertices]
 
-
-    def check_trajectory(self, traj:Trajectory, predicted_obstacles:TrackingBoxList, ego_length=0.0, ego_width=0.0):
-        if ego_length and ego_width:
-            self.set_ego_veh_size(ego_length,ego_width)
-
-        for i in range(traj.steps):
-            x, y, heading = traj.x[i], traj.y[i], traj.heading[i]
-            ego_box_vertices = obb2vertices(
-                [x, y, self.ego_length+2*self.safe_dist[0], self.ego_width+2*self.safe_dist[1], heading])
-            collision = self.check(ego_box_vertices, predicted_obstacles.get_vertices_at(i))
-            if collision:
-                return True
-        return False
-
-
     def check(self, ego_box_vertices=None, bboxes_vertices=None, safe_dilate=False):
         if not (ego_box_vertices is None):
             self.set_ego_box(ego_box_vertices)
@@ -79,8 +65,7 @@ class BoxCollisionChecker(BaseCollisionChecker):
             self.set_obstacles(bboxes_vertices)
 
         if safe_dilate:
-            self.set_ego_box(dilate(ego_box_vertices, 2*self.safe_dist[0], 2*self.safe_dist[1]))
-
+            self.set_ego_box(dilate(ego_box_vertices, 2 * self.safe_dist[0], 2 * self.safe_dist[1]))
 
         collision = False
         if self.method == spider.COLLISION_CHECKER_SAT:
@@ -102,7 +87,25 @@ class BoxCollisionChecker(BaseCollisionChecker):
         else:
             raise ValueError("INVALID method for box collision checker")
 
-        return collision # True就是撞了，False就是没撞
+        return collision  # True就是撞了，False就是没撞
+
+    def check_trajectory(self, traj:Trajectory, predicted_obstacles:TrackingBoxList, ego_length=0.0, ego_width=0.0):
+        if ego_length and ego_width:
+            self.set_ego_veh_size(ego_length,ego_width)
+
+        for i in range(traj.steps):
+            x, y, heading = traj.x[i], traj.y[i], traj.heading[i]
+            ego_box_vertices = obb2vertices(
+                [x, y, self.ego_length+2*self.safe_dist[0], self.ego_width+2*self.safe_dist[1], heading])
+            collision = self.check(ego_box_vertices, predicted_obstacles.get_vertices_at(i))
+            if collision:
+                return True
+        return False
+
+
+    def check_state(self, ego_veh_state:VehicleState, obstacles:TrackingBoxList):
+        ego_box_vertices = obb2vertices(ego_veh_state.obb)
+        return self.check(ego_box_vertices, obstacles.get_vertices_at(0))
 
 
 class GridCollisionChecker(BaseCollisionChecker):

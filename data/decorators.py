@@ -60,10 +60,9 @@ def expbuffer_policy(forward_func):
             action = forward_func(*args, **kwargs)
 
             if getattr(policy_instance, "_activate_exp_buffer"):
-                timestamp = None#expbuffer_policy.t # 暂时不储存timestamp
                 state = args[0] # todo:state一定都会放在第一个吗，可能得统一一下policy的输入输出形式
                 action = action
-                policy_instance._exp_buffer.record_forward(timestamp, state, action)
+                policy_instance._exp_buffer.record_forward(state, action)
 
             # expbuffer_policy.t += policy_instance.dt if hasattr(policy_instance, "dt") else 1
             return action
@@ -76,12 +75,45 @@ def expbuffer_policy(forward_func):
             policy_instance = args[0]
 
             if getattr(policy_instance, "_activate_exp_buffer"):
-                timestamp = None  # expbuffer_policy.t
                 state = args[1]  # todo:state一定都会放在第一个吗，可能得统一一下policy的输入输出形式
                 action = action
-                policy_instance._exp_buffer.record_forward(timestamp, state, action)
+                policy_instance._exp_buffer.record_forward(state, action)
 
             # expbuffer_policy.t += policy_instance.dt if hasattr(policy_instance, "dt") else 1
             return action
+
+    return wrapper
+
+
+def expbuffer_reward(reward_func):
+    '''
+    此装饰器，将策略网络的forward函数，包装成expbuffer_policy函数。
+    '''
+    # if not hasattr(expbuffer_policy, "t"):
+    #     expbuffer_policy.t = 0.0
+
+    if hasattr(reward_func, "__self__"):
+        # 将实例化后的policy的forward函数，封装起来。
+        # 用于在policy已经实例化后，在外部加装装饰器（expbuffer.apply_to()）
+        reward_instance = reward_func.__self__  # 实例化后的对象
+        def wrapper(*args, **kwargs):
+            reword, done = reward_func(*args, **kwargs)
+
+            if getattr(reward_instance, "_activate_exp_buffer"):
+                reward_instance._exp_buffer.record_feedback(reword, done)
+
+            return reword, done
+
+    else:
+        # 将实例化前的policy的forward函数，封装起来。
+        # 用于在policy代码构建的时候，用@expbuffer_policy来装饰forward函数
+        def wrapper(*args, **kwargs):
+            reword, done = reward_func(*args, **kwargs)
+            reward_instance = args[0]
+
+            if getattr(reward_instance, "_activate_exp_buffer"):
+                reward_instance._exp_buffer.record_feedback(reword, done)
+
+            return reword, done
 
     return wrapper

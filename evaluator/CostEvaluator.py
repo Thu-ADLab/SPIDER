@@ -4,7 +4,7 @@ from typing import List
 
 
 class CartCostEvaluator:
-    def __init__(self):
+    def __init__(self, weight_comfort=1.0, weight_efficiency=40., weight_safety=1.0):
         # self.weight_lat_comfort = 5.0
         # self.weight_long_comfort = 1.0
 

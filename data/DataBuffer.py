@@ -25,6 +25,7 @@ _default_max_records = 10000
 class BaseBuffer(deque):
     def __init__(self,
                  maxlen=_default_max_len,
+                 forward_only=True,
                  # 保存到本地数据集的参数
                  data_root='./dataset/',
                  subdir_prefix='segment',
@@ -64,7 +65,7 @@ class BaseBuffer(deque):
             "forward": None,
             "feedback": None
         }
-        self._STORE_FORWARD_ONLY = True # 以后加在参数里面
+        self._STORE_FORWARD_ONLY = forward_only
         # self._STORE_FORWARD_FEEDBACK = False
         # _STORE_FORWARD_ONLY若为True，则record_forward后自动存入buffer，清除record
         # _STORE_FORWARD_ONLY若为False，则record完毕forward后，等待record_feedback后再自动存入buffer，清除record
@@ -286,6 +287,7 @@ class LogBuffer(BaseBuffer):
     """
     def __init__(self,
                  maxlen=_default_max_len,
+                 forward_only=True,
                  # 保存到本地数据集的参数
                  data_root='./dataset/',
                  subdir_prefix='log_segment',
@@ -296,7 +298,7 @@ class LogBuffer(BaseBuffer):
                  new_seg_when_done=True,  # done信号了要不要保存一次数据到本地, 如果不保存就是固定intervals
                  max_save_records=_default_max_records,
                  ):
-        super(LogBuffer, self).__init__(maxlen, data_root, subdir_prefix, file_format, autosave,
+        super(LogBuffer, self).__init__(maxlen,forward_only, data_root, subdir_prefix, file_format, autosave,
                                         autosave_max_intervals, new_seg_when_done, max_save_records)
         # self: Deque[float, elm.Observation, elm.Plan, float, bool]
 
@@ -330,10 +332,9 @@ class LogBuffer(BaseBuffer):
             #  后面这个逻辑修改了一下，现在是每次有数据进来都保存，episode结束的时候造新的子文件夹,
             #  以前的逻辑是一个episode结束了才保存
             self.save()
-
-        if self._segment_end(done):
-            print("A segment containing {} log records has been saved to {}".format(self.record_idx, self.sub_dir))
-            self._update_sub_dir(self.seg_idx + 1)
+            if self._segment_end(done):
+                print("A segment containing {} log records has been saved to {}".format(self.record_idx, self.sub_dir))
+                self._update_sub_dir(self.seg_idx + 1)
 
 
 
@@ -387,51 +388,51 @@ class LogBuffer(BaseBuffer):
 class ExperienceBuffer(BaseBuffer):
     """
     Buffer for storing experience data.
-    [timestamp, state, action, next_state, reward, done]
+    [timestamp, state, action, reward, done, next_state]
     # exp buffer一般不存时间戳？
     # 注意！！！ state action等等，在存入exp buffer的时候，不应该是batched
 
     """
     def __init__(self,
                  maxlen=_default_max_len,
+                 forward_only=False,
                  # 保存到本地数据集的参数
                  data_root='./dataset/',
                  subdir_prefix='exp_segment',
                  file_format=spider.DATA_FORMAT_TENSOR,
                  # 下面是自动保存离线数据集时候的参数
-                 autosave=True,  # 只有autosave为True时，以下参数才有意义
+                 autosave=False,  # 只有autosave为True时，以下参数才有意义
                  autosave_max_intervals=1000,
                  new_seg_when_done=True,  # done信号了要不要保存一次数据到本地, 如果不保存就是固定intervals
                  max_save_records=_default_max_records,
                  ):
-        super(ExperienceBuffer, self).__init__(maxlen, data_root, subdir_prefix, file_format, autosave,
+        super(ExperienceBuffer, self).__init__(maxlen,forward_only, data_root, subdir_prefix, file_format, autosave,
                                                autosave_max_intervals, new_seg_when_done, max_save_records)
 
-    def store(self, timestamp, state:torch.Tensor, action:torch.Tensor, reward:float=None, done:bool=None):
+    def store(self, state:torch.Tensor, action:torch.Tensor, reward:float=None, done:bool=None):
         # next_state的处理，目前是每次只记录state,action,reward,done以及None
         # 在下一次储存的时候，会检查上一条记录，如果done，则不操作；否则将上一条记录的next_state改为当前state
-        # todo:在当前监听记录的逻辑下，每个episode的最后一个记录，next_state的值是None，因为已经done了，不会再监听到下一条记录，所以无法更新next_state
+        # todo:在当前监听记录的逻辑下，每个episode的最后一个记录，next_state的值是state，
+        #  因为已经done了，不会再监听到下一条记录，所以无法更新next_state。不过done了的话本身也用不到next_state,所以没事
         # todo:另外，如果环境或reward function没有提供done信息，目前的next_state逻辑是错误的，因为无法判断什么时候应该结束一个episode
 
         #将输入都转到cpu，同时detach
         # 要不要clone？怕引用赋值有问题
-        timestamp, state, action, reward, done = to_cpu(timestamp, state, action, reward, done)
+        state, action, reward, done = to_tensor(state, action, reward, done)
+        state, action, reward, done = ensure_batched(state, action, reward, done)
+        state, action, reward, done = to_cpu(state, action, reward, done)
 
-        if len(self) > 0: # 若存在上一条记录
-            last_record = self[-1]
-            if not last_record[4]: #上一条记录的done是False，说明不是一个episode的结束，当前record是上一条record的next
-                last_record[5] = state # 将当前state作为上一条record的next_state
+        self.try_update_last_record(state) # 尝试将当前state作为上一条record的next_state
 
         # self._extend_target_slice(1)
-        next_state = None
-        self.append([timestamp, state, action, reward, done, next_state])
+        next_state = state # 暂时记录当前的state，下一步会try_update_last_record更新这个记录的值
+        self.append([state, action, reward, done, next_state])
 
         if self._autosave_check():
             self.save()
-
-        if self._segment_end(done):
-            print("A segment containing {} exp records has been saved to {}".format(self.record_idx, self.sub_dir))
-            self._update_sub_dir(self.seg_idx + 1)
+            if self._segment_end(done.item()):
+                print("A segment containing {} exp records has been saved to {}".format(self.record_idx, self.sub_dir))
+                self._update_sub_dir(self.seg_idx + 1)
 
     def save(self, filepath=None):
         '''
@@ -456,22 +457,54 @@ class ExperienceBuffer(BaseBuffer):
         policy._exp_buffer = self
         policy.forward = expbuffer_policy(policy.forward) # wrapper装饰器 非常核心！！！
         self._STORE_FORWARD_ONLY = True
-        print("ExperienceBuffer: EXP Buffer is listening to the policy.")
+        print("ExperienceBuffer: EXP Buffer is listening to the policy. All forward data will be recorded...")
 
 
         if spider_reward_model is not None:
-            # todo: spider_reward_model的监听
+            # spider_reward_model的监听
             self._STORE_FORWARD_ONLY = False
-            raise NotImplementedError("Decorators for reward model has not been implemented...")
+            spider_reward_model._activate_exp_buffer = True
+            spider_reward_model._exp_buffer = self
+            spider_reward_model.evaluate_log = expbuffer_reward(spider_reward_model.evaluate_log)
+            print("ExperienceBuffer: EXP Buffer is listening to the reward. All feedback data will be recorded...")
+            # evaluate_exp暂时不加
 
-        print("ExperienceBuffer: All data will be automatically recorded...")
-        print("ExperienceBuffer: Please notice that when logging experience, all data should NOT be batched.")
+        print("ExperienceBuffer: Please notice that when logging experience, all data SHOULD be batched.")
 
+
+    def sample(self, batch_size:int, device=None):
+        '''
+        return batched tensor of experiences
+        '''
+        batch_size = min([len(self), batch_size])
+        if batch_size <= 0 :
+            warnings.warn("batch size or the experience buffer length is 0. Ignore sampling")
+            return None
+
+        batched_info = random.sample(self, batch_size)
+
+        states, actions, rewards, dones, next_states = [torch.cat(x, dim=0) for x in zip(*batched_info)]
+
+        # if batch_size == 1:
+        #     # batched
+        #     states, actions, rewards, dones, next_states = [torch.cat(x, dim=0) for x in zip(*batched_info)]
+        # else:
+        #     states, actions, rewards, dones, next_states = [torch.cat(x, dim=0) for x in zip(*batched_info)]
+        return states, actions, rewards, dones, next_states
 
     def replay(self):
         pass
 
     def get_dataloader(self):
         pass
+
+    def try_update_last_record(self, current_state):
+        '''
+        如果存在上一条记录，并且上一条记录的done是False，则更新上一条记录的next_state为当前state
+        '''
+        if len(self) > 0:  # 若存在上一条记录
+            last_record = self[-1]
+            if not last_record[3]:  # 上一条记录的done是False，说明不是一个episode的结束，当前record是上一条record的next
+                last_record[4] = current_state  # 将当前state作为上一条record的next_state
 
 

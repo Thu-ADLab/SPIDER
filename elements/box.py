@@ -277,14 +277,16 @@ class TrackingBoxList(List[TrackingBox]): # list
         '''
         bboxes_vertices = []
         for tb in self:
-            if len(tb.pred_vertices) == 0:
-                warnings.warn("Tracking box {} has not predicted yet!".format(tb.id))
+
             if step == 0:
                 bboxes_vertices.append(tb.vertices)
-            elif step >= len(tb.pred_vertices):
-                continue
             else:
-                bboxes_vertices.append(tb.pred_vertices[step])
+                if len(tb.pred_vertices) == 0:
+                    warnings.warn("Tracking box {} has not predicted yet!".format(tb.id))
+                if step >= len(tb.pred_vertices):
+                    continue
+                else:
+                    bboxes_vertices.append(tb.pred_vertices[step])
         return bboxes_vertices
 
     def get_frenet_vertices_at(self, step=0):

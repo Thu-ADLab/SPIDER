@@ -56,9 +56,9 @@ class BaseNeuralPlanner(BasePlanner):
 
     def plan(self, ego_veh_state:elm.VehicleState, obstacles:elm.TrackingBoxList, routed_local_map:elm.RoutedLocalMap)\
             -> Union[elm.Trajectory, elm.FrenetTrajectory]:
-        state = self.state_encoder(ego_veh_state, obstacles, routed_local_map)
-        action = self.act(state.to(self.device))
-        traj = self.action_decoder(action.detach().cpu())
+        state = self.state_encoder(ego_veh_state, obstacles, routed_local_map).unsqueeze(0)
+        action = self.act(state.to(self.device)).squeeze(0)
+        traj = self.action_decoder(action.detach().cpu(), ego_veh_state, obstacles, routed_local_map)
         return traj
 
     def to(self, device):

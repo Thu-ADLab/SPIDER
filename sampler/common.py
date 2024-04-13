@@ -2,11 +2,11 @@ import copy
 from types import FunctionType
 
 
-def closure(function, *args):
+def closure(function, *args, **kwargs):
     '''
     创建闭包函数，避免参数被修改。
     '''
-    new_function = lambda: function(*args)
+    new_function = lambda: function(*args, **kwargs)
     return new_function
 
 
@@ -45,8 +45,8 @@ class LazyList(list):
 
 
     @staticmethod
-    def wrap_generator(function, *args):
-        return closure(function, *args)
+    def wrap_generator(function, *args, **kwargs):
+        return closure(function, *args, **kwargs)
 
     def to_instance_list(self):
         return list(self)

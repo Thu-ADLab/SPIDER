@@ -9,6 +9,7 @@ def test1():
     # 用log_buffer.apply_to(planner)启用
     benchmark = DummyBenchmark({
         "snapshot": False,
+        "map_frequency": 1, # 记录地图数据
         # "racetrack": "straight",
     })
 
@@ -22,7 +23,7 @@ def test1():
         autosave_max_intervals=100,
         file_format=spider.DATA_FORMAT_RAW,
         # file_format=spider.DATA_FORMAT_JSON,
-        # data_root='./dataset_straight/'
+        data_root='./dataset_map/'
     )
 
     log_buffer.apply_to(planner)

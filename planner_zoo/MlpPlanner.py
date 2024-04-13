@@ -8,7 +8,7 @@ import torch
 import spider.elements as elm
 from spider.rl.state.StateConverter import KineStateEncoder
 from spider.rl.action.ActionConverter import TrajActionDecoder, TrajActionEncoder
-from spider.rl.policy.RegressionImitationPolicy import RegressionImitationPolicy
+from spider.rl.policy.RegressionILPolicy import RegressionILPolicy
 from spider.planner_zoo.BaseNeuralPlanner import BaseNeuralPlanner
 
 
@@ -43,7 +43,7 @@ class MlpPlanner(BaseNeuralPlanner):
 
         self.action_encoder = TrajActionEncoder(lon_range=self.config["longitudinal_range"], lat_range=self.config["lateral_range"])
 
-        self.policy = RegressionImitationPolicy(
+        self.policy = RegressionILPolicy(
             MlpActor(self.state_encoder.state_dim, self.action_decoder.action_dim).to(self.device),
             # criterion = nn.MSELoss(),
             lr = self.config["learning_rate"],

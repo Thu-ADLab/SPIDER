@@ -76,7 +76,11 @@ class BasePolicy(nn.Module):
 
     @property
     def device(self):
-        return next(self.parameters()).device
+        try:
+            return next(self.parameters()).device
+        except Exception:
+            warnings.warn("You have set no param to the policy. Can not tell which device")
+            return torch.device("cpu")
 
     @abstractmethod
     def forward(self, state):

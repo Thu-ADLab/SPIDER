@@ -7,30 +7,30 @@ import matplotlib.pyplot as plt
 import spider
 from spider.rl.policy.BasePolicy import BasePolicy, DataLoader
 
-
-class RegressionImitationPolicy(BasePolicy):
-    def __init__(self, actor:torch.nn.Module, criterion:torch.nn.Module=None, lr=1e-4,
+class ClassificationILPolicy(BasePolicy):
+    def __init__(self, critic:torch.nn.Module, criterion:torch.nn.Module=None, lr=1e-4,
                  enable_tensorboard=False, tensorboard_root='./tensorboard/'):
         super().__init__(enable_tensorboard, tensorboard_root)
-        self.actor = actor
+        self.critic = critic
 
-        self.criterion = torch.nn.L1Loss() if criterion is None else criterion
+        self.criterion = torch.nn.CrossEntropyLoss() if criterion is None else criterion
         self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
 
         self._plot_train_curve = True
 
     def forward(self, state:torch.Tensor) -> torch.Tensor:
-        return self.actor(state.to(self.device))
+        prob = self.critic(state.to(self.device))
+        return torch.argmax(prob, dim=-1)
 
     def learn_batch(self, batched_state, batched_target_action, *args):
         self.train()
         # forward
         batched_state = batched_state.to(self.device)
-        batched_pred_action = self.forward(batched_state)
+        batched_prob = self.critic(batched_state.to(self.device))
 
         # calculate loss
         batched_target_action = batched_target_action.to(self.device)
-        loss = self.criterion(batched_pred_action, batched_target_action)
+        loss = self.criterion(batched_prob, batched_target_action)
 
         # backward
         self.optimizer.zero_grad()
@@ -40,13 +40,13 @@ class RegressionImitationPolicy(BasePolicy):
 
     def validate_batch(self, batched_state, batched_target_action):
         self.eval()
-        # forward
         batched_state = batched_state.to(self.device)
-        batched_pred_action = self.forward(batched_state)
-
+        batched_prob = self.critic(batched_state.to(self.device))
         # calculate loss
+
         batched_target_action = batched_target_action.to(self.device)
-        loss = self.criterion(batched_pred_action, batched_target_action)
+        loss = self.criterion(batched_prob, batched_target_action)
+
         return loss.item()
 
     def learn_dataset(self, epochs:int, train_loader:DataLoader, val_loader:DataLoader=None):
@@ -99,7 +99,3 @@ class RegressionImitationPolicy(BasePolicy):
 
         plt.legend()
         plt.pause(0.01)
-
-
-
-

@@ -3,7 +3,11 @@ from spider.elements.trajectory import Trajectory
 import numpy as np
 
 
+
 class ConstraintCollection:
+    '''
+    todo: 未来改个形式，变成cvt/transform那种的变换的叠加的形式
+    '''
     # qzl: 这种形式有个弊端，只能处理上下界约束，如果是过程中可变约束怎么办
     traj_constraint_functions = {
         CONSTRIANT_SPEED_LB: lambda traj, config: np.all(np.array(traj.v) >= config['min_speed']),
@@ -39,7 +43,8 @@ class ConstraintCollection:
         把多个判断可行性的函数聚合成一个大函数
         todo: 想想看碰撞检测能不能融进来
         '''
-        if self.config["output"] == OUTPUT_TRAJECTORY:
+
+        if self.config.get("output", OUTPUT_TRAJECTORY) == OUTPUT_TRAJECTORY:
             all_funcs = self.traj_constraint_functions
         else:
             all_funcs = self.control_constraint_functions

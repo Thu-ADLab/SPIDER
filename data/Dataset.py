@@ -97,16 +97,23 @@ class OfflineLogDataset(OfflineExpDataset):
     '''
     def __init__(self, data_root, state_encoder, action_encoder,
                  file_format=spider.DATA_FORMAT_RAW, groundtruth=spider.DATA_GT_PLAN,
-                 require_feedback=False, require_next_state=False):
+                 require_feedback=False, require_next_state=False, use_cache=False):
         super(OfflineLogDataset, self).__init__(data_root, file_format, groundtruth, require_feedback, require_next_state)
         self.state_encoder = state_encoder
         self.action_encoder = action_encoder
+
+        self.use_cache = use_cache
+        self._cache = {}
 
     def __len__(self):
         # return 1
         return len(self._record_id2file)
 
     def __getitem__(self, record_index):
+        if self.use_cache:
+            if record_index in self._cache:
+                return self._cache[record_index]
+
         filepath = self._record_id2file[record_index]
         log_record = self._load_data(filepath)
         state = self.state_encoder(*log_record[1])
@@ -123,6 +130,9 @@ class OfflineLogDataset(OfflineExpDataset):
                 next_state = torch.empty((0,))
             else:
                 next_state = self._get_next_state(record_index)
+
+        if self.use_cache:
+            self._cache[record_index] = (state, action, reward, done, next_state)
 
         return state, action, reward, done, next_state
 
@@ -197,6 +207,7 @@ class OfflineLogDataset(OfflineExpDataset):
                 if gt_traj is not None:
                     vis.draw_trajectory(gt_traj, color="C0", show_footprint=True, footprint_alpha=0.2, label="groundtruth")
                 vis.lazy_draw(ego_state, perception, local_map, planned_traj)
+                vis.legend()
                 vis.pause(0.01)
 
                 if recording:
@@ -220,11 +231,14 @@ class OfflineLogDataset(OfflineExpDataset):
 
     def _get_action(self, log_record):
         if self.groundtruth_flag == spider.DATA_GT_PLAN:
-            return self.action_encoder(log_record[2])
+            return self.action_encoder(log_record[2], *log_record[1]) # *log_record[1]是observation
         elif self.groundtruth_flag == spider.DATA_GT_TRACE:
             raise NotImplementedError("Coming soon...") # todo: 下一步完成！
 
     def _get_next_state(self, current_index):
+        if self.use_cache and current_index + 1 in self._cache:
+            return self._cache[current_index + 1][0]
+
         filepath = self._record_id2file[current_index + 1]
         next_log_record = self._load_data(filepath)
         next_state = self.state_encoder(next_log_record[1])

@@ -24,12 +24,12 @@ class BaseInterface:
         pass
 
 
-    # todo:这里不对，environment应该和reward 以及 done 解耦开！ 因为实际上reward以及done与否都是取决于人类评判的标准，不是环境客观决定的
-    def is_done(self) -> bool:
-        return False
-
-    def calc_reward(self) -> float:
-        return 0.0
+    # environment应该和reward 以及 done 解耦开！ 因为实际上reward以及done与否都是取决于人类评判的标准，不是环境客观决定的
+    # def is_done(self) -> bool:
+    #     return False
+    #
+    # def calc_reward(self) -> float:
+    #     return 0.0
 
 class DummyInterface(BaseInterface):
     def __init__(self):
@@ -63,6 +63,45 @@ class DummyInterface(BaseInterface):
         for tb in self.obstacles:
             tb.set_obb([tb.x + tb.vx * traj.dt, tb.y + tb.vy * traj.dt, tb.length, tb.width, tb.box_heading])
 
-    def is_done(self):
-        return self.ego_veh_state.x() > 250
+
+    def visualize(self,traj):
+        '''
+        qzl: 要修改，统一格式
+        '''
+        import spider.visualize as vis
+        import matplotlib.pyplot as plt
+        import numpy as np
+
+        for lane in self.local_map.lanes:
+            plt.plot(lane.centerline[:, 0], lane.centerline[:, 1], color='gray', linestyle='--', lw=1.5)  # 画地图
+        # vis.draw_ego_vehicle(ego_veh_state, color='green', fill=True, alpha=0.2, linestyle='-', linewidth=1.5) # 画自车
+
+        for tb in self.obstacles:
+            vis.draw_boundingbox(tb, color='black', fill=True, alpha=0.1, linestyle='-', linewidth=1.5)  # 画他车
+            # 画他车预测轨迹
+            tb_pred_traj = np.column_stack((tb.x + np.asarray(traj.t) * tb.vx, tb.y + np.asarray(traj.t) * tb.vy))
+            vis.draw_polyline(tb_pred_traj, show_buffer=True, buffer_dist=tb.width * 0.5, buffer_alpha=0.1,
+                              color='C3')
+
+        vis.draw_ego_history(self.ego_veh_state, '-', lw=1, color='gray')  # 画自车历史
+        vis.draw_trajectory(traj, '.-', show_footprint=True, color='C2')  # 画轨迹
+        if "control_points" in traj.debug_info:  # bezier planner
+            pts = traj.debug_info["control_points"]
+            plt.plot(pts[:, 0], pts[:, 1], 'or')
+        # if "corridor" in traj.debug_info: # optimizer planner
+        #     vis.draw_corridor(traj.debug_info["corridor"], color='green', linewidth=0.5)
+        if "initial_trajectory" in traj.debug_info:
+            vis.draw_trajectory(traj.debug_info["initial_trajectory"], '--', color="black", show_footprint=False)
+
+        vis.draw_ego_vehicle(self.ego_veh_state, color='C0', fill=True, alpha=0.3, linestyle='-', linewidth=1.5)  # 画自车
+        # plt.axis('equal')
+        # plt.tight_layout()
+        vis.ego_centric_view(self.ego_veh_state.x(), self.ego_veh_state.y(), [-20, 80], [-5, 5])
+        # plt.xlim([ego_veh_state.x() - 20, ego_veh_state.x() + 80])
+        # plt.ylim([ego_veh_state.y() - 5, ego_veh_state.y() + 5])
+        plt.pause(0.001)
+
+
+    # def is_done(self):
+    #     return self.ego_veh_state.x() > 250
 

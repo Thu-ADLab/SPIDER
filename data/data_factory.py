@@ -13,6 +13,21 @@ format_suffix = {
     spider.DATA_FORMAT_TENSOR: '.pt'
 } # todo: 以后可以考虑支持numpy的npz格式 或者 csv 格式
 
+def ensure_batched(*tensors:torch.Tensor):
+    batched_tensors = []
+    for x in tensors:
+        shape = x.shape
+        if len(shape) == 0: # scalar标量值
+            batched_tensors.append(x.unsqueeze(0).unsqueeze(0))
+        elif len(shape) == 1: # 1维张量
+            batched_tensors.append(x.unsqueeze(0))
+        else:
+            batched_tensors.append(x)
+
+    if len(tensors) == 1:
+        return batched_tensors[0]
+    else:
+        return batched_tensors
 
 def to_cpu(*args):
     cpu_args = [x.detach().cpu() if isinstance(x, torch.Tensor) else x for x in args]

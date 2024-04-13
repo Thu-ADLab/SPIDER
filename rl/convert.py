@@ -95,7 +95,22 @@ class ToKineState(nn.Module):
         return states
 
 
+class TrajToTensor(nn.Module):
+    _input_type = DataType.Plan
+    _output_type = DataType.Tensor
+    def __init__(self, feature_keys=("x", "y"),flatten=False):
+        super().__init__()
+        if feature_keys != ("x", "y"):
+            raise NotImplementedError("feature_keys other than ('x', 'y') are not supported yet")
+        self._feature_keys = feature_keys
+        self._flatten = flatten
 
+    def forward(self, traj:elm.Trajectory) -> torch.Tensor:
+
+        tensor = torch.from_numpy(traj.trajectory_array)
+        if self._flatten:
+            tensor = tensor.flatten()
+        return tensor
 
 # class ToWaypointsAction(nn.Module):
 #     _input_type = DataType.Plan

@@ -112,6 +112,7 @@ class DummyBenchmark(BaseBenchmark):
 
             "debug_mode" : False,
             "racetrack": "curve", # "curve" or "straight
+            "map_frequency": 0, # 几帧更新一次map，0表示仅更新一次
 
             "rendering": True,
             "snapshot": True,
@@ -170,13 +171,20 @@ class DummyBenchmark(BaseBenchmark):
                     plt.cla()
 
                 # 地图信息更新
+                if self.config["map_frequency"] == 0:
+                    local_map = None
+                else:
+                    if i % self.config["map_frequency"] == 0:
+                        local_map = deepcopy(self.local_map)
+                    else:
+                        local_map = None
 
                 # 感知信息更新，这里假设完美感知+其他车全部静止
 
                 # 定位信息更新,本应该放在前面从gps拿，这里直接假设完美控制，在后面从控制拿了
                 # ego_veh_state = ...
 
-                traj = spider_planner.plan(deepcopy(self.ego_veh_state), deepcopy(self.obstacles), None)  # , self.local_map
+                traj = spider_planner.plan(deepcopy(self.ego_veh_state), deepcopy(self.obstacles), local_map)  # , self.local_map
 
                 if traj is None:
                     raise RuntimeError("DummyBenchmark receives no feasible trajectory!")
@@ -213,7 +221,7 @@ class DummyBenchmark(BaseBenchmark):
                     vis.ego_centric_view(self.ego_veh_state.x(), self.ego_veh_state.y(), [-20, 80], [-5, 5])
                     # plt.xlim([ego_veh_state.x() - 20, ego_veh_state.x() + 80])
                     # plt.ylim([ego_veh_state.y() - 5, ego_veh_state.y() + 5])
-                    plt.pause(0.01)
+                    plt.pause(0.001)
 
                     if self.config["snapshot"]:
                         snapshot.snap(plt.gca())

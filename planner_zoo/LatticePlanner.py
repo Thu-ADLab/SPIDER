@@ -1,5 +1,5 @@
 import math
-from typing import List
+from typing import List, Iterable
 import time
 import numpy as np
 import warnings
@@ -90,9 +90,9 @@ class LatticePlanner(BasePlanner):
         return self._candidate_trajectories, self._candidate_trajectories_cost
 
 
-    def constraint_check(self, sorted_candidate_trajectories:List[FrenetTrajectory], sorted_cost, obstacles:TrackingBoxList):
+    def constraint_check(self, sorted_candidate_trajectories:Iterable[FrenetTrajectory], sorted_cost, obstacles:TrackingBoxList):
         for traj, cost in zip(sorted_candidate_trajectories, sorted_cost):
-            traj = self.coordinate_transformer.frenet2cart4traj(traj, order=2) # 在笛卡尔坐标系下做碰撞检测
+            # traj = self.coordinate_transformer.frenet2cart4traj(traj, order=2) # 在笛卡尔坐标系下做碰撞检测
             if self.constraint_checker.check(traj, obstacles):
                 return traj, cost
 
@@ -178,6 +178,9 @@ class LatticePlanner(BasePlanner):
 
         # 评估+筛选
         sorted_candidates, sorted_cost = self.trajectory_evaluator.evaluate_candidates(candidate_trajectories)
+
+        sorted_candidates = (self.coordinate_transformer.frenet2cart4traj(t, order=2) for t in sorted_candidates)
+        # 由于frenet2cart4traj,order=2计算量很大，所以使用了生成器表达式，提高初始化时候的效率
         optimal_trajectory, min_cost = self.constraint_check(sorted_candidates, sorted_cost, predicted_obstacles)
 
         self._candidate_trajectories, self._candidate_trajectories_cost = sorted_candidates, sorted_cost
