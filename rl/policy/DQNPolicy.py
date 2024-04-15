@@ -8,7 +8,7 @@ import tqdm
 import matplotlib.pyplot as plt
 
 import spider
-from spider.rl.policy.BasePolicy import BasePolicy, DataLoader
+from spider.rl.policy.BasePolicy import BasePolicy
 
 class DQNPolicy(BasePolicy):
     def __init__(self, q_network:torch.nn.Module, num_action,
@@ -93,15 +93,13 @@ class DQNPolicy(BasePolicy):
 
         return loss.item()
 
-    def try_write_reward(self, reward, step=None):
-        if self.enable_tensorboard:
-            self.writer.add_scalar('reward/one_step', reward, step)
 
     def save_model(self, filename):
         torch.save(self.q_network.state_dict(), filename)
 
     def load_model(self, filename):
         self.q_network.load_state_dict(torch.load(filename))
+        self.target_q_network.load_state_dict(self.q_network.state_dict())
 
 
     def _update_train_curve(self, loss):
@@ -115,48 +113,24 @@ class DQNPolicy(BasePolicy):
         plt.legend()
         plt.pause(0.01)
 
-    # def validate_batch(self, batched_state, batched_target_action):
-    #     self.eval()
-    #     batched_state = batched_state.to(self.device)
-    #     batched_prob = self.critic(batched_state.to(self.device))
-    #     # calculate loss
-    #
-    #     batched_target_action = batched_target_action.to(self.device)
-    #     loss = self.criterion(batched_prob, batched_target_action)
-    #
-    #     return loss.item()
 
-    # def learn_dataset(self, epochs:int, train_loader:DataLoader, val_loader:DataLoader=None):
-    #     '''
-    #     Optionally implemented
-    #     learn from the dataloader of all the dataset
-    #     '''
-    #     for epoch in tqdm.tqdm(range(epochs), desc="Training with dataset..."):
-    #         avg_train_loss, count = 0.0, 0
-    #         for batch_data in train_loader:
-    #             avg_train_loss += self.learn_batch(*batch_data)
-    #             count += 1
-    #         avg_train_loss /= count
-    #         if self.enable_tensorboard:
-    #             self.writer.add_scalar('loss/train', avg_train_loss, epoch)
-    #
-    #         if val_loader is not None:
-    #             avg_val_loss, count = 0.0, 0
-    #             for batch_data in val_loader:
-    #                 avg_val_loss += self.learn_batch(*batch_data)
-    #                 count += 1
-    #             avg_val_loss /= count
-    #             if self.enable_tensorboard:
-    #                 self.writer.add_scalar('loss/val', avg_val_loss, epoch)
-    #         else:
-    #             avg_val_loss = None
-    #
-    #         if self._plot_train_curve:
-    #             self._update_train_curve(avg_train_loss, avg_val_loss)
-    #
-    #     # if self.enable_tensorboard:
-    #     #     self.start_tensorboard()
-    #     plt.savefig('./train_curve.png')
-    #     plt.close()
-    #
+    def try_write_reward(self, reward, done=False, step=None):
+        if self.enable_tensorboard:
+            # record the reward of one step
+            self.writer.add_scalar('reward/one_step', reward, step)
+
+            # record the reward of one episode
+            if not (hasattr(self, "_writer_acc_reward") and hasattr(self, "_writer_episode_count")):
+                self._writer_acc_reward = 0.0
+                self._writer_episode_count = 0
+                self._writer_lifetime = 0
+            self._writer_acc_reward += reward
+            self._writer_episode_count += 1
+            self._writer_lifetime += 1
+            if done:
+                self.writer.add_scalar('reward/episode', self._writer_acc_reward, self._writer_episode_count)
+                self.writer.add_scalar('reward/lifetime', self._writer_lifetime, self._writer_episode_count)
+                self._writer_acc_reward = 0.0
+                self._writer_lifetime = 0
+
 

@@ -1,48 +1,21 @@
 import spider.visualize as vis
 import tqdm
 
-'''
-qzl: 基本的伪代码
-
-state, action, next_state, done = None, None, None, False
-_env.reset()
-closed_loop = True # 默认闭环，开环的话不会计算奖励函数并储存经验池，纯做policy.act(state)
-
-while True:
-    observation = _env.observe()
-
-    ------------------------- Planner内部 ------------------------------
-    next_state = Encoder.encode(observation)
-
-    if closed_loop:
-        reward, done = RewardFunction.evaluate(state, action, next_state)
-        agent.experience_buffer.record(state, action, reward, next_state, done)
-        # 注意，当state是none的时候，reward的计算以及经验池的record都是无效的
-
-    if done:
-        state, action, next_state = None, None, None
-        plan = None
-    else:
-        state = next_state
-        action = agent.policy.act(state)
-        plan = Decoder.decode(action)
-    ---------------------------------------------------------------------
-
-    if plan is None: _env.reset()
-    else: _env.step(plan)
-'''
-
-class PlannerGym:
+class Trainner:
     '''
     todo:以后加一个把环境打包成gym环境的功能
     '''
     def __init__(self, env_interface, reward_function, visualize=False):
         self.env_interface = env_interface
         self.reward_function = reward_function
+
+        self.max_eps_len = 150
+
+        self.n_epochs = 10
         self._visualize = visualize
 
 
-    def train(self, planner, train_steps, batch_size=64):
+    def train(self, planner, train_steps, batch_size=16):
         # todo: 是一个step触发训练，还是一个episode触发训练？
         #  以及一轮训练的次数是1吗？可以参考stable baselines3
 
@@ -51,13 +24,11 @@ class PlannerGym:
 
         exp_buffer.apply_to(policy, self.reward_function)  # 开始监听
 
-        obs, done = None, True
+        obs, done = self.env_interface.reset(), False
 
         policy.set_exploration(enable=True)
 
         for i in tqdm.tqdm(range(train_steps)):
-            if done:
-                obs = self.env_interface.reset()
 
             # forward
             plan = planner.plan(*obs) # 监听exp_buffer记录了obs, plan
@@ -68,9 +39,6 @@ class PlannerGym:
             reward, done = self.reward_function.evaluate_log(obs, plan, obs2) # 监听exp_buffer记录了reward, done
             policy.try_write_reward(reward, done, i)
 
-            # 学习
-            batched_data = exp_buffer.sample(batch_size)
-            policy.learn_batch(*batched_data)
 
             # visualize
             if self._visualize:
@@ -79,16 +47,22 @@ class PlannerGym:
                 vis.title(f"Step {i}, Reward {reward}")
                 vis.pause(0.001)
 
-            obs = obs2
+            if done:
+                # 一个episode结束，更新网络参数，学习轨迹
+                policy.learn_buffer(exp_buffer, batch_size,self.n_epochs)
+                obs = self.env_interface.reset()
+                exp_buffer.clear()
+            else:
+                obs = obs2
 
+        policy._activate_exp_buffer = False
         policy.set_exploration(enable=False)
 
 
 if __name__ == '__main__':
     from spider.interface import DummyInterface, DummyBenchmark
-    from spider.planner_zoo.DQNPlanner import DQNPlanner
-    from spider.planner_zoo.DDQNPlanner import DDQNPlanner
     from spider.rl.reward.TrajectoryReward import TrajectoryReward
+    from spider.planner_zoo.DiscretePPOPlanner import DiscretePPOPlanner
 
     # presets
     ego_size = (5.,2.)
@@ -102,15 +76,15 @@ if __name__ == '__main__':
     )
 
     # setup_planner
-    planner_dqn = DDQNPlanner({
+    planner = DiscretePPOPlanner({
         "ego_veh_width": ego_size[1],
         "ego_veh_length": ego_size[0],
         "enable_tensorboard": True,
     })
 
-    planner_school = PlannerGym(env_interface, reward_function, visualize=False)
-    planner_school.train(planner_dqn, 10000, 64)
-    planner_dqn.policy.save_model('./q_net.pth')
+    planner_school = Trainner(env_interface, reward_function, visualize=False)
+    planner_school.train(planner, 10000)
+    planner.policy.save_model('./ppo.pth')
 
-    planner_dqn.policy.load_model('./q_net.pth')
-    DummyBenchmark({"save_video": True,}).test(planner_dqn)
+    planner.policy.load_model('./ppo.pth')
+    DummyBenchmark({"save_video": True,}).test(planner)

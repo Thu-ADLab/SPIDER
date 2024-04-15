@@ -8,6 +8,7 @@ import os
 
 import torch
 import torch.nn as nn
+from torch.utils.data.dataloader import DataLoader
 
 
 import spider
@@ -78,30 +79,56 @@ class BaseBuffer(deque):
     #     self._temp_record["timestamp"] = float(timestamp)
 
 
-    def record_forward(self, *args, **kwargs):
+    def record_forward(self, *args, others=()):
         '''timestamp, obs, plan'''
-        self._temp_record["forward"] = [args, kwargs]
+        self._temp_record["forward"] = [args, others]
 
         if self._STORE_FORWARD_ONLY:
             # _STORE_FORWARD_ONLY若为True，则record_forward后自动存入buffer，清除record
-            self.store(*args, **kwargs)
+            self.store(*args, others=others)
             self._clear_record()
         else:
             pass  # wait for record_feedback...
 
 
-    def record_feedback(self, *args, **kwargs):
+    def record_feedback(self, *fb_args, others=()):
         '''reward, done'''
         if self._temp_record["forward"] is None:
             return  # 只有在有forward信息时才存feedback信息
 
-        self._temp_record["feedback"] = [args, kwargs]
+        self._temp_record["feedback"] = [fb_args, others]
 
         if not self._STORE_FORWARD_ONLY:
             # _STORE_FORWARD_ONLY若为True，则record_forward后自动存入buffer，清除record
-            fw_args, fw_kwargs = self._temp_record["forward"]
-            self.store(*fw_args, *args, **fw_kwargs, **kwargs)
+            fw_args, fw_others = self._temp_record["forward"]
+            self.store(*fw_args, *fb_args, others=[*fw_others, *others])
             self._clear_record()
+
+
+    # def record_forward(self, *args, **kwargs):
+    #     '''timestamp, obs, plan'''
+    #     self._temp_record["forward"] = [args, kwargs]
+    #
+    #     if self._STORE_FORWARD_ONLY:
+    #         # _STORE_FORWARD_ONLY若为True，则record_forward后自动存入buffer，清除record
+    #         self.store(*args, **kwargs)
+    #         self._clear_record()
+    #     else:
+    #         pass  # wait for record_feedback...
+    #
+    #
+    # def record_feedback(self, *fb_args, **fb_kwargs):
+    #     '''reward, done'''
+    #     if self._temp_record["forward"] is None:
+    #         return  # 只有在有forward信息时才存feedback信息
+    #
+    #     self._temp_record["feedback"] = [fb_args, fb_kwargs]
+    #
+    #     if not self._STORE_FORWARD_ONLY:
+    #         # _STORE_FORWARD_ONLY若为True，则record_forward后自动存入buffer，清除record
+    #         fw_args, fw_kwargs = self._temp_record["forward"]
+    #         self.store(*fw_args, *fb_args, **fw_kwargs, **fb_kwargs)
+    #         self._clear_record()
 
     @abstractmethod
     def store(self, *args, **kwargs):
@@ -324,9 +351,9 @@ class LogBuffer(BaseBuffer):
     #         self._clear_record()
 
     def store(self, timestamp, observation:elm.Observation, plan:elm.Plan,
-              reward:float=None, done:bool=None, *other_args):
+              reward:float=None, done:bool=None, others=()):
         # self._extend_target_slice()
-        self.append((timestamp, observation, plan, reward, done, *other_args))
+        self.append((timestamp, observation, plan, reward, done, *others))
 
         if self._autosave_check():
             #  后面这个逻辑修改了一下，现在是每次有数据进来都保存，episode结束的时候造新的子文件夹,
@@ -409,7 +436,7 @@ class ExperienceBuffer(BaseBuffer):
         super(ExperienceBuffer, self).__init__(maxlen,forward_only, data_root, subdir_prefix, file_format, autosave,
                                                autosave_max_intervals, new_seg_when_done, max_save_records)
 
-    def store(self, state:torch.Tensor, action:torch.Tensor, reward:float=None, done:bool=None):
+    def store(self, state:torch.Tensor, action:torch.Tensor, reward:float=None, done:bool=None, others=()):
         # next_state的处理，目前是每次只记录state,action,reward,done以及None
         # 在下一次储存的时候，会检查上一条记录，如果done，则不操作；否则将上一条记录的next_state改为当前state
         # todo:在当前监听记录的逻辑下，每个episode的最后一个记录，next_state的值是state，
@@ -419,14 +446,19 @@ class ExperienceBuffer(BaseBuffer):
         #将输入都转到cpu，同时detach
         # 要不要clone？怕引用赋值有问题
         state, action, reward, done = to_tensor(state, action, reward, done)
-        state, action, reward, done = ensure_batched(state, action, reward, done)
         state, action, reward, done = to_cpu(state, action, reward, done)
+        state, action, reward, done = ensure_not_batched(state, action, reward, done)
+        if others is not None and len(others) > 0:
+            others = map(to_tensor, others)
+            others = map(to_cpu, others)
+            others = map(ensure_not_batched, others)
+
 
         self.try_update_last_record(state) # 尝试将当前state作为上一条record的next_state
 
         # self._extend_target_slice(1)
         next_state = state # 暂时记录当前的state，下一步会try_update_last_record更新这个记录的值
-        self.append([state, action, reward, done, next_state])
+        self.append([state, action, reward, done, next_state, *others])
 
         if self._autosave_check():
             self.save()
@@ -472,7 +504,7 @@ class ExperienceBuffer(BaseBuffer):
         print("ExperienceBuffer: Please notice that when logging experience, all data SHOULD be batched.")
 
 
-    def sample(self, batch_size:int, device=None):
+    def sample(self, batch_size:int):
         '''
         return batched tensor of experiences
         '''
@@ -481,22 +513,24 @@ class ExperienceBuffer(BaseBuffer):
             warnings.warn("batch size or the experience buffer length is 0. Ignore sampling")
             return None
 
-        batched_info = random.sample(self, batch_size)
+        sampled_records = random.sample(self, batch_size)
 
-        states, actions, rewards, dones, next_states = [torch.cat(x, dim=0) for x in zip(*batched_info)]
+        # batched_info = [torch.cat(x, dim=0) for x in zip(*sampled_records)]
+        batched_info = [torch.stack(x, dim=0) for x in zip(*sampled_records)]
 
         # if batch_size == 1:
         #     # batched
         #     states, actions, rewards, dones, next_states = [torch.cat(x, dim=0) for x in zip(*batched_info)]
         # else:
         #     states, actions, rewards, dones, next_states = [torch.cat(x, dim=0) for x in zip(*batched_info)]
-        return states, actions, rewards, dones, next_states
+        return batched_info # states, actions, rewards, dones, next_states, *others
+
+    def get_dataloader(self, batch_size:int, shuffle=True, **kwargs):
+        return DataLoader(self, batch_size=batch_size, shuffle=shuffle, **kwargs)
 
     def replay(self):
         pass
 
-    def get_dataloader(self):
-        pass
 
     def try_update_last_record(self, current_state):
         '''

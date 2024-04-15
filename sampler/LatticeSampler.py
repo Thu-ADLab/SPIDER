@@ -70,9 +70,13 @@ class LatticeSampler(BaseSampler):
 
         else:
             from spider.sampler.common import LazyList
+            def _to_cart(coord_tf, traj_candidates, idx, order):
+                return coord_tf.frenet2cart4traj(traj_candidates[idx], order=order)
+
+            # 惰性计算, 仅在被索引时候计算。candidate_trajectories本身就是LazyList
             candidate_trajectories = LazyList(
-                [LazyList.wrap_generator(coordinate_transformer.frenet2cart4traj, traj, order=cart_order)
-                 for traj in candidate_trajectories]
+                [LazyList.wrap_generator(_to_cart, coordinate_transformer, candidate_trajectories, i, cart_order)
+                 for i in range(len(candidate_trajectories))]
             )
         return candidate_trajectories
 

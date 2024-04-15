@@ -13,27 +13,42 @@ from spider.data.DataBuffer import ExperienceBuffer
 
 from spider.rl.state.StateConverter import KineStateEncoder
 from spider.rl.action.ActionConverter import DiscreteTrajActionDecoder, DiscreteTrajActionEncoder
-from spider.rl.policy.DQNPolicy import DQNPolicy
+from spider.rl.policy.PPOPolicy import DiscretePPOPolicy
 from spider.planner_zoo.BaseNeuralPlanner import BaseNeuralPlanner
 from spider.utils.lane_decision import ConstLaneDecision
 
 
-class MLP_q_network(nn.Module):
-    def __init__(self, input_dim, output_dim, hidden_size=64):
+class MLP_Actor(nn.Module):
+    def __init__(self, state_dim, action_num, hidden_size=64):
         super().__init__()
         self.mlp = nn.Sequential(  # 5-layer MLP
-            nn.Linear(input_dim, hidden_size), nn.ReLU(),
+            nn.Linear(state_dim, hidden_size), nn.ReLU(),
             nn.Linear(hidden_size, hidden_size), nn.ReLU(),
             nn.Linear(hidden_size, hidden_size), nn.ReLU(),
             nn.Linear(hidden_size, hidden_size), nn.ReLU(),
-            nn.Linear(hidden_size, output_dim)#, nn.Sigmoid()
+            nn.Linear(hidden_size, action_num)
         )
 
     def forward(self, x):
-        return self.mlp(x)
+        return torch.nn.functional.softmax(self.mlp(x), dim=-1) # 返回的是每个离散动作的概率，所以做softmax
 
 
-class DQNPlanner(BaseNeuralPlanner):
+class MLP_Critic(nn.Module):
+    def __init__(self, state_dim, hidden_size=16):
+        super().__init__()
+        self.mlp = nn.Sequential(  # 5-layer MLP
+            nn.Linear(state_dim, hidden_size), nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size), nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size), nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size), nn.ReLU(),
+            nn.Linear(hidden_size, 1)
+        )
+
+    def forward(self, x):
+        return self.mlp(x) # 返回的是对于状态的价值估计
+
+
+class DiscretePPOPlanner(BaseNeuralPlanner):
     def __init__(self, config=None):
         super().__init__(config)
 
@@ -56,10 +71,10 @@ class DQNPlanner(BaseNeuralPlanner):
         self.action_decoder = DiscreteTrajActionDecoder(sampler=self.trajectory_sampler)
         # self.action_encoder = DiscreteTrajActionEncoder(sampler=self.trajectory_sampler)
 
-        self.policy = DQNPolicy(
-            MLP_q_network(self.state_encoder.state_dim, self.action_decoder.action_dim),
+        self.policy = DiscretePPOPolicy(
+            MLP_Actor(self.state_encoder.state_dim, self.action_decoder.action_dim),
+            MLP_Critic(self.state_encoder.state_dim),
             self.action_decoder.action_dim,
-            lr = self.config["learning_rate"],
             enable_tensorboard=self.config["enable_tensorboard"],
             tensorboard_root=self.config["tensorboard_root"]
         )
@@ -85,10 +100,10 @@ class DQNPlanner(BaseNeuralPlanner):
             "lateral_range": (-20,20),
 
             ####### 离散动作空间 采样器参数 #########
-            "end_s_candidates": (10, 20, 40),
+            "end_s_candidates": (20,),
             "end_l_candidates": (-3.5, 0, 3.5),
-            "end_v_candidates": tuple(i * 60 / 3.6 / 2 for i in range(3)),
-            "end_T_candidates": (2, 4),
+            "end_v_candidates": (0.,60/3.6),#tuple(i * 60 / 3.6 / 2 for i in range(3)),
+            "end_T_candidates": (4,),
 
             ####### 经验回放池 参数 #########
             "exp_buffer_maxlen": 100000,
@@ -96,7 +111,7 @@ class DQNPlanner(BaseNeuralPlanner):
             ####### 训练 参数 #########
             "batch_size": 64,
 
-            "learning_rate": 0.0001,
+            # "learning_rate": 0.0001,
             "enable_tensorboard": False,
             "tensorboard_root": './tensorboard/'
             # "epochs": 100,

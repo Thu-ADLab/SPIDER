@@ -29,7 +29,7 @@ class TrajectoryReward(BaseReward):
 
         self.max_reward = 10.0
         self.finish_reward = 5.0
-        self.punish_reward = -10.0
+        self.punish_reward = -50.0
 
         # self.trajectory_evaluator = CartCostEvaluator(0.1, 100,1.0)
 
@@ -60,14 +60,19 @@ class TrajectoryReward(BaseReward):
             return c_reward, done
 
         # _break_kinematics_reward, done = self._break_kinematics_reward(plan)
-        d_reward, done = self._destination_reward(ego_x_, ego_y_)
+        des_reward, des_done = self._destination_reward(ego_x_, ego_y_)
         cline_reward, _ = self._centerline_reward(ego_, lmap_)
-        val_reward = self._efficiency_reward(ego_)[0] + self._comfort_reward(ego,ego_)[0] + self._stuck_reward(ego_)[0]
+        val_reward = self._efficiency_reward_traj(plan)[0] +\
+                     self._comfort_reward(ego,ego_)[0] +\
+                     self._stuck_reward(ego_)[0]
+        stuck_reward, stuck_done = self._stuck_reward(ego_)
         delay_reward, _ = self._delay_reward()
 
-        reward = sum([range_reward, c_reward, d_reward, val_reward, delay_reward])
+        reward = sum([range_reward, c_reward, des_reward, val_reward, delay_reward, stuck_reward, cline_reward])
         reward = max([reward, self.punish_reward])
         reward = min([reward, self.max_reward])
+
+        done = des_done or stuck_done
 
         return reward, done
 
@@ -76,29 +81,37 @@ class TrajectoryReward(BaseReward):
 
 
     def _delay_reward(self):
-        return -0.5, False
+        return -1.0, False
 
-    def _efficiency_reward(self, ego_):
+    def _efficiency_reward(self, ego, ego_):
+        # 这个效果不是很好
+        delta_v = ego_.v() - ego.v()
         v = ego_.v()
-        return (v ** 2)/20, False
+        return delta_v * 3 + v/10 , False
+
+    def _efficiency_reward_traj(self, traj):
+        return (traj.v[-1]**2) / 30, False
 
     def _comfort_reward(self, ego, ego_):
         delta_v = ego_.v() - ego.v()
-        return -abs(delta_v) , False
+        delta_yaw = ego_.yaw() - ego.yaw()
+        return -abs(delta_v) - abs(delta_yaw)*3.0 , False
+
 
     def _stuck_reward(self, ego_):
-        if hasattr(self, "_stuck_count"):
+        if not hasattr(self, "_stuck_count"):
             self._stuck_count = 0
 
         v = ego_.v()
-        if v < 0.1:
+        if v < 0.2:
+            reward = - 2.0 # reward不应该跟stuck_count有关，否则违反了reward的独立性即马尔可夫性不成立
             self._stuck_count += 1
         else:
-            self._stuck_count = 0
+            reward = 0.0
+            self._stuck_count = max([self._stuck_count- 1, 0.0])
 
-        done = self._stuck_count > 15
-
-        return - self._stuck_count * 0.5, done
+        done = self._stuck_count > 10 # done按道理也不应该跟stuck_count有关，但是这里是为了合理地结束episode
+        return reward, done
 
 
     # def _traj_eval_reward(self, traj):

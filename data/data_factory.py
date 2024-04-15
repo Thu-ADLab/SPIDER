@@ -29,6 +29,23 @@ def ensure_batched(*tensors:torch.Tensor):
     else:
         return batched_tensors
 
+def ensure_not_batched(*tensors:torch.Tensor):
+    batched_tensors = []
+    for x in tensors:
+        shape = x.shape
+        if len(shape) == 0: # scalar标量值
+            batched_tensors.append(x.unsqueeze(0))
+        elif len(shape) == 1: # 1维张量
+            batched_tensors.append(x)
+        else:
+            if shape[0] == 1:
+                batched_tensors.append(x[0])
+
+    if len(tensors) == 1:
+        return batched_tensors[0]
+    else:
+        return batched_tensors
+
 def to_cpu(*args):
     cpu_args = [x.detach().cpu() if isinstance(x, torch.Tensor) else x for x in args]
 

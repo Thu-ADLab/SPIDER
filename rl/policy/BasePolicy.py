@@ -6,6 +6,8 @@ import torch
 import torch.nn as nn
 from torch.utils.data.dataloader import DataLoader
 
+from spider.data.data_factory import *
+
 from abc import abstractmethod
 
 
@@ -51,6 +53,9 @@ def _start_tensorboard(logdir='./tensorboard'):
 def _get_timestamp():
     return time.strftime("%Y%m%d_%H%M%S", time.localtime())
 
+def _get_class_name(obj):
+    return obj.__class__.__name__
+
 
 class BasePolicy(nn.Module):
     def __init__(self, enable_tensorboard=False, tensorboard_root='./tensorboard/'):
@@ -62,11 +67,16 @@ class BasePolicy(nn.Module):
         self.enable_tensorboard = enable_tensorboard
         self._tensorboard_root = tensorboard_root
 
-        self._tensorboard_dir = os.path.join(self._tensorboard_root, _get_timestamp())
+        self._tensorboard_dir = os.path.join(self._tensorboard_root, _get_class_name(self)+_get_timestamp())
         self._writer = None #tensorboardX.SummaryWriter(self._tensorboard_dir)
         # else:
         #     self._tensorboard_dir = None
         #     self.writer = None
+
+        self._activate_exp_buffer = False
+        self._exp_buffer = None
+        self._exp_extra_data = []
+
 
     @property
     def writer(self):
@@ -117,6 +127,10 @@ class BasePolicy(nn.Module):
         '''
         pass
 
+    def record_exp_extra_data(self, data):
+        data = to_tensor(data)
+        data = to_cpu(data)
+        self._exp_extra_data.append(data)
 
     def start_tensorboard(self):
         if self._writer is not None:
@@ -129,24 +143,57 @@ class BasePolicy(nn.Module):
     def reset_tensorboard_writer(self):
         if self._writer is not None:
             self._writer.close()
-        self._tensorboard_dir = os.path.join(self._tensorboard_root, _get_timestamp())
+        self._tensorboard_dir = os.path.join(self._tensorboard_root, _get_class_name(self)+_get_timestamp())
         self._writer = None
 
-    # @abstractmethod
-    # def save_model(self, *args, **kwargs):
-    #     '''
-    #     Must be implemented
-    #     Save the model
-    #     '''
-    #     pass
-    #
-    # @abstractmethod
-    # def load_model(self, *args, **kwargs):
-    #     '''
-    #     Must be implemented
-    #     Load the model
-    #     '''
-    #     pass
+    @abstractmethod
+    def save_model(self, *args, **kwargs):
+        '''
+        Must be implemented
+        Save the model
+        '''
+        pass
+
+    @abstractmethod
+    def load_model(self, *args, **kwargs):
+        '''
+        Must be implemented
+        Load the model
+        '''
+        pass
+
+
+
+
+class RLPolicy(BasePolicy):
+    def __init__(self, enable_tensorboard=False, tensorboard_root='./tensorboard/'):
+        super(RLPolicy, self).__init__(enable_tensorboard, tensorboard_root)
+
+    def set_exploration(self, enable=True, *args, **kwargs):
+        '''
+        Optionally implemented
+        Set the exploration strategy
+        '''
+        pass
+
+    def try_write_reward(self, reward, done=False, step=None):
+        if self.enable_tensorboard:
+            # record the reward of one step
+            self.writer.add_scalar('reward/one_step', reward, step)
+
+            # record the reward of one episode
+            if not (hasattr(self, "_writer_acc_reward") and hasattr(self, "_writer_episode_count")):
+                self._writer_acc_reward = 0.0
+                self._writer_episode_count = 0
+                self._writer_lifetime = 0
+            self._writer_acc_reward += reward
+            self._writer_episode_count += 1
+            self._writer_lifetime += 1
+            if done:
+                self.writer.add_scalar('reward/episode', self._writer_acc_reward, self._writer_episode_count)
+                self.writer.add_scalar('reward/lifetime', self._writer_lifetime, self._writer_episode_count)
+                self._writer_acc_reward = 0.0
+                self._writer_lifetime = 0
 
 
 

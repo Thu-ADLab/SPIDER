@@ -62,7 +62,9 @@ def expbuffer_policy(forward_func):
             if getattr(policy_instance, "_activate_exp_buffer"):
                 state = args[0] # todo:state一定都会放在第一个吗，可能得统一一下policy的输入输出形式
                 action = action
-                policy_instance._exp_buffer.record_forward(state, action)
+                others = getattr(policy_instance, "_exp_extra_data", [])
+                policy_instance._exp_extra_data = []
+                policy_instance._exp_buffer.record_forward(state, action, others=others)
 
             # expbuffer_policy.t += policy_instance.dt if hasattr(policy_instance, "dt") else 1
             return action
@@ -77,7 +79,9 @@ def expbuffer_policy(forward_func):
             if getattr(policy_instance, "_activate_exp_buffer"):
                 state = args[1]  # todo:state一定都会放在第一个吗，可能得统一一下policy的输入输出形式
                 action = action
-                policy_instance._exp_buffer.record_forward(state, action)
+                others = getattr(policy_instance, "_exp_extra_data", [])
+                policy_instance._exp_extra_data = []
+                policy_instance._exp_buffer.record_forward(state, action, others=others)
 
             # expbuffer_policy.t += policy_instance.dt if hasattr(policy_instance, "dt") else 1
             return action
