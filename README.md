@@ -62,7 +62,7 @@ Here shows another planner which attaches an optimizer to the LatticePlanner:
 Significantly, SPIDER provides a set of tools to build data engines and data-driven planners, 
 along with some implementions of the policy learning algorithms including IL and RL.
 Both log-replay and closed-loop training/testing are easy to be conducted with SPIDER. 
-Here are the examples of log-replay testing demo with GRU-IL and DQN-RL:
+Here are the examples of testing with GRU-IL and DQN-RL:
 
 [//]: # (![GRUPlanner &#40;log-replay testing&#41;]&#40;./display_assests/GRU_log_replay.gif&#41;)
 
