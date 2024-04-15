@@ -1,4 +1,5 @@
 # SPIDER
+[![Downloads](https://img.shields.io/pypi/dm/spider-python)](https://pypi.org/project/spider-python/)
 
 Self-driving Planning and Intelligent Decision-making Engine with Reinforcement learning
 
