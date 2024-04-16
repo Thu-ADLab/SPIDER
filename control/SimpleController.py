@@ -16,7 +16,7 @@ class SimpleController(object):
 
     def __init__(self):
         self._lon_controller = LonController()
-        self._lat_controller = PurePuesuitController()
+        self._lat_controller = PurePursuitController()
 
         self._max_brake = 0.5
         self._max_throt = 0.75
@@ -136,7 +136,7 @@ class LonController(object):
         return calculate_value
 
 
-class PurePuesuitController(object):
+class PurePursuitController(object):
 
     def __init__(self):
         pass
