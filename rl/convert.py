@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 
 import spider.elements as elm
-from spider.utils.transform.relative import RelativeCoordinateTransformer
+from spider.utils.transform.relative import RelativeCoordTransformer
 
 class DataType: # no need to use Enum, for the value can be calculated
     Any = -1 # -1 & x = x, -1 | x =-1
@@ -61,7 +61,7 @@ class ToKineState(nn.Module):
         self.max_num_object = max_num_object
         self.max_num_waypoint = max_num_object
         self.relative = relative
-        self.tf = RelativeCoordinateTransformer() if relative else None
+        self.tf = RelativeCoordTransformer() if relative else None
 
     def forward(self,
                 ego_veh_state: elm.VehicleState,
@@ -367,7 +367,7 @@ class ToRelativeObservation(nn.Module):
 
     def __init__(self, max_num_object=math.inf):
         super().__init__()
-        self.tf = RelativeCoordinateTransformer()
+        self.tf = RelativeCoordTransformer()
         self.max_num_object = max_num_object
 
     def forward(self,

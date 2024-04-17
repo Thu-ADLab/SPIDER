@@ -24,11 +24,11 @@ class MlpCritic(nn.Module):
             nn.Linear(hidden_size, hidden_size), nn.ReLU(),
             nn.Linear(hidden_size, hidden_size), nn.ReLU(),
             nn.Linear(hidden_size, hidden_size), nn.ReLU(),
-            nn.Linear(hidden_size, output_dim), nn.Sigmoid()
+            nn.Linear(hidden_size, output_dim)#, nn.Sigmoid()
         )
 
     def forward(self, x):
-        return self.mlp(x)
+        return torch.nn.functional.softmax(self.mlp(x), dim=-1)
 
 
 class ProbabilisticPlanner(BaseNeuralPlanner):

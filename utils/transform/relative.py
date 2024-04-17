@@ -3,7 +3,7 @@ import numpy as np
 from spider.elements.vector import rotate
 
 
-class RelativeCoordinateTransformer:
+class RelativeCoordTransformer:
     def __init__(self, ego_x=None, ego_y=None, ego_yaw=None, ego_vx=None, ego_vy=None):
         self.ego_x = 0.
         self.ego_y = 0.
@@ -71,6 +71,6 @@ class RelativeCoordinateTransformer:
         return abs_x, abs_y, abs_yaw, abs_vx, abs_vy
 
 if __name__ == '__main__':
-    tf = RelativeCoordinateTransformer()
+    tf = RelativeCoordTransformer()
     tf.abs2rel(2, 2, 3.14 / 3, 1, 1, (1, 1, 3.14 / 6), (1, 0))
     print(tf)

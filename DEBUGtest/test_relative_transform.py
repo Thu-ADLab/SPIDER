@@ -1,10 +1,10 @@
 import numpy as np
 
 
-from spider.utils.transform.relative import RelativeCoordinateTransformer
+from spider.utils.transform.relative import RelativeCoordTransformer
 import spider.visualize as vis
 
-tf = RelativeCoordinateTransformer()
+tf = RelativeCoordTransformer()
 tf.abs2rel(2, 2, 3.14 / 3, 1, 1, (1, 1, 3.14 / 6), (1, 0))
 print(tf)
 
