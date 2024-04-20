@@ -1,6 +1,6 @@
 import numpy as np
 
-from spider.elements.vector import rotate
+from spider.utils.vector import rotate
 
 
 class RelativeCoordTransformer:

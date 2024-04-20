@@ -359,6 +359,7 @@ class HighwayEnvBenchmarkGUI:
         except Exception as e:
             # 处理异常，例如配置解析错误
             print(f"Error: {e}")
+            assert 0
 
     @classmethod
     def launch(cls):

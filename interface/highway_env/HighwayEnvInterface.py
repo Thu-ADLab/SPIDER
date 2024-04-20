@@ -7,6 +7,7 @@ import numpy as np
 
 import spider
 import spider.elements as elm
+import spider.elements.vehicle
 from spider.elements import TrackingBoxList, OccupancyGrid2D, RoutedLocalMap, VehicleState, Trajectory
 
 from spider.control import SimpleController
@@ -207,8 +208,8 @@ class HighwayEnvInterface:
         ego_info: dict = self._get_veh_info_dict(observation[0], necessary_feat)
         loc = elm.Location(ego_info["x"], ego_info["y"], 0.)
         rot = elm.Rotation(0., ego_info["heading"], 0.)
-        velocity = elm.Vector3D(ego_info["vx"], ego_info["vy"], 0.)
-        ego_state = VehicleState(elm.Transform(loc, rot), velocity, elm.Vector3D())
+        velocity = spider.elements.vehicle.Vector3D(ego_info["vx"], ego_info["vy"], 0.)
+        ego_state = VehicleState(elm.Transform(loc, rot), velocity, spider.elements.vehicle.Vector3D())
         return ego_state
 
     def _wrap_kine2box(self, observation) -> TrackingBoxList:

@@ -7,7 +7,7 @@ import math
 import spider
 from spider.elements.curves import ParametricCubicSpline
 from spider.elements.vehicle import VehicleState
-from spider.utils import transform
+
 from spider.utils.geometry import resample_polyline, generate_parallel_line, find_nearest_point, cumulated_distances
 
 """
@@ -126,6 +126,8 @@ class LocalMap:
         '''
         这里返回的变量数量不统一，最好要改过来
         '''
+        from spider.utils import transform
+
         if len(self.lanes) == 0:
             raise ValueError("No lanes!")
 

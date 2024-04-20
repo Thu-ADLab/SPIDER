@@ -1,10 +1,10 @@
 import math
-from typing import List, Iterable
+from typing import Iterable
 import time
-import numpy as np
 import warnings
 
 import spider
+import numpy as np
 from spider.planner_zoo.BasePlanner import BasePlanner
 
 from spider.elements.map import RoutedLocalMap

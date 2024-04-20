@@ -1,4 +1,4 @@
-from spider.elements.vector import *
+from spider.utils.vector import *
 import numpy as np
 from spider.utils.collision.AABB import AABB_check
 

@@ -4,7 +4,7 @@ import warnings
 from copy import deepcopy
 
 import spider
-from spider.elements.vector import rotate
+from spider.utils.vector import rotate
 from spider.utils.predict.linear import vertices_linear_predict
 from spider.elements.vehicle import FrenetKinematicState
 

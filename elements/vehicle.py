@@ -1,6 +1,13 @@
-from spider.elements.vector import Vector3D
 import numpy as np
 
+class Vector3D:
+    # 这边Vector的定义有歧义了，思考一下怎么修改
+    def __init__(self, x=0.0, y=0.0, z=0.0):
+        self.x, self.y, self.z = x, y, z
+        # self._arr = np.array([x,y,z], dtype=float)
+
+    def __array__(self):# 加了这个方法之后可以调用一些numpy的函数
+        return np.array([self.x, self.y, self.z], dtype=float)# self._arr
 
 class Location:
     def __init__(self,x=0.0,y=0.0,z=0.0):
@@ -138,3 +145,6 @@ if __name__ == '__main__':
     temp = VehicleState()
     a = 3
     pass
+
+
+

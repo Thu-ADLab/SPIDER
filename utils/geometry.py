@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from spider.elements.vector import project, rotate90
+from spider.utils.vector import project, rotate90
 import spider
 
 
