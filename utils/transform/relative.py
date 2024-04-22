@@ -14,6 +14,14 @@ class RelativeTransformer:
         self.set_ego_pose(ego_x, ego_y, ego_yaw)
         self.set_ego_velocity(ego_vx, ego_vy)
 
+    @property
+    def ego_pose(self):
+        return self.ego_x, self.ego_y, self.ego_yaw
+
+    @property
+    def ego_velocity(self):
+        return self.ego_vx, self.ego_vy
+
     def set_ego_pose(self, ego_x, ego_y, ego_yaw):
         self.ego_x = ego_x
         self.ego_y = ego_y
