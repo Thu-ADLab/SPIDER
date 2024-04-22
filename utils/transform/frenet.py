@@ -44,7 +44,7 @@ from spider.control.vehicle_model import curvature2steer
 #     return [s0, s1, s2], [d0, d1, d2]
 
 
-class FrenetCoordinateTransformer:
+class FrenetTransformer:
     def __init__(self, reference_line:np.ndarray=None, reference_line_csp=None, resample=False, resample_resolution=1.0):
         self.refer_line_arr = None # N行2列，[[x,y]*N]
         self.refer_line_csp = None
@@ -366,7 +366,7 @@ if __name__ == '__main__':
     xs = np.linspace(0,100,101)
     ys = np.zeros_like(xs)
     centerline = np.column_stack((xs, ys))
-    transformer = FrenetCoordinateTransformer()
+    transformer = FrenetTransformer()
     transformer.set_reference_line(centerline)
 
 

@@ -1,12 +1,12 @@
 import numpy as np
-from spider.utils.transform.frenet import FrenetCoordinateTransformer
+from spider.utils.transform.frenet import FrenetTransformer
 from spider.elements.trajectory import FrenetTrajectory
 
 
 xs = np.linspace(0,100,101)
 ys = np.linspace(0,-1,101)
 centerline = np.column_stack((xs, ys))
-transformer = FrenetCoordinateTransformer()
+transformer = FrenetTransformer()
 transformer.set_reference_line(centerline)
 
 

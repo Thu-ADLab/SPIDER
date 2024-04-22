@@ -14,7 +14,7 @@ from spider.elements.box import TrackingBoxList, TrackingBox
 from spider.sampler import QuarticPolyminalSampler, BezierCurveSampler, PVDCombiner
 from spider.evaluator import CartCostEvaluator
 
-from spider.utils.transform.frenet import FrenetCoordinateTransformer
+from spider.utils.transform.frenet import FrenetTransformer
 from spider.utils.collision import BoxCollisionChecker
 
 from spider.constraints import CartConstriantChecker
@@ -29,7 +29,7 @@ class BezierPlanner(BasePlanner):
             self.config.update(config)
 
         self.local_map = RoutedLocalMap()
-        self.coordinate_transformer = FrenetCoordinateTransformer() # 要维护几个坐标系呢？
+        self.coordinate_transformer = FrenetTransformer() # 要维护几个坐标系呢？
         # self.predictor = None
         self.path_sampler = BezierCurveSampler(self.config["end_s_candidates"],self.config["end_l_candidates"])
         self.displacement_sampler = QuarticPolyminalSampler(self.config["end_T_candidates"],

@@ -15,7 +15,7 @@ from spider.elements.box import TrackingBoxList, TrackingBox
 from spider.sampler.LatticeSampler import LatticeSampler
 from spider.evaluator import FrenetCostEvaluator
 
-from spider.utils.transform.frenet import FrenetCoordinateTransformer
+from spider.utils.transform.frenet import FrenetTransformer
 from spider.utils.collision import BoxCollisionChecker
 
 from spider.constraints import CartConstriantChecker
@@ -33,7 +33,7 @@ class LatticePlanner(BasePlanner):
         #     self.config.update(config)
 
         self.local_map = RoutedLocalMap()
-        self.coordinate_transformer = FrenetCoordinateTransformer() # 要维护几个坐标系呢？
+        self.coordinate_transformer = FrenetTransformer() # 要维护几个坐标系呢？
 
         self.trajectory_sampler = LatticeSampler(
             self.steps, self.dt,

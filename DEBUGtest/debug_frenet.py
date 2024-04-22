@@ -1,5 +1,5 @@
 import numpy as np
-from spider.utils.transform.frenet import FrenetCoordinateTransformer
+from spider.utils.transform.frenet import FrenetTransformer
 from spider.elements.trajectory import FrenetTrajectory, Trajectory
 import matplotlib.pyplot as plt
 import torch
@@ -16,7 +16,7 @@ plt.plot(cline[:,0], cline[:,1], '.-')
 plt.plot(traj_arr[:,0], traj_arr[:,1])
 
 
-transformer = FrenetCoordinateTransformer()
+transformer = FrenetTransformer()
 transformer.set_reference_line(cline)
 
 plt.figure()

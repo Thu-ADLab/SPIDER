@@ -12,7 +12,7 @@ def polar2cart(r, theta):
 
 
 
-class PolarCoordTransformer:
+class PolarTransformer:
     def __init__(self):
         pass
     

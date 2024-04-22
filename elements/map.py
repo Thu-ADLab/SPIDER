@@ -133,7 +133,7 @@ class LocalMap:
 
         x, y = ego_veh_state.x(), ego_veh_state.y()
         min_idx, min_dist = -1, math.inf
-        coordinate_transformer = transform.FrenetCoordinateTransformer()
+        coordinate_transformer = transform.FrenetTransformer()
         for idx in range(len(self.lanes)):
             target_lane = self.lanes[idx]
             coordinate_transformer.set_reference_line(target_lane.centerline, target_lane.centerline_csp)

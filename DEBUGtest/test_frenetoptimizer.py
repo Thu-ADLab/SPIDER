@@ -7,7 +7,7 @@ from spider.utils.collision.AABB import aabb2vertices
 from spider.elements import TrackingBox
 import spider.visualize as vis
 from spider.optimize.TrajectoryOptimizer import FrenetTrajectoryOptimizer
-from spider.utils.transform.frenet import FrenetCoordinateTransformer
+from spider.utils.transform.frenet import FrenetTransformer
 
 
 
@@ -43,7 +43,7 @@ bboxes.predict([dt * i for i in range(steps)])
 xs = np.linspace(0,80,80)
 ys = np.linspace(0,0,80)
 centerline = np.column_stack((xs, ys))
-transformer = FrenetCoordinateTransformer(centerline)
+transformer = FrenetTransformer(centerline)
 bboxes = transformer.cart2frenet4boxes(bboxes, convert_prediction=True)
 
 

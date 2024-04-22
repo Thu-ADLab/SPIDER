@@ -4,7 +4,7 @@ including some samplers that generates a 2D curve as path
 import numpy as np
 from spider.sampler.BaseSampler import BaseSampler
 from spider.elements.curves import ParametricCurve, BezierCurve
-from spider.utils.transform import FrenetCoordinateTransformer
+from spider.utils.transform import FrenetTransformer
 
 class BezierCurveSampler(BaseSampler):
     def __init__(self, end_s_candidates, end_l_candidates, num_control_points=5, max_transition_length=5.0):
@@ -18,7 +18,7 @@ class BezierCurveSampler(BaseSampler):
         self.num_control_points = num_control_points
         self.max_transition_length = max_transition_length #transition_length是为了保证初始yaw和末尾yaw而延申的长度
 
-    def sample(self, start_x, start_y, start_yaw, frenet_transformer: FrenetCoordinateTransformer):
+    def sample(self, start_x, start_y, start_yaw, frenet_transformer: FrenetTransformer):
         '''
         referline应该是参数化曲线，输入s,输出x,y
         '''

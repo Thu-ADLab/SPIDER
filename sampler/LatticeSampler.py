@@ -45,12 +45,12 @@ class LatticeSampler(BaseSampler):
 
 
     def sample_with_observation(self, ego_veh_state, perception, local_map, frenet2cart=False, cart_order=0):
-        from spider.utils.transform.frenet import FrenetCoordinateTransformer
+        from spider.utils.transform.frenet import FrenetTransformer
 
         target_lane_idx = self.lane_decision(ego_veh_state, perception, local_map)
         target_lane = local_map.lanes[target_lane_idx]
 
-        coordinate_transformer = FrenetCoordinateTransformer()
+        coordinate_transformer = FrenetTransformer()
         coordinate_transformer.set_reference_line(target_lane.centerline, target_lane.centerline_csp)
 
         fstate_start = coordinate_transformer.cart2frenet(ego_veh_state.x(), ego_veh_state.y(),

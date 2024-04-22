@@ -260,7 +260,7 @@ class FrenetTrajectoryOptimizer(BaseOptimizer):
 if __name__ == '__main__':
     from spider.elements import TrackingBox
     from spider.visualize import draw_polygon
-    from spider.utils.transform.frenet import FrenetCoordinateTransformer
+    from spider.utils.transform.frenet import FrenetTransformer
     import matplotlib.pyplot as plt
 
 
@@ -279,7 +279,7 @@ if __name__ == '__main__':
     xs = np.linspace(0, 80, 80)
     ys = np.linspace(0, 0, 80)
     centerline = np.column_stack((xs, ys))
-    transformer = FrenetCoordinateTransformer(centerline)
+    transformer = FrenetTransformer(centerline)
 
 
     # observation

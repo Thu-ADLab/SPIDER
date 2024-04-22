@@ -1,3 +1,5 @@
+import warnings
+from typing import Union
 import numpy as np
 import math
 import spider
@@ -26,16 +28,24 @@ todo list:
 '''
 qzl: 可以考虑直接继承ndarray类？还是.grid属性更好？
 '''
+def image_scale(image):
+    '''convert an array of any scale into 0-255 image(uint8)'''
+    image = np.asarray(image)
+    image = image - np.min(image)
+    image = (image / np.max(image) * 255).astype(np.uint8)
+    return image
+
+
 class OccupancyGrid2D:
-    # def __init__(self, height, width, channel, grid_resolution,):
-    def __init__(self, longitudinal_range, lateral_range, grid_resolution, channel:int):
+    # def __init__(self, height, width, num_channel, grid_resolution,):
+    def __init__(self, longitudinal_range, lateral_range, grid_resolution, num_channel=1, channel_names=("occupancy",)):
         '''
         环境的栅格化表达
         longitudinal_range: [longitudinal_range_front,longitudinal_range_back]
         lateral_range: [lateral_range_left, lateral_range_right]
         grid_resolution: [longitudinal_resolution, lateral_resolution]
-        channel: int
-        channel 0必须储存占据信息。
+        num_channel: int
+        num_channel 0必须储存占据信息。
         '''
         for x in longitudinal_range, lateral_range, grid_resolution:
             assert len(x) == 2
@@ -45,20 +55,30 @@ class OccupancyGrid2D:
 
         self.height = int(math.ceil( sum(longitudinal_range) / self.lon_resolution ))
         self.width = int(math.ceil( sum(lateral_range) / self.lat_resolution ))
-        self.channel = channel
+        self.num_channel = num_channel
+        if len(channel_names) != num_channel:
+            warnings.warn("Number of channel names does not match number of channels")
+        else:
+            self.channel_names = channel_names
 
-        self.grid: np.ndarray = np.zeros((self.height, self.width, self.channel))
+        self.grid: np.ndarray = np.zeros((self.num_channel, self.height, self.width)) # 很核心的一个属性，存储栅格信息
 
     def get_occupancy(self):
-        return self.grid[:,:,0]
+        return self.grid[0]
 
     def set_grid(self, grid: np.ndarray):
-        assert grid.shape == (self.height, self.width, self.channel)
+        assert grid.shape == (self.num_channel, self.height, self.width)
         self.grid = grid
 
-    def visualize(self, delay=0):
-        occ = (self.get_occupancy() * 255).astype(np.uint8)
-        cv2.imshow('vis', occ)
+    def show(self, channel:Union[int, str], delay=0):
+        if isinstance(channel, str):
+            channel_id = self.channel_names.index(channel)
+        elif isinstance(channel, int):
+            channel_id = channel
+        else:
+            raise ValueError("Channel should be either int or str. For example, 0 or 'occupancy'")
+        img = self.grid[channel_id]
+        cv2.imshow('vis', img)
         cv2.waitKey(delay)
         cv2.destroyAllWindows()
 
@@ -87,7 +107,7 @@ class OccupancyGrid2D:
 
         Parameters:
         - grid: np.ndarray
-            栅格图像，三维数组，形状为 (height, width, channel)。
+            栅格图像，三维数组，形状为 (num_channel, height, width)。
         - grid_resolution: tuple
             栅格分辨率，包含两个元素，分别是纵向和横向的分辨率。
         - ego_anchor: tuple
@@ -100,11 +120,11 @@ class OccupancyGrid2D:
         # ego_anchor是ego veh在图像中的x,y坐标
         assert len(grid.shape) == 3
         assert len(grid_resolution) == 2
-        height, width, channel = grid.shape
+        num_channel, height, width = grid.shape
         ego_x_occ, ego_y_occ = ego_anchor
         lon_range = [ego_y_occ * grid_resolution[0], (height - ego_y_occ) * grid_resolution[0]]
         lat_range = [ego_x_occ * grid_resolution[1], (width - ego_x_occ) * grid_resolution[1]]
-        occ = cls(lon_range, lat_range, grid_resolution, channel)
+        occ = cls(lon_range, lat_range, grid_resolution, num_channel)
         occ.set_grid(grid)
         return occ
 
@@ -333,6 +353,6 @@ class OccupancyGrid3D:
 
 if __name__ == '__main__':
     occ_grid = OccupancyGrid2D([100,30],[30,30],[0.1,0.1],4)
-    occ_grid.visualize()
+    occ_grid.show(0,0)
 
 

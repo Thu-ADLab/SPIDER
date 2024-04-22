@@ -16,7 +16,7 @@ from spider.sampler.PolynomialSampler import QuarticPolyminalSampler, QuinticPol
 from spider.sampler.Combiner import LatLonCombiner
 from spider.evaluator import FrenetCostEvaluator
 
-from spider.utils.transform.frenet import FrenetCoordinateTransformer
+from spider.utils.transform.frenet import FrenetTransformer
 from spider.utils.collision import BoxCollisionChecker
 
 from spider.constraints import CartConstriantChecker
@@ -32,7 +32,7 @@ class PiecewiseLatticePlanner(BasePlanner):
             # self.configure(config)
 
         self.local_map = RoutedLocalMap()
-        self.coordinate_transformer = FrenetCoordinateTransformer() # 要维护几个坐标系呢？
+        self.coordinate_transformer = FrenetTransformer() # 要维护几个坐标系呢？
         # self.predictor = None
         self.longitudinal_sampler = QuarticPolyminalSampler(self.config["end_T_candidates"],
                                                             self.config["end_v_candidates"])

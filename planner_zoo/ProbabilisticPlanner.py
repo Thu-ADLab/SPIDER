@@ -14,7 +14,7 @@ from spider.rl.action.ActionConverter import DiscreteTrajActionDecoder, Discrete
 from spider.rl.policy.ClassificationILPolicy import ClassificationILPolicy
 import spider.rl.convert as cvt
 from spider.planner_zoo.BaseNeuralPlanner import BaseNeuralPlanner
-from spider.utils.transform.frenet import FrenetCoordinateTransformer
+from spider.utils.transform.frenet import FrenetTransformer
 
 class MlpCritic(nn.Module):
     def __init__(self, input_dim, output_dim, hidden_size=64):
