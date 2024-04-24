@@ -2,7 +2,7 @@
 import numpy as np
 
 
-G, K_risk, discount_factor = 10, 0.25, 0.9
+G, K_risk = 9, 0.3
 Ms = {i:1 for i in range(50)} # qzl: a ratio determined by the class of boundary points
 max_risk = 1.0
 _epsilon = 0.001
@@ -15,8 +15,9 @@ def vel_oriented_risk(target_xs, target_ys, obs_x, obs_y, obs_vx, obs_vy, obs_cl
     # if np.any(dist <= ego_radius):
     #     return max_risk # *10 collision!!
 
-    rr = (dist - ego_radius) ** 2
-    rr[rr < _epsilon] = _epsilon    # avoid division by zero
+    rr = (dist - ego_radius) ** 2 # dist < ego radius的在后面会被置为max risk
+    # rr = dist ** 2
+    rr[rr < _epsilon] = _epsilon # avoid division by zero
 
     v = np.sqrt(obs_vx ** 2 + obs_vy ** 2)
     vtheta = np.arctan2(obs_vy, obs_vx)  # if obvx != 0 else 0.5*np.pi*obvy/abs(obvy)
