@@ -99,6 +99,7 @@ class DummyPlanner(BasePlanner):
     def __init__(self, config=None):
         super().__init__(config)
 
+    @classmethod
     def default_config(cls) -> dict:
         return cls._update_config(super().default_config(),{
             # "acceleration": ,

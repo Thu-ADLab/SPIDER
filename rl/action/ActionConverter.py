@@ -87,7 +87,7 @@ class TrajActionEncoder(nn.Module):
         )
 
 
-    def forward(self, trajectory: Union[elm.Trajectory, elm.FrenetTrajectory]) -> torch.Tensor:
+    def forward(self, trajectory: Union[elm.Trajectory, elm.FrenetTrajectory], *args, **kwargs) -> torch.Tensor:
         '''
         forward的定义应该是decoder(action_tensor, *observation) -> trajectory
         '''

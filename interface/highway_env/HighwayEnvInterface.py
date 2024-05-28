@@ -67,7 +67,8 @@ class HighwayEnvInterface:
     def reset(self):
         # todo: qzl: 想一想有没有什么更多的需要reset的
         self._routed_local_map = None
-        return self._env.reset()
+        obs,info = self._env.reset()
+        return self.wrap_observation(obs)
 
     def step(self, action) -> Tuple["Observation", float, bool, bool, dict]:
         """

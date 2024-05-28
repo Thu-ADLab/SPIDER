@@ -7,10 +7,7 @@ import spider
 import numpy as np
 from spider.planner_zoo.BasePlanner import BasePlanner
 
-from spider.elements.map import RoutedLocalMap
-from spider.elements.trajectory import FrenetTrajectory
-from spider.elements.vehicle import VehicleState
-from spider.elements.box import TrackingBoxList, TrackingBox
+from spider.elements import RoutedLocalMap,FrenetTrajectory,VehicleState,TrackingBoxList, TrackingBox
 
 from spider.sampler.LatticeSampler import LatticeSampler
 from spider.evaluator import FrenetCostEvaluator
@@ -19,10 +16,6 @@ from spider.utils.transform.frenet import FrenetTransformer
 from spider.utils.collision import BoxCollisionChecker
 
 from spider.constraints import CartConstriantChecker
-
-# from concurrent.futures import ProcessPoolExecutor
-# def transform_trajectory(t, coordinate_transformer):
-#     return coordinate_transformer.frenet2cart4traj(t, order=2)
 
 class LatticePlanner(BasePlanner):
     def __init__(self, config=None):
@@ -96,14 +89,6 @@ class LatticePlanner(BasePlanner):
             if self.constraint_checker.check(traj, obstacles):
                 return traj, cost
 
-            # if np.any(np.array(traj.v) > self.config["max_speed"]): continue
-            # if np.any(np.array(traj.v) < self.config["min_speed"]): continue
-            # if np.any(np.array(traj.a) > self.config["max_acceleration"]): continue
-            # if np.any(np.array(traj.a) < -self.config["max_deceleration"]): continue
-            # if np.any(np.abs(traj.curvature) > self.config["max_curvature"]): continue
-            # if self.collision_checker.check_trajectory(traj, obstacles): continue
-            # return traj, cost
-
 
         return None, 0
 
@@ -115,22 +100,6 @@ class LatticePlanner(BasePlanner):
             raise ValueError("Invalid target lane record_index")
         target_lane = self.local_map.lanes[target_lane_idx]
         self.coordinate_transformer.set_reference_line(target_lane.centerline, target_lane.centerline_csp)
-
-    # def match_lanes(self, ego_veh_state:VehicleState):
-    #     # 已经放在map的函数里了
-    #     if len(self.local_map.lanes) == 0:
-    #         raise ValueError("No lanes!")
-    #
-    #     x,y = ego_veh_state.x(), ego_veh_state.y()
-    #     min_idx, min_dist = -1, math.inf
-    #     for idx in range(len(self.local_map.lanes)):
-    #         self.build_frenet_lane(idx)
-    #         fstate = self.coordinate_transformer.cart2frenet(x, y, order=0)
-    #         dist = math.fabs(fstate.l)
-    #         if dist<min_dist:
-    #             min_idx, min_dist = idx, dist
-    #     return min_idx
-
 
     def plan(self, ego_veh_state:VehicleState, obstacles:TrackingBoxList, local_map:RoutedLocalMap=None) -> FrenetTrajectory:
         """
@@ -144,7 +113,7 @@ class LatticePlanner(BasePlanner):
 
         # 把自车位置匹配到对应车道，并且把自车点位转换为Frenet坐标
         # 坐标系建立及坐标转换（车道匹配+车道决策+坐标转换）
-        ego_lane_idx = self.local_map.match_lane(ego_veh_state)#self.match_lanes(ego_veh_state)  # 把自车位置匹配到对应车道
+        ego_lane_idx = self.local_map.match_lane(ego_veh_state.x(), ego_veh_state.y())#self.match_lanes(ego_veh_state)  # 把自车位置匹配到对应车道
         # todo: 加上车道决策的部分
         target_lane_idx = ego_lane_idx  # 目前车道决策还没写上，先默认自车车道，按道理是一个以自车车道输入的函数
         self.build_frenet_lane(target_lane_idx)
@@ -156,9 +125,6 @@ class LatticePlanner(BasePlanner):
         predicted_obstacles = obstacles.predict(self.config["dt"] * np.arange(self.config["steps"]))
 
         # 轨迹采样
-        # long_samples = self.longitudinal_sampler.sample((fstate_start.s, fstate_start.s_dot, fstate_start.s_2dot))
-        # lat_samples = self.lateral_sampler.sample((fstate_start.l, fstate_start.l_prime, fstate_start.l_2prime))
-        # candidate_trajectories = self.trajectory_combiner.combine(lat_samples, long_samples)
         candidate_trajectories = self.trajectory_sampler.sample(
             (fstate_start.s, fstate_start.s_dot, fstate_start.s_2dot),
             (fstate_start.l, fstate_start.l_prime, fstate_start.l_2prime)
@@ -166,10 +132,6 @@ class LatticePlanner(BasePlanner):
 
 
         # 轨迹坐标转换，把每个轨迹点转到笛卡尔坐标
-        # todo: qzl:这一步耗时非常严重，有2个建议：
-        #  1. 评估暂时用不到笛卡尔坐标，碰撞检测目前在笛卡尔坐标下，所以可以在碰撞检测的时候再转换，不用提前把所有的都做坐标转换
-        #  2. 把碰撞检测直接整个放在Frenet坐标下，即先把障碍物及其预测轨迹变换到Frenet坐标，这样子所有的环节都在Frenet坐标进行，最后输出前再转换到笛卡尔
-        #  p.s.第一点的补充：坐标转换可以暂时先存储成函数或生成器，暂时先不执行，在碰撞检测的时候才执行
         # candidate_trajectories = [self.coordinate_transformer.frenet2cart4traj(t, order=2) for t in candidate_trajectories]
         # 并行计算
         # with ProcessPoolExecutor() as executor:
@@ -197,6 +159,21 @@ class LatticePlanner(BasePlanner):
             print("Planning Succeed! Time: %.2f seconds, FPS: %.2f" % (t2 - t1, 1 / (t2 - t1)))
 
         return optimal_trajectory
+
+    # def match_lanes(self, ego_veh_state:VehicleState):
+    #     # 已经放在map的函数里了
+    #     if len(self.local_map.lanes) == 0:
+    #         raise ValueError("No lanes!")
+    #
+    #     x,y = ego_veh_state.x(), ego_veh_state.y()
+    #     min_idx, min_dist = -1, math.inf
+    #     for idx in range(len(self.local_map.lanes)):
+    #         self.build_frenet_lane(idx)
+    #         fstate = self.coordinate_transformer.cart2frenet(x, y, order=0)
+    #         dist = math.fabs(fstate.l)
+    #         if dist<min_dist:
+    #             min_idx, min_dist = idx, dist
+    #     return min_idx
 
 
 if __name__ == '__main__':

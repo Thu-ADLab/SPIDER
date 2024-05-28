@@ -3,7 +3,7 @@ from spider.data.Dataset import OfflineLogDataset
 from spider.planner_zoo.ProbabilisticPlanner import ProbabilisticPlanner
 
 train = 0
-test_mode_closed_loop = 1
+test_mode_closed_loop = 0
 
 # setup the planner
 planner = ProbabilisticPlanner({

@@ -114,7 +114,7 @@ class ProbabilisticPlanner(BaseNeuralPlanner):
     # def sample_candidate_trajectories(self, ego_veh_state:elm.VehicleState):
     #     # 把自车位置匹配到对应车道，并且把自车点位转换为Frenet坐标
     #     # 坐标系建立及坐标转换（车道匹配+车道决策+坐标转换）
-    #     ego_lane_idx = self.local_map.match_lane(ego_veh_state)  # self.match_lanes(ego_veh_state)  # 把自车位置匹配到对应车道
+    #     ego_lane_idx = self.local_map.match_lane(ego_veh_state.x(), ego_veh_state.y())  # self.match_lanes(ego_veh_state)  # 把自车位置匹配到对应车道
     #     target_lane_idx = ego_lane_idx  # 目前车道决策还没写上，先默认自车车道，按道理是一个以自车车道输入的函数
     #     self.build_frenet_lane(target_lane_idx)
     #     fstate_start = self.coordinate_transformer.cart2frenet(ego_veh_state.x(), ego_veh_state.y(),

@@ -58,7 +58,8 @@ class OptimizedLatticePlanner(LatticePlanner):
         self.initial_traj = copy.deepcopy(traj)
 
         if traj is None:
-            print("No feasible sampling initial trajectory! ")
+            if self.config["print_info"]:
+                print("No feasible sampling initial trajectory! ")
             return None
 
 

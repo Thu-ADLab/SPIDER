@@ -87,19 +87,20 @@ class HighwayEnvBenchmark(BaseBenchmark):
         '''
         给定一个planner，在设置好的环境里面开一遍，返回config中指定的metrics
         '''
-        obs, info = self.initial_environment()
+        ego_veh_state, perception, local_map = self.initial_environment()
 
         for i in range(self.config["episode_num"]):
             self.interface.reset()
             self.env.render() # 为了初始化env.viewer, 否则为None
 
             for _ in range(self.config["max_steps"]):
-                ego_veh_state, perception, local_map = self.interface.wrap_observation(obs)
+                
                 output = spider_planner.plan(ego_veh_state, perception, local_map)
                 if output is None:
                     break # 没有可行解了，其实应该把reward给个低值。
                 action = self.interface.convert_to_action(output, ego_veh_state)
                 obs, reward, done, truncated, info = self.env.step(action)
+                ego_veh_state, perception, local_map = self.interface.wrap_observation(obs)
 
 
                 self.env.render()

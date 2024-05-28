@@ -1,4 +1,5 @@
 from abc import abstractmethod
+import copy
 
 class BaseInterface:
     def __init__(self):
@@ -32,18 +33,48 @@ class BaseInterface:
     #     return 0.0
 
 class DummyInterface(BaseInterface):
-    def __init__(self):
+    def __init__(self,config=None):
         super(DummyInterface, self).__init__()
+        self.config = self.default_config()
+        if not (config is None):
+            self.config.update(config)
+
         self.ego_veh_state = None
         self.obstacles = None
         self.local_map = None
 
+        assert self.config["racetrack"] in ["curve", "straight"], "racetrack must be one of ['curve', 'straight']"
+        self.init_observation = self.get_environment_presets(
+            self.config["ego_veh_length"], self.config["ego_veh_width"], self.config["racetrack"])
+        self.reset()
 
-    def reset(self):
-        # todo:应该反过来， benchmark从interface获取。
-        from spider.interface.BaseBenchmark import DummyBenchmark
-        self.ego_veh_state, self.obstacles, self.local_map = DummyBenchmark.get_environment_presets()
+    @classmethod
+    def default_config(cls) -> dict:
+        """
+        :return: a configuration dict
+        """
+        return {
+            # "random_seed": 666,
+            "ego_veh_length": 5.0,
+            "ego_veh_width": 2.0,
+
+            "racetrack": "curve",  # "curve" or "straight
+        }
+
+
+    def reset(self, random=False):
+        self.ego_veh_state, self.obstacles, self.local_map = copy.deepcopy(self.init_observation)
+        ##
+        if random:
+            import random as rnd
+            dx, dy = rnd.random() * 6 - 3, rnd.random() * 6 - 3
+            dv = rnd.random() * 0.5
+            self.ego_veh_state.transform.location.x += dx
+            self.ego_veh_state.transform.location.y += dy
+            self.ego_veh_state.velocity.y += dv
+        ####
         return self.wrap_observation()
+
 
     def wrap_observation(self):
         return self.ego_veh_state, self.obstacles, self.local_map
@@ -83,7 +114,7 @@ class DummyInterface(BaseInterface):
             vis.draw_polyline(tb_pred_traj, show_buffer=True, buffer_dist=tb.width * 0.5, buffer_alpha=0.1,
                               color='C3')
 
-        vis.draw_ego_history(self.ego_veh_state, '-', lw=1, color='gray')  # 画自车历史
+        # vis.draw_ego_history(self.ego_veh_state, '-', lw=1, color='gray')  # 画自车历史
         vis.draw_trajectory(traj, '.-', show_footprint=True, color='C2')  # 画轨迹
         if "control_points" in traj.debug_info:  # bezier planner
             pts = traj.debug_info["control_points"]
@@ -99,9 +130,40 @@ class DummyInterface(BaseInterface):
         vis.ego_centric_view(self.ego_veh_state.x(), self.ego_veh_state.y(), [-20, 80], [-5, 5])
         # plt.xlim([ego_veh_state.x() - 20, ego_veh_state.x() + 80])
         # plt.ylim([ego_veh_state.y() - 5, ego_veh_state.y() + 5])
-        plt.pause(0.001)
+        # plt.pause(0.001)
 
+    @staticmethod
+    def get_environment_presets(ego_length=5.0, ego_width=2.0, racetrack="curve"):
+        ############ environment presets ###################
+        import numpy as np
+        from spider.elements.map import RoutedLocalMap, Lane
+        from spider.elements.box import TrackingBoxList, TrackingBox
+        from spider.elements.vehicle import VehicleState
 
-    # def is_done(self):
-    #     return self.ego_veh_state.x() > 250
+        ## localization
+        init_ego_state = VehicleState.from_kine_states(5., 1., 0., vx=0.5, vy=0.,
+                                                       length=ego_length, width=ego_width)
+        # init_ego_state = VehicleState.from_kine_states(5., 1., 0., vx=0.5, vy=0.,
+        #                                                      length=ego_length, width=ego_width)
+
+        ### map
+        init_local_map = RoutedLocalMap()
+        for idx, yy in enumerate([-3.5, 0, 3.5]):
+            xs = np.arange(0, 300.1, 1.0)
+            if racetrack == "curve":
+                cline = np.column_stack((xs, 3 * np.sin(np.pi * xs / 100) + yy))  # sin形状车道
+            else:
+                cline = np.column_stack((xs, np.ones_like(xs) * yy))  # 直线车道
+
+            lane = Lane(idx, cline, width=3.5, speed_limit=60 / 3.6)
+            init_local_map.lanes.append(lane)
+
+        ## perception
+        init_obstacles = TrackingBoxList([
+            TrackingBox(obb=(50, 0, 5, 2, np.arctan2(0.2, 5)), vx=5, vy=0.2),
+            TrackingBox(obb=(100, 0, 5, 2, np.arctan2(-0.2, 5)), vx=5, vy=-0.25),
+            TrackingBox(obb=(200, -10, 1, 1, np.pi / 2), vx=0, vy=1.0),  # 横穿马路
+            # TrackingBox(obb=(220, -2, 1, 1, -np.pi / 2), vx=0.0, vy=0.0)  # 路障
+        ])
+        return init_ego_state, init_obstacles, init_local_map
 

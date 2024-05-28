@@ -12,7 +12,7 @@ from spider.rl.policy.BasePolicy import BasePolicy
 class DiscretePPOPolicy(BasePolicy):
     def __init__(self, actor_network: torch.nn.Module, critic_network: torch.nn.Module, num_actions,
                  gamma=0.98, value_coef=0.5, entropy_coef=0.01,
-                 lr_actor=3e-4, lr_critic=3e-4, max_grad_norm=0.5,
+                 lr_actor=3e-5, lr_critic=3e-5, max_grad_norm=1.0,
                  enable_tensorboard=False, tensorboard_root='./tensorboard/'):
         super().__init__(enable_tensorboard, tensorboard_root)
 

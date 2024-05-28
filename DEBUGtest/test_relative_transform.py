@@ -16,7 +16,7 @@ ys = np.random.rand(n) * 10
 yaws = np.random.rand(n) * 3.14
 # colors = np.random.rand(n,3)
 xs_rel, ys_rel, yaws_rel,_,_ = tf.abs2rel(xs, ys, yaws, ego_pose=ego_pose)
-vis.figure((13,6))
+vis.figure(figsize=(13,6))
 vis.subplot(1,2,1)
 vis.draw_obb([ego_pose[0], ego_pose[1], 5,2, ego_pose[2]])
 vis.plot(xs, ys, '.b')

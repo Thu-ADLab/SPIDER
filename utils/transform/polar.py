@@ -18,7 +18,7 @@ class PolarTransformer:
     
     def cart2polar(self, x, y, vx=None, vy=None, ax=None, ay=None, *, order=0):
         r = np.sqrt(x**2 + y**2)
-        theta = np.atan2(y, x)
+        theta = np.arctan2(y, x)
         return r, theta
     
     def polar2cart(self, r, theta):

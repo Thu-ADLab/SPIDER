@@ -122,7 +122,7 @@ class LocalMap:
     def get_centerline_info(self, lane_index):
         return self.lanes[lane_index].centerline, self.lanes[lane_index].centerline_csp
 
-    def match_lane(self, ego_veh_state: VehicleState, return_dist=False):
+    def match_lane(self, x, y, return_frenet=False):
         '''
         这里返回的变量数量不统一，最好要改过来
         '''
@@ -131,19 +131,21 @@ class LocalMap:
         if len(self.lanes) == 0:
             raise ValueError("No lanes!")
 
-        x, y = ego_veh_state.x(), ego_veh_state.y()
+        # x, y = ego_veh_state.x(), ego_veh_state.y()
         min_idx, min_dist = -1, math.inf
+        s = 0.0
         coordinate_transformer = transform.FrenetTransformer()
         for idx in range(len(self.lanes)):
             target_lane = self.lanes[idx]
             coordinate_transformer.set_reference_line(target_lane.centerline, target_lane.centerline_csp)
             fstate = coordinate_transformer.cart2frenet(x, y, order=0)
-            dist = math.fabs(fstate.l)
-            if dist < min_dist:
+            dist = fstate.l
+            if abs(dist) < abs(min_dist):
                 min_idx, min_dist = idx, dist
+                s = fstate.s
 
-        if return_dist:
-            return min_idx, min_dist
+        if return_frenet:
+            return min_idx, (s, min_dist)
         else:
             return min_idx
 

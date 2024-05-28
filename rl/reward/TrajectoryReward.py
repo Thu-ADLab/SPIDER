@@ -127,7 +127,8 @@ class TrajectoryReward(BaseReward):
     def _centerline_reward(self, ego_state, local_map):
         if local_map is None:
             return 0., False
-        nearest_lane_id, dist = local_map.match_lane(ego_state, return_dist=True)
+        nearest_lane_id, sl = local_map.match_lane(ego_state, return_frenet=True)
+        dist = abs(sl[1])
         return - (dist/1.75) * 3, False
         #     if distance > 0:
         #         direction = closest_lane.direction_at(distance)

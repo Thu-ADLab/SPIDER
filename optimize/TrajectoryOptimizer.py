@@ -229,7 +229,8 @@ class FrenetTrajectoryOptimizer(BaseOptimizer):
 
         Q, f, Aineq, bineq, Aeq, beq = [cvxopt.matrix(i.astype(np.float64))
                                             for i in [Q, f, Aineq, bineq, Aeq, beq]]
-        sol = cvxopt.solvers.qp(Q, f, Aineq, bineq, Aeq, beq)  # kktsolver='ldl', options={'kktreg':1e-9}
+        sol = cvxopt.solvers.qp(Q, f, Aineq, bineq, Aeq, beq, options={'show_progress':False})
+        # kktsolver='ldl', options={'kktreg':1e-9}, options={'show_progress':False}
 
         optim_traj_arr = np.array(sol['x']) # size of [2N, 1] squeeze的过程在下面赋值的时候加了0的列索引
         optim_traj = FrenetTrajectory(traj.steps, traj.dt)

@@ -3,7 +3,7 @@ from spider.data.Dataset import OfflineLogDataset
 from spider.planner_zoo.GRUPlanner import GRUPlanner
 
 train = 0
-test_mode_closed_loop = 0
+test_mode_closed_loop = 1
 
 # setup the planner
 planner = GRUPlanner({
@@ -21,7 +21,7 @@ planner = GRUPlanner({
 })
 
 # setup the dataset
-dataset = OfflineLogDataset('./dataset/', planner.state_encoder, planner.action_encoder)
+dataset = OfflineLogDataset('./dataset_map/', planner.state_encoder, planner.action_encoder)
 train_loader = dataset.get_dataloader(batch_size=32, shuffle=True)  #DataLoader(dataset, batch_size=64, shuffle=True)
 
 if train:
@@ -32,14 +32,15 @@ if train:
     planner.save_state_dict('gru.pth')
 
 # load the model
-# planner.load_state_dict('gru.pth')
-planner.load_state_dict('gru_best.pth')
+planner.load_state_dict('gru.pth')
+# planner.load_state_dict('gru_best.pth')
 
 # test the planner
 
 if test_mode_closed_loop:
     from spider.interface.BaseBenchmark import DummyBenchmark
     benchmark = DummyBenchmark({
+        "save_video": True,
     })
     benchmark.test(planner)
 else:

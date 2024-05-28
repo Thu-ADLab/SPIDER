@@ -84,6 +84,7 @@ class PiecewiseLatticePlanner(BasePlanner):
                 spider.CONSTRIANT_DECELERATION,
                 spider.CONSTRIANT_CURVATURE
             },
+            "print_info": True,
         }
 
     def get_candidate_traj_with_cost(self):
@@ -144,7 +145,7 @@ class PiecewiseLatticePlanner(BasePlanner):
 
         # 把自车位置匹配到对应车道，并且把自车点位转换为Frenet坐标
         # 坐标系建立及坐标转换（车道匹配+车道决策+坐标转换）
-        ego_lane_idx = self.local_map.match_lane(ego_veh_state)#self.match_lanes(ego_veh_state)  # 把自车位置匹配到对应车道
+        ego_lane_idx = self.local_map.match_lane(ego_veh_state.x(), ego_veh_state.y())#self.match_lanes(ego_veh_state)  # 把自车位置匹配到对应车道
         # todo: 加上车道决策的部分
         target_lane_idx = ego_lane_idx  # 目前车道决策还没写上，先默认自车车道，按道理是一个以自车车道输入的函数
         self.build_frenet_lane(target_lane_idx)
@@ -173,14 +174,15 @@ class PiecewiseLatticePlanner(BasePlanner):
 
         self._candidate_trajectories, self._candidate_trajectories_cost = sorted_candidates, sorted_cost
 
-        if not (optimal_trajectory is None):
-            print("Optimal trajectory found! s_dot_end=%.2f,l_end=%.2f" %
-                  (optimal_trajectory.s_dot[-1], optimal_trajectory.l[-1]))
-        else:
-            warnings.warn("WARNING: NO feasible trajectory!")
+        if self.config["print_info"]:
+            if not (optimal_trajectory is None):
+                print("Optimal trajectory found! s_dot_end=%.2f,l_end=%.2f" %
+                      (optimal_trajectory.s_dot[-1], optimal_trajectory.l[-1]))
+            else:
+                warnings.warn("WARNING: NO feasible trajectory!")
 
-        t2 = time.time()
-        print("Planning Succeed! Time: %.2f seconds, FPS: %.2f" % (t2 - t1, 1 / (t2 - t1)))
+            t2 = time.time()
+            print("Planning Succeed! Time: %.2f seconds, FPS: %.2f" % (t2 - t1, 1 / (t2 - t1)))
 
         return optimal_trajectory
 
