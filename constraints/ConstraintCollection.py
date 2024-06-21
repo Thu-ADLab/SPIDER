@@ -15,6 +15,8 @@ class ConstraintCollection:
         CONSTRIANT_ACCELERATION: lambda traj, config: np.all(np.array(traj.a) <= config["max_acceleration"]),
         CONSTRIANT_DECELERATION: lambda traj, config: np.all(np.array(traj.a) >= -config["max_deceleration"]),
         CONSTRIANT_CURVATURE: lambda traj, config: np.all(np.array(traj.curvature) <= config["max_curvature"]),
+        CONSTRIANT_LATERAL_JERK: lambda traj, config: np.all(np.abs(np.array(traj.l_3dot)) <= config["max_lateral_jerk"]),
+        CONSTRIANT_LONGITUDINAL_JERK: lambda traj, config: np.all(np.abs(np.array(traj.s_3dot)) <= config["max_longitudinal_jerk"]),
     }
 
     control_constraint_functions = {

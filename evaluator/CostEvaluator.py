@@ -22,7 +22,7 @@ class CartCostEvaluator:
 
         efficiency = -np.sum(traj.v)
 
-        safety = 0#np.sum(np.array(traj.l) ** 2)
+        safety = np.sum(np.array(traj.l) ** 2)
 
         cost = self.weight_comfort * comfort +\
                self.weight_efficiency * efficiency +\
