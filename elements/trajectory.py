@@ -1,5 +1,7 @@
 import numpy as np
 from spider.control.vehicle_model import Bicycle
+import copy
+import warnings
 
 
 # 考虑一下要不要改成 traj = [pose]
@@ -55,7 +57,7 @@ class Trajectory(Path):
     _sequential_properties = [
         'a', 'centripetal_acceleration', 'curvature', 'heading', 'jerk', 'l',
         's', 'steer', 'steer_velocity', 'v', 'x', 'y' , 'debug_info',
-        #'t' # 注意，t不应该被裁剪、串联等等
+        't' # t 可能出问题
     ]
 
     def __init__(self, steps, dt=0.1):
@@ -103,6 +105,7 @@ class Trajectory(Path):
         pass
 
     def truncate(self, steps_num):
+        warnings.warn("This method is going to be deprecated. Use Trajectory.__getitem__ instead (directly slicing).", DeprecationWarning)
         self.steps = steps_num # 有没有必要呢？
         for prop_name in self._sequential_properties:
             seq = getattr(self, prop_name)
@@ -114,6 +117,38 @@ class Trajectory(Path):
                 setattr(self, prop_name, seq[:steps_num])
         return self
 
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            # Handle slicing
+            new_traj = copy.deepcopy(self)
+            for prop_name in new_traj._sequential_properties:
+                seq = getattr(new_traj, prop_name)
+                if isinstance(seq, dict):
+                    for key in seq:
+                        seq[key] = seq[key][index]
+                    setattr(new_traj, prop_name, seq)
+                else:
+                    setattr(new_traj, prop_name, seq[index])
+            new_traj.steps = len(new_traj.t)
+            return new_traj
+
+        elif isinstance(index, int):
+            # Handle single index access
+            # todo: qzl: it needs to be reconsidered, because sequence is modified to a scalar
+            new_traj = copy.deepcopy(self)
+            for prop_name in new_traj._sequential_properties:
+                seq = getattr(new_traj, prop_name)
+                if isinstance(seq, dict):
+                    for key in seq:
+                        seq[key] = seq[key][index]
+                    setattr(new_traj, prop_name, seq)
+                else:
+                    setattr(new_traj, prop_name, seq[index])
+            new_traj.steps = 1
+            return new_traj
+        else:
+            raise TypeError("Invalid argument type.")
+
     def __add__(self, other):
         if isinstance(other, Trajectory):
             return self.concat(other)
@@ -122,8 +157,6 @@ class Trajectory(Path):
 
     def concat(self, trajectory):
         assert self.dt == trajectory.dt
-        # self.steps = self.steps + trajectory.steps # 有没有必要呢？
-
         for prop_name in self._sequential_properties:
             seq1, seq2 = getattr(self, prop_name), getattr(trajectory, prop_name)
             if isinstance(seq1, dict):
@@ -132,6 +165,8 @@ class Trajectory(Path):
                 setattr(self, prop_name, seq1)
             else:
                 setattr(self, prop_name, np.concatenate((seq1, seq2)))
+        self.steps = self.steps + trajectory.steps
+        self.t = np.arange(self.steps) * self.dt
         return self
 
 
@@ -267,4 +302,6 @@ class FrenetTrajectory(Trajectory):
 if __name__ == '__main__':
     a = Trajectory(50)
     b = isinstance(a, Path)
+    c = Trajectory.from_trajectory_array(np.random.rand(50,2),0.1,calc_derivative=True)
+    d = c[:10]
     pass
