@@ -20,6 +20,12 @@ and coarse-grained modular decomposing of the internal procedures of the planner
 </p>
 
 ## Build a Planner with SPIDER
+A multi-scale tool chain is provided to build a planner by reusing the submodules seamlessly, and some are listed below.
+<p align="center">
+    <img src="./display_assests/common_tools.png" alt="common tools" width=600><br/>
+    <em>SPIDER tools for building a planner</em>
+</p>
+
 To have a glimpse of its capability, you can try to launch a demo script of LatticePlanner with 
 ```python
 import spider
@@ -77,6 +83,16 @@ Here are the examples of testing with GRU-IL and DQN-RL:
     <em>DQNPlanner (closed-loop testing)</em>
 </p>
 
+SPIDER consists of a planner zoo with the implementation of different kinds of planners 
+to show the support for various algorithms and frameworks.
+And we also compare the performance of them with the same customized metrics as a benchmark 
+in a simple environment provided by SPIDER, which we call the planner arena.
+The experiments are conducted for 10 times with random initial states, and the results are shown as follows:
+<p align="center">
+    <img src="./display_assests/planner_arena.png" alt="planner arena" width=600><br/>
+    <em>Planner Arena</em>
+</p>
+
 
 ## Access to the Environment
 What's more, a unified interface of SPIDER planners contributes to 
@@ -110,7 +126,7 @@ coming soon...
 coming soon...
 
 ## Contact Information
-If you have any problem, please feel free to contact me:
+If you have any questions, please feel free to contact me:
 
 Author: Zelin Qian(钱泽林)
 
