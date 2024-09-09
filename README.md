@@ -1,7 +1,7 @@
 # SPIDER
 [![Downloads](https://img.shields.io/pypi/dm/spider-python)](https://pypi.org/project/spider-python/)
 
-Self-driving Planning and Intelligent Decision-making Engine with Reinforcement learning
+Self-driving Planning and Intelligent Decision-making Engine with Reusability
 
 ## Installation
 The python package has been released to pypi: https://pypi.org/project/spider-python/.
