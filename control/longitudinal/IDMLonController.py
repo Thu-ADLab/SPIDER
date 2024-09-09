@@ -31,7 +31,7 @@ class IDMLonController(object):
         return: throttle control in the range [0, 1]
         """
         acc = self._calc_acceleration(v, v_desired, v_front, s)
-        return np.clip(acc, -self.a, self.a)
+        return acc#np.clip(acc, -self.a, self.a)
 
     def _calc_acceleration(self, v, v_desired, v_front, s):
         delta_v = v - v_front
